@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+import { supabase } from '@/integrations/supabase/client';
+import { showSuccess, showError } from '@/utils/toast';
 
 const Register: React.FC = () => {
     const navigate = useNavigate();
@@ -90,16 +92,49 @@ const Register: React.FC = () => {
         e.preventDefault();
         if (!validateForm()) return;
         setIsLoading(true);
+
+        const cleanCPF = formData.cpf.replace(/\D/g, '');
+        
         try {
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            setShowSuccessMessage(true);
-            setTimeout(() => {
-                navigate('/');
-                setShowSuccessMessage(false);
-                setFormData({ name: '', email: '', cpf: '', password: '', confirmPassword: '' });
-            }, 3000);
+            const { data, error } = await supabase.auth.signUp({
+                email: formData.email,
+                password: formData.password,
+                options: {
+                    data: {
+                        name: formData.name,
+                        cpf: cleanCPF,
+                    },
+                },
+            });
+
+            if (error) {
+                showError(`Erro ao cadastrar: ${error.message}`);
+                setIsLoading(false);
+                return;
+            }
+
+            if (data.user) {
+                showSuccess("Cadastro realizado! Verifique seu e-mail para ativar sua conta.");
+                setShowSuccessMessage(true);
+                setTimeout(() => {
+                    navigate('/login');
+                    setShowSuccessMessage(false);
+                    setFormData({ name: '', email: '', cpf: '', password: '', confirmPassword: '' });
+                }, 3000);
+            } else {
+                // Caso o Supabase retorne sucesso, mas sem usuário (e-mail de confirmação enviado)
+                showSuccess("Cadastro realizado! Verifique seu e-mail para ativar sua conta.");
+                setShowSuccessMessage(true);
+                setTimeout(() => {
+                    navigate('/login');
+                    setShowSuccessMessage(false);
+                    setFormData({ name: '', email: '', cpf: '', password: '', confirmPassword: '' });
+                }, 3000);
+            }
+
         } catch (error) {
-            console.error('Erro no cadastro:', error);
+            console.error('Erro inesperado no cadastro:', error);
+            showError("Ocorreu um erro inesperado. Tente novamente.");
         } finally {
             setIsLoading(false);
         }
@@ -132,7 +167,7 @@ const Register: React.FC = () => {
                                 Enviamos um link de verificação para seu e-mail. Verifique sua caixa de entrada para ativar sua conta.
                             </p>
                             <div className="text-sm text-yellow-500">
-                                Redirecionando em alguns segundos...
+                                Redirecionando para o login em alguns segundos...
                             </div>
                         </div>
                     ) : (
