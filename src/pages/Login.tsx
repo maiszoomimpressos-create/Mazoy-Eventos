@@ -1,10 +1,79 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+import { supabase } from '@/integrations/supabase/client';
+import { showSuccess, showError } from '@/utils/toast';
 
 const Login: React.FC = () => {
     const navigate = useNavigate();
     const [loginData, setLoginData] = useState({ email: '', password: '' });
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        try {
+            // 1. Autenticação com Supabase
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                email: loginData.email,
+                password: loginData.password,
+            });
+
+            if (authError) {
+                // Trata erros de credenciais inválidas ou usuário não encontrado
+                showError("Credenciais inválidas ou usuário não encontrado.");
+                setIsLoading(false);
+                return;
+            }
+
+            const user = authData.user;
+
+            if (user) {
+                // 2. Buscar o Tipo de Usuário na tabela profiles
+                const { data: profileData, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('tipo_usuario_id')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profileError || !profileData) {
+                    console.error("Erro ao buscar perfil:", profileError);
+                    showError("Erro ao carregar dados do perfil. Tente novamente.");
+                    // Opcional: forçar logout se o perfil não for encontrado
+                    await supabase.auth.signOut();
+                    setIsLoading(false);
+                    return;
+                }
+
+                const userType = profileData.tipo_usuario_id;
+
+                // 3. Roteamento Condicional
+                if (userType === 1 || userType === 2) {
+                    // Tipo 1 (Admin) ou Tipo 2 (Gestor) -> Dashboard PRO
+                    showSuccess("Login de Gestor realizado com sucesso!");
+                    navigate('/manager/dashboard');
+                } else if (userType === 3) {
+                    // Tipo 3 (Cliente) -> Home/Index (onde o perfil será editável)
+                    showSuccess("Login de Cliente realizado com sucesso!");
+                    navigate('/');
+                } else {
+                    showError("Tipo de usuário desconhecido. Acesso negado.");
+                    await supabase.auth.signOut();
+                    navigate('/login');
+                }
+            } else {
+                // Isso pode acontecer se o e-mail não estiver confirmado, dependendo da configuração do Supabase
+                showError("Login falhou. Verifique seu e-mail e senha.");
+            }
+
+        } catch (error) {
+            console.error('Erro inesperado no login:', error);
+            showError("Ocorreu um erro inesperado. Tente novamente.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-black text-white flex items-center justify-center px-6 py-12">
@@ -23,7 +92,7 @@ const Login: React.FC = () => {
                     <p className="text-gray-400">Bem-vindo de volta!</p>
                 </div>
                 <div className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-8 shadow-2xl shadow-yellow-500/10">
-                    <form onSubmit={(e) => { e.preventDefault(); navigate('/'); }} className="space-y-6">
+                    <form onSubmit={handleLogin} className="space-y-6">
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
                                 E-mail
@@ -70,9 +139,17 @@ const Login: React.FC = () => {
                         <div className="space-y-4">
                             <Button
                                 type="submit"
-                                className="w-full bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer hover:scale-105"
+                                disabled={isLoading}
+                                className="w-full bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                Entrar
+                                {isLoading ? (
+                                    <div className="flex items-center justify-center">
+                                        <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin mr-2"></div>
+                                        Entrando...
+                                    </div>
+                                ) : (
+                                    'Entrar'
+                                )}
                             </Button>
                             <Button
                                 type="button"
