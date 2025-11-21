@@ -13,7 +13,10 @@ export interface ManagerEvent {
 }
 
 const fetchManagerEvents = async (userId: string): Promise<ManagerEvent[]> => {
-    if (!userId) return [];
+    if (!userId) {
+        console.warn("Attempted to fetch manager events without a userId.");
+        return [];
+    }
 
     const { data, error } = await supabase
         .from('events')
@@ -29,9 +32,9 @@ const fetchManagerEvents = async (userId: string): Promise<ManagerEvent[]> => {
         .order('created_at', { ascending: false });
 
     if (error) {
-        console.error("Error fetching manager events:", error);
-        showError("Erro ao carregar seus eventos.");
-        return [];
+        console.error("Error fetching manager events from Supabase:", error);
+        // O erro será tratado pelo useQuery, mas o log detalhado ajuda na depuração.
+        throw new Error(error.message); 
     }
     
     // Convertendo a data para string para manter a compatibilidade com o tipo
@@ -49,6 +52,11 @@ export const useManagerEvents = (userId: string | undefined) => {
         queryFn: () => fetchManagerEvents(userId!),
         enabled: !!userId,
         staleTime: 1000 * 60 * 1, // 1 minute
+        // Adicionando tratamento de erro para exibir o toast
+        onError: (error) => {
+            console.error("Query Error:", error);
+            showError("Erro ao carregar seus eventos.");
+        }
     });
 
     return {
