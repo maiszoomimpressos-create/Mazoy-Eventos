@@ -241,36 +241,42 @@ const Profile: React.FC = () => {
         const numeroToSave = values.numero || null;
         const complementoToSave = values.complemento || null;
 
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ 
+                    first_name: values.first_name,
+                    birth_date: values.birth_date,
+                    gender: genderToSave,
+                    cpf: cleanCPF, 
+                    rg: cleanRG,
+                    // Salvando endereço
+                    cep: cleanCEP,
+                    rua: ruaToSave,
+                    bairro: bairroToSave,
+                    cidade: cidadeToSave,
+                    estado: estadoToSave,
+                    numero: numeroToSave,
+                    complemento: complementoToSave,
+                })
+                .eq('id', session.user.id);
 
-        const { error } = await supabase
-            .from('profiles')
-            .update({ 
-                first_name: values.first_name,
-                birth_date: values.birth_date,
-                gender: genderToSave,
-                cpf: cleanCPF, 
-                rg: cleanRG,
-                // Salvando endereço
-                cep: cleanCEP,
-                rua: ruaToSave,
-                bairro: bairroToSave,
-                cidade: cidadeToSave,
-                estado: estadoToSave,
-                numero: numeroToSave,
-                complemento: complementoToSave,
-            })
-            .eq('id', session.user.id);
-
-        if (error) {
-            showError("Erro ao atualizar o perfil.");
-            console.error("Supabase Update Error:", error);
-        } else {
-            showSuccess("Perfil atualizado com sucesso!");
-            // Invalida a query para forçar a re-busca e atualização imediata do status de notificação em todos os componentes
-            queryClient.invalidateQueries({ queryKey: ['profile', userId] });
-            setIsEditing(false);
+            if (error) {
+                showError("Erro ao atualizar o perfil.");
+                console.error("Supabase Update Error:", error);
+            } else {
+                showSuccess("Perfil atualizado com sucesso!");
+                // Invalida a query para forçar a re-busca e atualização imediata do status de notificação em todos os componentes
+                queryClient.invalidateQueries({ queryKey: ['profile', userId] });
+                setIsEditing(false);
+            }
+        } catch (e) {
+            // Captura erros inesperados (como falhas de rede/timeout)
+            console.error("Unexpected error during profile update:", e);
+            showError("Ocorreu um erro inesperado ao salvar o perfil. Verifique sua conexão.");
+        } finally {
+            setFormLoading(false);
         }
-        setFormLoading(false);
     };
 
     const onInvalid = (errors: any) => {
@@ -640,7 +646,12 @@ const Profile: React.FC = () => {
                                             {isEditing ? (
                                                 <div className="flex items-center space-x-4 pt-4">
                                                     <Button type="submit" disabled={formLoading} className="bg-yellow-500 text-black hover:bg-yellow-600 transition-all duration-300 cursor-pointer">
-                                                        {formLoading ? 'Salvando...' : 'Salvar Alterações'}
+                                                        {formLoading ? (
+                                                            <div className="flex items-center justify-center">
+                                                                <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin mr-2"></div>
+                                                                Salvando...
+                                                            </div>
+                                                        ) : 'Salvar Alterações'}
                                                     </Button>
                                                     <Button type="button" variant="outline" onClick={handleCancelEdit} className="bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10">
                                                         Cancelar
