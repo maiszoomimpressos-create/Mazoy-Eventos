@@ -13,6 +13,7 @@ import MyTickets from "./pages/MyTickets";
 import ManagerLogin from "./pages/ManagerLogin";
 import ManagerDashboard from "./pages/ManagerDashboard";
 import ManagerCreateEvent from "./pages/ManagerCreateEvent";
+import ManagerEventsList from "./pages/ManagerEventsList"; // Importando a nova lista
 import ManagerLayout from "./components/layouts/ManagerLayout";
 import ForgotPassword from "./pages/ForgotPassword";
 
@@ -36,6 +37,7 @@ const App = () => (
           
           <Route element={<ManagerLayout />}>
             <Route path="/manager/dashboard" element={<ManagerDashboard />} />
+            <Route path="/manager/events" element={<ManagerEventsList />} /> {/* Nova rota de listagem */}
             <Route path="/manager/events/create" element={<ManagerCreateEvent />} />
           </Route>
 
