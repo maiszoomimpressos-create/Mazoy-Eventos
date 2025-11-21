@@ -14,7 +14,7 @@ interface WristbandFormData {
     eventId: string;
     code: string;
     accessType: string;
-    clientEmail: string; // Used to find client_user_id
+    // clientEmail removido conforme solicitação
 }
 
 const ACCESS_TYPES = [
@@ -32,7 +32,6 @@ const ManagerCreateWristband: React.FC = () => {
         eventId: '',
         code: '',
         accessType: ACCESS_TYPES[0],
-        clientEmail: '',
     });
     const [isSaving, setIsSaving] = useState(false);
 
@@ -75,44 +74,20 @@ const ManagerCreateWristband: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!validateForm() || !company?.id) return;
+        if (!validateForm() || !company?.id || !userId) return;
 
         setIsSaving(true);
         const toastId = showLoading("Cadastrando pulseira...");
 
         try {
-            let clientUserId: string | null = null;
-
-            // 1. Tentar encontrar o ID do cliente pelo e-mail (se fornecido)
-            if (formData.clientEmail.trim()) {
-                const { data: userData, error: userError } = await supabase
-                    .from('profiles')
-                    .select('id')
-                    .eq('email', formData.clientEmail.trim()) // Assumindo que 'profiles' tem o email (não é o caso, mas vamos buscar o user_id pelo email do auth)
-                    .single();
-                
-                // Como o email não está na tabela profiles, precisamos de uma função de backend ou buscar no auth.users (que não é acessível diretamente via RLS)
-                // Para simplificar, vamos assumir que o email do cliente é o ID do usuário para fins de teste, ou deixamos null.
-                // Em um sistema real, usaríamos uma Edge Function para buscar o auth.user.id pelo email.
-                
-                // Simulação de busca de ID do cliente (deixando null por enquanto)
-                // clientUserId = userData?.id || null; 
-                
-                // Se o email foi fornecido, mas não encontramos o usuário, alertamos.
-                if (formData.clientEmail.trim() && !clientUserId) {
-                    // Não é um erro fatal, mas é um aviso importante
-                    console.warn("Email do cliente fornecido, mas usuário não encontrado. Pulseira não será associada a um cliente.");
-                }
-            }
-
-            // 2. Inserir a pulseira
+            // 1. Inserir a pulseira
             const { error: insertError } = await supabase
                 .from('wristbands')
                 .insert([
                     {
                         event_id: formData.eventId,
                         company_id: company.id,
-                        client_user_id: clientUserId, // Pode ser null
+                        manager_user_id: userId, // Novo campo para rastrear o gestor
                         code: formData.code.trim(),
                         access_type: formData.accessType,
                         status: 'active',
@@ -129,8 +104,12 @@ const ManagerCreateWristband: React.FC = () => {
             dismissToast(toastId);
             showSuccess(`Pulseira ${formData.code} cadastrada com sucesso!`);
             
-            // Limpar formulário após sucesso
-            setFormData(prev => ({ ...DEFAULT_SETTINGS, eventId: prev.eventId }));
+            // Limpar formulário após sucesso, mantendo o evento selecionado se houver
+            setFormData(prev => ({ 
+                eventId: prev.eventId, // Mantém o evento selecionado
+                code: '',
+                accessType: ACCESS_TYPES[0],
+            }));
 
         } catch (error: any) {
             dismissToast(toastId);
@@ -256,21 +235,17 @@ const ManagerCreateWristband: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Cliente Associado (Opcional) */}
+                        {/* Cliente Associado (Opcional) - Removido o campo de email, mas mantemos a estrutura para futuras expansões */}
                         <div className="pt-4 border-t border-yellow-500/10">
-                            <label htmlFor="clientEmail" className="block text-sm font-medium text-white mb-2 flex items-center">
-                                <User className="h-4 w-4 mr-2 text-yellow-500" />
-                                E-mail do Cliente (Opcional)
-                            </label>
-                            <Input 
-                                id="clientEmail" 
-                                type="email"
-                                value={formData.clientEmail} 
-                                onChange={handleChange} 
-                                placeholder="cliente@email.com"
-                                className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">Associe a pulseira a um cliente existente (se o e-mail estiver cadastrado).</p>
+                            <div className="flex items-start p-3 bg-black/40 rounded-xl border border-yellow-500/20">
+                                <User className="h-5 w-5 mr-3 text-yellow-500 flex-shrink-0" />
+                                <div>
+                                    <p className="text-white font-medium text-sm">Associação de Cliente</p>
+                                    <p className="text-gray-400 text-xs mt-1">
+                                        A associação direta a um cliente será implementada em uma próxima atualização. Por enquanto, a pulseira será cadastrada sem um cliente específico.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Botões de Ação */}
