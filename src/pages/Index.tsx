@@ -25,7 +25,7 @@ const Index: React.FC = () => {
             <header className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md border-b border-yellow-500/20">
                 <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
                     <div className="text-2xl font-serif text-yellow-500 font-bold">
-                        EventsPremium
+                        Mazoy
                     </div>
                     <nav className="hidden md:flex items-center space-x-8">
                         <a href="#home" className="text-white hover:text-yellow-500 transition-colors duration-300 cursor-pointer">Home</a>
@@ -396,7 +396,7 @@ const Index: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
                         <div>
                             <div className="text-2xl font-serif text-yellow-500 font-bold mb-4">
-                                EventsPremium
+                                Mazoy
                             </div>
                             <p className="text-gray-400 leading-relaxed">
                                 A plataforma premium para eventos exclusivos e experiências inesquecíveis.
@@ -440,7 +440,7 @@ const Index: React.FC = () => {
                     </div>
                     <div className="border-t border-yellow-500/20 pt-8 text-center">
                         <p className="text-gray-400">
-                            © 2025 EventsPremium. Todos os direitos reservados.
+                            © 2025 Mazoy. Todos os direitos reservados.
                         </p>
                     </div>
                 </div>
