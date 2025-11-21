@@ -56,6 +56,7 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
             const value = profile[field as keyof ProfileData];
             if (isValueEmpty(value)) {
                 missingEssential = true;
+                console.log(`[ProfileStatus] Missing essential field: ${field}`);
                 break;
             }
         }
@@ -72,10 +73,12 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
             // Se o usuário preencheu manualmente o endereço, mas o CEP está faltando ou inválido
             if (!cep || cep.length !== 8) {
                 missingAddressDetail = true;
+                console.log(`[ProfileStatus] Missing CEP or invalid when address fields are filled.`);
             } else {
-                // Se o CEP está preenchido, mas Rua ou Número estão faltando (como na lógica anterior)
+                // Se o CEP está preenchido, mas Rua ou Número estão faltando
                 if (isValueEmpty(profile.rua) || isValueEmpty(profile.numero)) {
                     missingAddressDetail = true;
+                    console.log(`[ProfileStatus] Missing Rua or Numero when CEP is present.`);
                 }
             }
         }
@@ -83,6 +86,8 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
 
         const profileIsComplete = !missingEssential && !missingAddressDetail;
         
+        console.log(`[ProfileStatus] Profile Complete: ${profileIsComplete}. Notifications Active: ${!profileIsComplete}`);
+
         setStatus({
             isComplete: profileIsComplete,
             hasPendingNotifications: !profileIsComplete,
