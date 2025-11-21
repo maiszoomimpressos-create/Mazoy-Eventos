@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, QrCode, Tag, Clock, AlertTriangle, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Input } from "@/components/ui/input"; // Importando Input
+import { ArrowLeft, Loader2, QrCode, Tag, Clock, AlertTriangle, CheckCircle, XCircle, RefreshCw, Zap } from 'lucide-react';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -89,6 +90,10 @@ const ManagerManageWristband: React.FC = () => {
     const { data, isLoading, isError, invalidate } = useWristbandManagement(id);
     const [newStatus, setNewStatus] = useState<WristbandDetails['status'] | string>('');
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+    
+    // Novo estado para registro de uso
+    const [usageQuantity, setUsageQuantity] = useState<number>(1);
+    const [isRegisteringUsage, setIsRegisteringUsage] = useState(false);
 
     useEffect(() => {
         if (data?.details) {
@@ -135,6 +140,48 @@ const ManagerManageWristband: React.FC = () => {
             setIsUpdatingStatus(false);
         }
     };
+    
+    const handleUsageRegistration = async () => {
+        if (!id || usageQuantity < 1) {
+            showError("A quantidade de uso deve ser pelo menos 1.");
+            return;
+        }
+        if (data?.details.status !== 'active') {
+            showError("Não é possível registrar uso em pulseiras inativas.");
+            return;
+        }
+
+        setIsRegisteringUsage(true);
+        const toastId = showLoading(`Registrando ${usageQuantity} uso(s)...`);
+
+        try {
+            // Inserir registro de analytics para o uso
+            await supabase
+                .from('wristband_analytics')
+                .insert([{
+                    wristband_id: id,
+                    event_type: 'usage_entry', // Novo tipo de evento
+                    event_data: { 
+                        quantity: usageQuantity,
+                        location: 'Ponto de Acesso Principal', // Simulação de localização
+                        manager_id: data?.details.manager_user_id
+                    }
+                }]);
+
+            dismissToast(toastId);
+            showSuccess(`${usageQuantity} uso(s) registrados com sucesso!`);
+            setUsageQuantity(1); // Resetar quantidade
+            invalidate(); // Recarrega os dados
+
+        } catch (e: any) {
+            dismissToast(toastId);
+            console.error("Usage registration error:", e);
+            showError(`Falha ao registrar uso: ${e.message || 'Erro desconhecido'}`);
+        } finally {
+            setIsRegisteringUsage(false);
+        }
+    };
+
 
     if (isLoading) {
         return (
@@ -251,6 +298,47 @@ const ManagerManageWristband: React.FC = () => {
                             </Button>
                         </div>
                     </Card>
+                    
+                    {/* Registro de Uso (com Quantidade) */}
+                    <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
+                        <CardTitle className="text-white text-xl mb-4 flex items-center">
+                            <Zap className="h-5 w-5 mr-2 text-yellow-500" />
+                            Registrar Uso (Entrada/Saída)
+                        </CardTitle>
+                        <div className="space-y-4">
+                            <div>
+                                <label htmlFor="usageQuantity" className="block text-sm font-medium text-white mb-2">Quantidade de Usos</label>
+                                <Input 
+                                    id="usageQuantity" 
+                                    type="number"
+                                    value={usageQuantity} 
+                                    onChange={(e) => setUsageQuantity(Math.max(1, parseInt(e.target.value) || 1))} 
+                                    placeholder="1"
+                                    className="bg-black/60 border-yellow-500/30 text-white focus:border-yellow-500"
+                                    min={1}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Use para registrar múltiplas entradas ou ações de consumo.</p>
+                            </div>
+
+                            <Button
+                                onClick={handleUsageRegistration}
+                                disabled={isRegisteringUsage || details.status !== 'active'}
+                                className="w-full bg-green-600 text-white hover:bg-green-700 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
+                            >
+                                {isRegisteringUsage ? (
+                                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                                ) : (
+                                    <>
+                                        <i className="fas fa-check-circle mr-2"></i>
+                                        Registrar Uso
+                                    </>
+                                )}
+                            </Button>
+                            {!isRegisteringUsage && details.status !== 'active' && (
+                                <p className="text-red-400 text-xs text-center">A pulseira deve estar Ativa para registrar uso.</p>
+                            )}
+                        </div>
+                    </Card>
                 </div>
 
                 {/* Coluna de Histórico de Analytics */}
@@ -287,7 +375,8 @@ const ManagerManageWristband: React.FC = () => {
                                             {entry.event_data && (
                                                 <span className="text-gray-500 text-xs">
                                                     {entry.event_data.new_status ? `Status: ${entry.event_data.new_status}` : ''}
-                                                    {entry.event_data.location ? `Local: ${entry.event_data.location}` : ''}
+                                                    {entry.event_data.quantity ? ` | Qtd: ${entry.event_data.quantity}` : ''}
+                                                    {entry.event_data.location ? ` | Local: ${entry.event_data.location}` : ''}
                                                 </span>
                                             )}
                                         </div>
