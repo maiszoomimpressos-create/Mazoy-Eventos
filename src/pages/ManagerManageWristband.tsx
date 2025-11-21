@@ -91,9 +91,9 @@ const ManagerManageWristband: React.FC = () => {
     const [newStatus, setNewStatus] = useState<WristbandDetails['status'] | string>('');
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
     
-    // Novo estado para registro de uso
-    const [usageQuantity, setUsageQuantity] = useState<number>(1);
-    const [isRegisteringUsage, setIsRegisteringUsage] = useState(false);
+    // Removendo estados de uso que não são mais necessários
+    // const [usageQuantity, setUsageQuantity] = useState<number>(1);
+    // const [isRegisteringUsage, setIsRegisteringUsage] = useState(false);
 
     useEffect(() => {
         if (data?.details) {
@@ -141,47 +141,7 @@ const ManagerManageWristband: React.FC = () => {
         }
     };
     
-    const handleUsageRegistration = async () => {
-        if (!id || usageQuantity < 1) {
-            showError("A quantidade de uso deve ser pelo menos 1.");
-            return;
-        }
-        if (data?.details.status !== 'active') {
-            showError("Não é possível registrar uso em pulseiras inativas.");
-            return;
-        }
-
-        setIsRegisteringUsage(true);
-        const toastId = showLoading(`Registrando ${usageQuantity} uso(s)...`);
-
-        try {
-            // Inserir registro de analytics para o uso
-            await supabase
-                .from('wristband_analytics')
-                .insert([{
-                    wristband_id: id,
-                    event_type: 'usage_entry', // Novo tipo de evento
-                    event_data: { 
-                        quantity: usageQuantity,
-                        location: 'Ponto de Acesso Principal', // Simulação de localização
-                        manager_id: data?.details.manager_user_id
-                    }
-                }]);
-
-            dismissToast(toastId);
-            showSuccess(`${usageQuantity} uso(s) registrados com sucesso!`);
-            setUsageQuantity(1); // Resetar quantidade
-            invalidate(); // Recarrega os dados
-
-        } catch (e: any) {
-            dismissToast(toastId);
-            console.error("Usage registration error:", e);
-            showError(`Falha ao registrar uso: ${e.message || 'Erro desconhecido'}`);
-        } finally {
-            setIsRegisteringUsage(false);
-        }
-    };
-
+    // Removendo handleUsageRegistration
 
     if (isLoading) {
         return (
@@ -285,60 +245,34 @@ const ManagerManageWristband: React.FC = () => {
                                 </Select>
                             </div>
 
-                            <Button
-                                onClick={handleStatusUpdate}
-                                disabled={isUpdatingStatus || !newStatus || newStatus === details.status}
-                                className="w-full bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
-                            >
-                                {isUpdatingStatus ? (
-                                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                                ) : (
-                                    'Salvar Status'
-                                )}
-                            </Button>
+                            <div className="flex space-x-4 pt-2">
+                                <Button
+                                    onClick={handleStatusUpdate}
+                                    disabled={isUpdatingStatus || !newStatus || newStatus === details.status}
+                                    className="flex-1 bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
+                                >
+                                    {isUpdatingStatus ? (
+                                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                                    ) : (
+                                        'Gravar Alterações'
+                                    )}
+                                </Button>
+                                <Button
+                                    onClick={() => navigate('/manager/wristbands')}
+                                    variant="outline"
+                                    className="bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer"
+                                    disabled={isUpdatingStatus}
+                                >
+                                    <ArrowLeft className="h-5 w-5" />
+                                </Button>
+                            </div>
                         </div>
                     </Card>
                     
-                    {/* Registro de Uso (com Quantidade) */}
-                    <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
-                        <CardTitle className="text-white text-xl mb-4 flex items-center">
-                            <Zap className="h-5 w-5 mr-2 text-yellow-500" />
-                            Registrar Uso (Entrada/Saída)
-                        </CardTitle>
-                        <div className="space-y-4">
-                            <div>
-                                <label htmlFor="usageQuantity" className="block text-sm font-medium text-white mb-2">Quantidade de Usos</label>
-                                <Input 
-                                    id="usageQuantity" 
-                                    type="number"
-                                    value={usageQuantity} 
-                                    onChange={(e) => setUsageQuantity(Math.max(1, parseInt(e.target.value) || 1))} 
-                                    placeholder="1"
-                                    className="bg-black/60 border-yellow-500/30 text-white focus:border-yellow-500"
-                                    min={1}
-                                />
-                                <p className="text-xs text-gray-500 mt-1">Use para registrar múltiplas entradas ou ações de consumo.</p>
-                            </div>
-
-                            <Button
-                                onClick={handleUsageRegistration}
-                                disabled={isRegisteringUsage || details.status !== 'active'}
-                                className="w-full bg-green-600 text-white hover:bg-green-700 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
-                            >
-                                {isRegisteringUsage ? (
-                                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                                ) : (
-                                    <>
-                                        <i className="fas fa-check-circle mr-2"></i>
-                                        Registrar Uso
-                                    </>
-                                )}
-                            </Button>
-                            {!isRegisteringUsage && details.status !== 'active' && (
-                                <p className="text-red-400 text-xs text-center">A pulseira deve estar Ativa para registrar uso.</p>
-                            )}
-                        </div>
-                    </Card>
+                    {/* Removendo o bloco de Registro de Uso */}
+                    {/* <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
+                        ...
+                    </Card> */}
                 </div>
 
                 {/* Coluna de Histórico de Analytics */}
