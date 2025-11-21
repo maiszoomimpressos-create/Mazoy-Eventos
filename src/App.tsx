@@ -14,7 +14,8 @@ import ManagerLogin from "./pages/ManagerLogin";
 import ManagerDashboard from "./pages/ManagerDashboard";
 import ManagerCreateEvent from "./pages/ManagerCreateEvent";
 import ManagerEventsList from "./pages/ManagerEventsList";
-import ManagerEditEvent from "./pages/ManagerEditEvent"; // Importando a nova página de edição
+import ManagerEditEvent from "./pages/ManagerEditEvent";
+import ManagerSettings from "./pages/ManagerSettings"; // Importando a nova página
 import ManagerLayout from "./components/layouts/ManagerLayout";
 import ForgotPassword from "./pages/ForgotPassword";
 
@@ -40,7 +41,8 @@ const App = () => (
             <Route path="/manager/dashboard" element={<ManagerDashboard />} />
             <Route path="/manager/events" element={<ManagerEventsList />} />
             <Route path="/manager/events/create" element={<ManagerCreateEvent />} />
-            <Route path="/manager/events/edit/:id" element={<ManagerEditEvent />} /> {/* Nova rota de edição */}
+            <Route path="/manager/events/edit/:id" element={<ManagerEditEvent />} />
+            <Route path="/manager/settings" element={<ManagerSettings />} /> {/* Nova Rota */}
           </Route>
 
           <Route path="*" element={<NotFound />} />
