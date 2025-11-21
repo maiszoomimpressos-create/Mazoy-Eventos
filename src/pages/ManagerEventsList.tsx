@@ -8,25 +8,20 @@ import { Plus, Search, Loader2 } from 'lucide-react';
 import { useManagerEvents, ManagerEvent } from '@/hooks/use-manager-events';
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
+import DeleteEventDialog from '@/components/DeleteEventDialog'; // Importando o novo componente
 
 const ManagerEventsList: React.FC = () => {
     const navigate = useNavigate();
-    const [userId, setUserId] = useState<string | undefined | null>(undefined); // null means not logged in
+    const [userId, setUserId] = useState<string | undefined>(undefined);
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
-            // Se o usuário não estiver logado, redireciona para o login do gestor
-            if (!user) {
-                navigate('/manager/login');
-                setUserId(null);
-            } else {
-                setUserId(user.id);
-            }
+            setUserId(user?.id);
         });
-    }, [navigate]);
+    }, []);
 
-    const { events, isLoading, isError } = useManagerEvents(userId);
+    const { events, isLoading, isError, invalidateEvents } = useManagerEvents(userId);
 
     const filteredEvents = events.filter(event =>
         event.title.toLowerCase().includes(searchTerm.toLowerCase())
@@ -117,7 +112,7 @@ const ManagerEventsList: React.FC = () => {
                                     const formattedDate = new Date(event.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
                                     
                                     return (
-                                        <TableRow key={event.id} className="border-b border-yellow-500/10 hover:bg-black/40 transition-colors text-sm cursor-pointer">
+                                        <TableRow key={event.id} className="border-b border-yellow-500/10 hover:bg-black/40 transition-colors text-sm">
                                             <TableCell className="py-4">
                                                 <div className="text-white font-medium truncate max-w-[300px]">{event.title}</div>
                                                 <div className="text-gray-500 text-xs mt-1">ID: {event.id.substring(0, 8)}...</div>
@@ -131,7 +126,7 @@ const ManagerEventsList: React.FC = () => {
                                             <TableCell className="text-center py-4">
                                                 <span className="text-green-400 font-bold">R$ {metrics.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                                             </TableCell>
-                                            <TableCell className="text-center py-4">
+                                            <TableCell className="text-center py-4 flex items-center justify-center">
                                                 <Button 
                                                     variant="outline" 
                                                     size="sm"
@@ -144,6 +139,11 @@ const ManagerEventsList: React.FC = () => {
                                                     <i className="fas fa-edit mr-2"></i>
                                                     Gerenciar
                                                 </Button>
+                                                <DeleteEventDialog
+                                                    eventId={event.id}
+                                                    eventTitle={event.title}
+                                                    onDeleteSuccess={invalidateEvents}
+                                                />
                                             </TableCell>
                                         </TableRow>
                                     );
