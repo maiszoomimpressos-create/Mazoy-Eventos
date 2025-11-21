@@ -33,16 +33,9 @@ const AuthStatusMenu: React.FC = () => {
     const userId = session?.user?.id;
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
     
-    const { hasPendingNotifications, loading: statusLoading, missingFields } = useProfileStatus(profile, isLoadingProfile);
+    const { hasPendingNotifications, loading: statusLoading } = useProfileStatus(profile, isLoadingProfile);
 
     const handleLogout = async () => {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        if (!currentSession) {
-            showError("Nenhuma sessão ativa para encerrar. A página será atualizada.");
-            window.location.reload();
-            return;
-        }
-
         const { error } = await supabase.auth.signOut();
         if (error) {
             showError("Erro ao sair: " + error.message);
@@ -53,6 +46,7 @@ const AuthStatusMenu: React.FC = () => {
     };
 
     if (loadingSession || isLoadingProfile || statusLoading) {
+        // Pode retornar um Skeleton ou null durante o carregamento inicial
         return <div className="w-10 h-10 bg-yellow-500/20 rounded-full animate-pulse"></div>;
     }
 
@@ -62,12 +56,13 @@ const AuthStatusMenu: React.FC = () => {
 
         return (
             <div className="flex items-center space-x-4">
+                {/* Ícone de Notificação (Agora é um Popover) */}
                 <NotificationBell 
                     hasPendingNotifications={hasPendingNotifications} 
-                    loading={statusLoading}
-                    missingFields={missingFields}
+                    loading={statusLoading} 
                 />
 
+                {/* Menu de Perfil */}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <div className="cursor-pointer p-1 rounded-full border-2 border-yellow-500/50 hover:border-yellow-500 transition-all duration-300">
@@ -119,6 +114,7 @@ const AuthStatusMenu: React.FC = () => {
         );
     }
 
+    // Se não estiver logado, retorna os botões de Login/Cadastro
     return (
         <div className="flex items-center space-x-3">
             <Button

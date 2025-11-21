@@ -12,7 +12,7 @@ const Register: React.FC = () => {
         email: '',
         cpf: '',
         birthDate: '',
-        gender: null as string | null, // Alterado para permitir null
+        gender: '', // Inicializado como string vazia
         password: '',
         confirmPassword: ''
     });
@@ -112,7 +112,8 @@ const Register: React.FC = () => {
     };
 
     const handleSelectChange = (field: string, value: string) => {
-        const finalValue = value === 'not_specified' ? null : value;
+        // Se o valor for 'not_specified', salvamos como string vazia no estado para representar 'null' no DB
+        const finalValue = value === 'not_specified' ? '' : value;
         setFormData(prev => ({ ...prev, [field]: finalValue }));
         if (formErrors[field]) {
             setFormErrors(prev => ({ ...prev, [field]: '' }));
@@ -135,6 +136,8 @@ const Register: React.FC = () => {
         setIsLoading(true);
 
         const cleanCPF = formData.cpf.replace(/\D/g, '');
+        // Se o gênero for string vazia, ele será tratado como null pelo trigger do Supabase
+        const genderToSave = formData.gender || null; 
         
         try {
             const { data, error } = await supabase.auth.signUp({
@@ -145,7 +148,7 @@ const Register: React.FC = () => {
                         name: formData.name,
                         cpf: cleanCPF,
                         birth_date: formData.birthDate,
-                        gender: formData.gender, // Agora envia null diretamente
+                        gender: genderToSave,
                     },
                 },
             });
