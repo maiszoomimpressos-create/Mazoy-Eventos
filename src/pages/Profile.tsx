@@ -244,11 +244,22 @@ const Profile: React.FC = () => {
 
         // Limpeza e conversão para salvar no DB
         const cleanCPF = values.cpf.replace(/\D/g, '');
+        // Se o RG for uma string vazia (após formatação), salva como null
         const cleanRG = values.rg ? values.rg.replace(/\D/g, '') : null;
+        
         // CEP é opcional, se for string vazia ou nula, salva como null
         const cleanCEP = values.cep ? values.cep.replace(/\D/g, '') : null;
         
         const genderToSave = (values.gender === "not_specified" || !values.gender) ? null : values.gender;
+
+        // Certifique-se de que campos de endereço vazios sejam salvos como null, não como strings vazias
+        const ruaToSave = values.rua || null;
+        const bairroToSave = values.bairro || null;
+        const cidadeToSave = values.cidade || null;
+        const estadoToSave = values.estado || null;
+        const numeroToSave = values.numero || null;
+        const complementoToSave = values.complemento || null;
+
 
         const { error } = await supabase
             .from('profiles')
@@ -260,17 +271,18 @@ const Profile: React.FC = () => {
                 rg: cleanRG,
                 // Salvando endereço
                 cep: cleanCEP,
-                rua: values.rua || null,
-                bairro: values.bairro || null,
-                cidade: values.cidade || null,
-                estado: values.estado || null,
-                numero: values.numero || null,
-                complemento: values.complemento || null,
+                rua: ruaToSave,
+                bairro: bairroToSave,
+                cidade: cidadeToSave,
+                estado: estadoToSave,
+                numero: numeroToSave,
+                complemento: complementoToSave,
             })
             .eq('id', session.user.id);
 
         if (error) {
             showError("Erro ao atualizar o perfil.");
+            console.error("Supabase Update Error:", error);
         } else {
             showSuccess("Perfil atualizado com sucesso!");
             setProfile(prev => prev ? { 
@@ -282,16 +294,22 @@ const Profile: React.FC = () => {
                 rg: cleanRG,
                 // Atualizando estado local
                 cep: cleanCEP,
-                rua: values.rua || null,
-                bairro: values.bairro || null,
-                cidade: values.cidade || null,
-                estado: values.estado || null,
-                numero: values.numero || null,
-                complemento: values.complemento || null,
+                rua: ruaToSave,
+                bairro: bairroToSave,
+                cidade: cidadeToSave,
+                estado: estadoToSave,
+                numero: numeroToSave,
+                complemento: complementoToSave,
             } : null);
             setIsEditing(false);
         }
         setFormLoading(false);
+    };
+
+    const onInvalid = (errors: any) => {
+        console.error("Form Validation Errors:", errors);
+        showError("Por favor, corrija os erros no formulário antes de salvar.");
+        setFormLoading(false); // Garantir que o loading seja desativado se a validação falhar
     };
 
     const handleAvatarUpload = (newUrl: string) => {
@@ -418,7 +436,7 @@ const Profile: React.FC = () => {
                                         </div>
                                     )}
                                     <Form {...form}>
-                                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                                        <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
                                             <FormField
                                                 control={form.control}
                                                 name="first_name"
