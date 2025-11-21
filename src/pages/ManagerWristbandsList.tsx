@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Loader2, QrCode, Tag, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Loader2, QrCode, Tag, AlertTriangle, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useManagerWristbands, WristbandData } from '@/hooks/use-manager-wristbands';
 
@@ -31,10 +31,9 @@ const ManagerWristbandsList: React.FC = () => {
             case 'active':
                 return 'bg-green-500/20 text-green-400';
             case 'used':
+            case 'cancelled':
                 return 'bg-gray-500/20 text-gray-400';
             case 'lost':
-                return 'bg-red-500/20 text-red-400';
-            case 'cancelled':
                 return 'bg-red-500/20 text-red-400';
             default:
                 return 'bg-yellow-500/20 text-yellow-400';
@@ -49,6 +48,10 @@ const ManagerWristbandsList: React.FC = () => {
             case 'cancelled': return 'Cancelada';
             default: return 'Desconhecido';
         }
+    };
+
+    const handleManageClick = (eventId: string) => {
+        navigate(`/manager/wristbands/manage/${eventId}`);
     };
 
     // Estado de carregamento inicial (antes de saber se o usuário está logado)
@@ -69,11 +72,6 @@ const ManagerWristbandsList: React.FC = () => {
             </div>
         );
     }
-
-    const handleRowClick = (wristbandId: string) => {
-        // Futuramente, navegar para a página de edição/detalhes da pulseira
-        alert(`Visualizando detalhes da pulseira ID: ${wristbandId}`);
-    };
 
     return (
         <div className="max-w-7xl mx-auto">
@@ -116,24 +114,22 @@ const ManagerWristbandsList: React.FC = () => {
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <Table className="w-full min-w-[700px]">
+                        <Table className="w-full min-w-[800px]">
                             <TableHeader>
                                 <TableRow className="border-b border-yellow-500/20 text-sm hover:bg-black/40">
                                     <TableHead className="text-left text-gray-400 font-semibold py-3">Código</TableHead>
                                     <TableHead className="text-left text-gray-400 font-semibold py-3">Evento</TableHead>
                                     <TableHead className="text-center text-gray-400 font-semibold py-3">Tipo de Acesso</TableHead>
                                     <TableHead className="text-center text-gray-400 font-semibold py-3">Status</TableHead>
-                                    <TableHead className="text-right text-gray-400 font-semibold py-3">Data Criação</TableHead>
+                                    <TableHead className="text-right text-gray-400 font-semibold py-3 w-[150px]">Ações</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {filteredWristbands.map((wristband) => {
-                                    const createdAtDate = new Date(wristband.created_at).toLocaleDateString('pt-BR');
                                     return (
                                         <TableRow 
                                             key={wristband.id} 
-                                            className="border-b border-yellow-500/10 hover:bg-black/40 transition-colors text-sm cursor-pointer"
-                                            onClick={() => handleRowClick(wristband.id)}
+                                            className="border-b border-yellow-500/10 hover:bg-black/40 transition-colors text-sm"
                                         >
                                             <TableCell className="py-4">
                                                 <div className="text-white font-medium">{wristband.code}</div>
@@ -150,7 +146,15 @@ const ManagerWristbandsList: React.FC = () => {
                                                 </span>
                                             </TableCell>
                                             <TableCell className="text-right py-4">
-                                                <span className="text-gray-400 text-xs">{createdAtDate}</span>
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm"
+                                                    className="bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 h-8 px-3"
+                                                    onClick={() => handleManageClick(wristband.id)}
+                                                >
+                                                    <Settings className="h-4 w-4 mr-2" />
+                                                    Gerenciar
+                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     );
