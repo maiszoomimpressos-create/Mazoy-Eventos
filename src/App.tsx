@@ -18,7 +18,8 @@ import ManagerEditEvent from "./pages/ManagerEditEvent";
 import ManagerSettings from "./pages/ManagerSettings";
 import ManagerCompanyProfile from "./pages/ManagerCompanyProfile";
 import ManagerNotifications from "./pages/ManagerNotifications";
-import ManagerAdvancedSettings from "./pages/ManagerAdvancedSettings"; // Importando a nova página
+import ManagerAdvancedSettings from "./pages/ManagerAdvancedSettings"; 
+import ManagerPaymentSettings from "./pages/ManagerPaymentSettings"; // Importando a nova página
 import ManagerLayout from "./components/layouts/ManagerLayout";
 import ForgotPassword from "./pages/ForgotPassword";
 
@@ -48,7 +49,8 @@ const App = () => (
             <Route path="/manager/settings" element={<ManagerSettings />} />
             <Route path="/manager/settings/company-profile" element={<ManagerCompanyProfile />} />
             <Route path="/manager/settings/notifications" element={<ManagerNotifications />} />
-            <Route path="/manager/settings/advanced" element={<ManagerAdvancedSettings />} /> {/* Nova Rota */}
+            <Route path="/manager/settings/advanced" element={<ManagerAdvancedSettings />} />
+            <Route path="/manager/settings/payment" element={<ManagerPaymentSettings />} /> {/* Nova Rota */}
           </Route>
 
           <Route path="*" element={<NotFound />} />
