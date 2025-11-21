@@ -10,7 +10,7 @@ const ManagerLayout: React.FC = () => {
 
     const navItems = [
         { path: '/manager/dashboard', label: 'Dashboard' },
-        { path: '/manager/events/create', label: 'Eventos' },
+        { path: '/manager/events', label: 'Eventos' }, // Rota atualizada para a lista
         { path: '#', label: 'Pulseiras' },
         { path: '#', label: 'Relatórios' },
         { path: '#', label: 'Configurações' },
@@ -26,7 +26,7 @@ const ManagerLayout: React.FC = () => {
                         if (onClick) onClick();
                     }} 
                     className={`transition-colors duration-300 cursor-pointer py-2 md:py-0 md:pb-1 text-left ${
-                        location.pathname === item.path 
+                        location.pathname.startsWith(item.path) && item.path !== '#' // Usar startsWith para incluir /manager/events/create
                         ? 'text-yellow-500 md:border-b-2 border-yellow-500 font-semibold' 
                         : 'text-white hover:text-yellow-500'
                     }`}
@@ -40,7 +40,7 @@ const ManagerLayout: React.FC = () => {
     return (
         <div className="min-h-screen bg-black text-white">
             <header className="fixed top-0 left-0 right-0 z-[100] bg-black/90 backdrop-blur-md border-b border-yellow-500/20">
-                <div className="px-4 sm:px-6 py-4 flex items-center justify-between">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center space-x-4 sm:space-x-6">
                         <div className="text-xl sm:text-2xl font-serif text-yellow-500 font-bold flex items-center">
                             Mazoy

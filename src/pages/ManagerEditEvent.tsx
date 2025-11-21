@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { categories } from '@/data/events';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Loader2 } from 'lucide-react';
 
 // Define the structure for the form data
 interface EventFormData {
@@ -16,56 +17,99 @@ interface EventFormData {
     date: string;
     time: string;
     location: string; // General location name
-    address: string; // Detailed address (new mandatory field)
-    image_url: string; // Image URL (new mandatory field)
-    min_age: number | string; // Minimum age (new mandatory field)
+    address: string; // Detailed address
+    image_url: string; // Image URL
+    min_age: number | string; // Minimum age
     category: string;
     price: string;
 }
 
-const ManagerCreateEvent: React.FC = () => {
+const ManagerEditEvent: React.FC = () => {
     const navigate = useNavigate();
-    const [formData, setFormData] = useState<EventFormData>({
-        title: '',
-        description: '',
-        date: '',
-        time: '',
-        location: '',
-        address: '', // New
-        image_url: '', // New
-        min_age: 0, // New, default to 0 (Livre)
-        category: '',
-        price: '',
-    });
+    const { id } = useParams<{ id: string }>();
+    const [formData, setFormData] = useState<EventFormData | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isFetching, setIsFetching] = useState(true);
     const [userId, setUserId] = useState<string | null>(null);
 
     useEffect(() => {
-        // Fetch current user ID
-        supabase.auth.getUser().then(({ data: { user } }) => {
-            if (user) {
-                setUserId(user.id);
-            } else {
-                // Redirect to manager login if no user is found (basic protection)
-                showError("Sessão expirada ou não autenticada. Faça login novamente.");
+        const fetchEventAndUser = async () => {
+            setIsFetching(true);
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (!user) {
+                showError("Sessão expirada ou não autenticada.");
                 navigate('/manager/login');
+                return;
             }
-        });
-    }, [navigate]);
+            setUserId(user.id);
+
+            if (!id) {
+                showError("ID do evento não fornecido.");
+                navigate('/manager/events');
+                return;
+            }
+
+            // Fetch event data
+            const { data: eventData, error: fetchError } = await supabase
+                .from('events')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (fetchError || !eventData) {
+                console.error("Erro ao buscar evento:", fetchError);
+                showError("Evento não encontrado ou você não tem permissão para editá-lo.");
+                navigate('/manager/events');
+                return;
+            }
+
+            // Basic check to ensure the user owns the event (RLS should handle this, but good practice)
+            if (eventData.user_id !== user.id) {
+                showError("Você não tem permissão para editar este evento.");
+                navigate('/manager/events');
+                return;
+            }
+
+            // Populate form data
+            setFormData({
+                title: eventData.title || '',
+                description: eventData.description || '',
+                date: eventData.date || '',
+                time: eventData.time || '',
+                location: eventData.location || '',
+                address: eventData.address || '',
+                image_url: eventData.image_url || '',
+                min_age: eventData.min_age || 0,
+                category: eventData.category || '',
+                price: String(eventData.price || 0),
+            });
+            setIsFetching(false);
+        };
+
+        fetchEventAndUser();
+    }, [id, navigate]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value, type } = e.target;
-        setFormData(prev => ({ 
-            ...prev, 
-            [id]: type === 'number' ? (value === '' ? '' : Number(value)) : value 
-        }));
+        setFormData(prev => {
+            if (!prev) return null;
+            return { 
+                ...prev, 
+                [id]: type === 'number' ? (value === '' ? '' : Number(value)) : value 
+            };
+        });
     };
 
     const handleSelectChange = (value: string) => {
-        setFormData(prev => ({ ...prev, category: value }));
+        setFormData(prev => {
+            if (!prev) return null;
+            return { ...prev, category: value };
+        });
     };
 
     const validateForm = () => {
+        if (!formData) return false;
         const errors: string[] = [];
         
         if (!formData.title) errors.push("Título é obrigatório.");
@@ -73,19 +117,18 @@ const ManagerCreateEvent: React.FC = () => {
         if (!formData.date) errors.push("Data é obrigatória.");
         if (!formData.time) errors.push("Horário é obrigatório.");
         if (!formData.location) errors.push("Localização é obrigatória.");
-        if (!formData.address) errors.push("Endereço detalhado é obrigatório."); // New validation
-        if (!formData.image_url) errors.push("URL da Imagem/Banner é obrigatória."); // New validation
+        if (!formData.address) errors.push("Endereço detalhado é obrigatório.");
+        if (!formData.image_url) errors.push("URL da Imagem/Banner é obrigatória.");
         
         const minAge = Number(formData.min_age);
         if (formData.min_age === '' || formData.min_age === null || isNaN(minAge) || minAge < 0) {
-            errors.push("Idade Mínima é obrigatória e deve ser 0 ou maior."); // New validation
+            errors.push("Idade Mínima é obrigatória e deve ser 0 ou maior.");
         }
 
         if (!formData.category) errors.push("Categoria é obrigatória.");
         if (!formData.price || Number(formData.price) <= 0) errors.push("Preço Base é obrigatório e deve ser maior que zero.");
 
         if (errors.length > 0) {
-            // Exibe um único toast de erro para todos os campos
             showError(`Por favor, preencha todos os campos obrigatórios.`);
             return false;
         }
@@ -94,64 +137,72 @@ const ManagerCreateEvent: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!validateForm() || !userId) return;
+        if (!validateForm() || !userId || !id || !formData) return;
 
-        const toastId = showLoading("Publicando evento...");
+        const toastId = showLoading("Atualizando evento...");
         setIsLoading(true);
 
         try {
             const { error } = await supabase
                 .from('events')
-                .insert([
-                    {
-                        user_id: userId,
-                        title: formData.title,
-                        description: formData.description,
-                        date: formData.date,
-                        time: formData.time,
-                        location: formData.location,
-                        address: formData.address,
-                        image_url: formData.image_url,
-                        min_age: Number(formData.min_age),
-                        category: formData.category,
-                        price: Number(formData.price),
-                    },
-                ]);
+                .update({
+                    title: formData.title,
+                    description: formData.description,
+                    date: formData.date,
+                    time: formData.time,
+                    location: formData.location,
+                    address: formData.address,
+                    image_url: formData.image_url,
+                    min_age: Number(formData.min_age),
+                    category: formData.category,
+                    price: Number(formData.price),
+                })
+                .eq('id', id)
+                .eq('user_id', userId); // Ensure only the owner can update
 
             if (error) {
                 throw error;
             }
 
             dismissToast(toastId);
-            showSuccess(`Evento "${formData.title}" criado com sucesso!`);
-            navigate('/manager/dashboard');
+            showSuccess(`Evento "${formData.title}" atualizado com sucesso!`);
+            navigate('/manager/events');
 
         } catch (error: any) {
             dismissToast(toastId);
-            console.error("Erro ao criar evento:", error);
-            showError(`Falha ao publicar evento: ${error.message || 'Erro desconhecido'}`);
+            console.error("Erro ao atualizar evento:", error);
+            showError(`Falha ao atualizar evento: ${error.message || 'Erro desconhecido'}`);
         } finally {
             setIsLoading(false);
         }
     };
 
+    if (isFetching || !formData) {
+        return (
+            <div className="max-w-4xl mx-auto px-4 sm:px-0 text-center py-20">
+                <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
+                <p className="text-gray-400">Carregando detalhes do evento...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="max-w-4xl mx-auto px-4 sm:px-0">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
-                <h1 className="text-2xl sm:text-3xl font-serif text-yellow-500 mb-4 sm:mb-0">Criar Novo Evento</h1>
+                <h1 className="text-2xl sm:text-3xl font-serif text-yellow-500 mb-4 sm:mb-0">Editar Evento: {formData.title}</h1>
                 <Button 
-                    onClick={() => navigate('/manager/dashboard')}
+                    onClick={() => navigate('/manager/events')}
                     variant="outline"
                     className="bg-black/60 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 text-sm"
                 >
                     <i className="fas fa-arrow-left mr-2"></i>
-                    Voltar ao Dashboard
+                    Voltar para a Lista
                 </Button>
             </div>
 
             <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
                 <CardHeader>
-                    <CardTitle className="text-white text-xl sm:text-2xl font-semibold">Detalhes do Evento</CardTitle>
+                    <CardTitle className="text-white text-xl sm:text-2xl font-semibold">ID do Evento: {id}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-6">
@@ -302,12 +353,12 @@ const ManagerCreateEvent: React.FC = () => {
                             {isLoading ? (
                                 <div className="flex items-center justify-center">
                                     <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin mr-2"></div>
-                                    Salvando Evento...
+                                    Salvando Alterações...
                                 </div>
                             ) : (
                                 <>
-                                    <i className="fas fa-calendar-plus mr-2"></i>
-                                    Publicar Evento
+                                    <i className="fas fa-save mr-2"></i>
+                                    Salvar Alterações
                                 </>
                             )}
                         </Button>
@@ -318,4 +369,4 @@ const ManagerCreateEvent: React.FC = () => {
     );
 };
 
-export default ManagerCreateEvent;
+export default ManagerEditEvent;
