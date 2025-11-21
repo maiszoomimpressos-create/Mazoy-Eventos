@@ -74,6 +74,17 @@ const AuthStatusMenu: React.FC = () => {
         }
     };
 
+    // Função placeholder para o clique do sino
+    const handleNotificationClick = () => {
+        // Por enquanto, apenas exibe um alerta ou faz nada, conforme solicitado.
+        // Futuramente, pode abrir um modal de notificações.
+        if (hasPendingNotifications) {
+            alert("Você tem notificações pendentes! (Perfil Incompleto)");
+        } else {
+            alert("Nenhuma notificação nova.");
+        }
+    };
+
     if (loading || statusLoading) {
         // Pode retornar um Skeleton ou null durante o carregamento inicial
         return <div className="w-10 h-10 bg-yellow-500/20 rounded-full animate-pulse"></div>;
@@ -85,9 +96,9 @@ const AuthStatusMenu: React.FC = () => {
 
         return (
             <div className="flex items-center space-x-4">
-                {/* Ícone de Notificação */}
+                {/* Ícone de Notificação - Agora não navega para /profile */}
                 <button 
-                    onClick={() => navigate('/profile')} // Redireciona para o perfil para completar os dados
+                    onClick={handleNotificationClick} 
                     className="relative p-2 text-yellow-500 hover:bg-yellow-500/10 rounded-lg transition-colors cursor-pointer"
                     title={hasPendingNotifications ? "Perfil Incompleto" : "Notificações"}
                 >
