@@ -7,11 +7,20 @@ interface ProfileStatus {
     loading: boolean;
 }
 
-// Campos considerados essenciais para o perfil
-const ESSENTIAL_FIELDS = [
-    'first_name', 
-    'cpf', 
+// Agora, todos estes campos são necessários para que a notificação desapareça.
+// O campo 'complemento' é o único considerado verdadeiramente opcional.
+const ALL_REQUIRED_FIELDS: (keyof ProfileData)[] = [
+    'first_name',
+    'cpf',
     'birth_date',
+    'rg',
+    'gender',
+    'cep',
+    'rua',
+    'bairro',
+    'cidade',
+    'estado',
+    'numero',
 ];
 
 // Função auxiliar para verificar se um valor é considerado vazio
@@ -33,43 +42,29 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
 
         if (isLoading) return;
 
+        let isProfileConsideredComplete = true;
+
         if (!profile) {
-            // Se não há perfil (usuário logado, mas perfil não carregado), consideramos incompleto/pendente
-            setStatus({ isComplete: false, hasPendingNotifications: true, loading: false });
-            return;
-        }
-
-        let missingEssential = false;
-        let missingAddressDetail = false;
-
-        // 1. Verificar campos essenciais (Nome, CPF, Data de Nascimento)
-        for (const field of ESSENTIAL_FIELDS) {
-            const value = profile[field as keyof ProfileData];
-            if (isValueEmpty(value)) {
-                missingEssential = true;
-                console.log(`[ProfileStatus] Missing essential field: ${field}`);
-                break;
+            // Se não há perfil, ele está definitivamente incompleto.
+            isProfileConsideredComplete = false;
+        } else {
+            // Itera sobre a lista de TODOS os campos obrigatórios.
+            for (const field of ALL_REQUIRED_FIELDS) {
+                const value = profile[field];
+                if (isValueEmpty(value)) {
+                    // Se qualquer um dos campos estiver vazio, o perfil é considerado incompleto.
+                    console.log(`[ProfileStatus] Profile incomplete. Missing field: ${field}`);
+                    isProfileConsideredComplete = false;
+                    break; // Encontrou um campo vazio, já pode parar a verificação.
+                }
             }
         }
-
-        // 2. Verificar a consistência do endereço
-        const cep = profile.cep ? String(profile.cep).replace(/\D/g, '') : null;
         
-        // Se o CEP foi preenchido, a Rua e o Número se tornam obrigatórios para um endereço completo.
-        if (cep && cep.length === 8) {
-            if (isValueEmpty(profile.rua) || isValueEmpty(profile.numero)) {
-                missingAddressDetail = true;
-                console.log(`[ProfileStatus] CEP is present, but Rua or Numero are missing.`);
-            }
-        }
-
-        const profileIsComplete = !missingEssential && !missingAddressDetail;
-        
-        console.log(`[ProfileStatus] Profile Complete: ${profileIsComplete}. Notifications Active: ${!profileIsComplete}`);
+        console.log(`[ProfileStatus] Final check - Profile Complete: ${isProfileConsideredComplete}`);
 
         setStatus({
-            isComplete: profileIsComplete,
-            hasPendingNotifications: !profileIsComplete,
+            isComplete: isProfileConsideredComplete,
+            hasPendingNotifications: !isProfileConsideredComplete,
             loading: false,
         });
     }, [profile, isLoading]);
