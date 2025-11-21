@@ -97,7 +97,6 @@ const ManagerEventsList: React.FC = () => {
                             </TableHeader>
                             <TableBody>
                                 {filteredEvents.map((event) => {
-                                    // Passamos o objeto event inteiro para a função de métricas
                                     const metrics = getSimulatedMetrics(event);
                                     const formattedDate = new Date(event.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
                                     
@@ -123,8 +122,7 @@ const ManagerEventsList: React.FC = () => {
                                                     className="bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 h-8 px-3"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        // Implementar navegação para edição
-                                                        showSuccess(`Abrindo edição para: ${event.title}`);
+                                                        navigate(`/manager/events/edit/${event.id}`);
                                                     }}
                                                 >
                                                     <i className="fas fa-edit mr-2"></i>
