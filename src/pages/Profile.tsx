@@ -15,6 +15,7 @@ import AvatarUpload from '@/components/AvatarUpload';
 
 const profileSchema = z.object({
     first_name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
+    birth_date: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de nascimento é obrigatória." }),
 });
 
 interface ProfileData {
@@ -30,11 +31,13 @@ const Profile: React.FC = () => {
     const [profile, setProfile] = useState<ProfileData | null>(null);
     const [loading, setLoading] = useState(true);
     const [formLoading, setFormLoading] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
 
     const form = useForm<z.infer<typeof profileSchema>>({
         resolver: zodResolver(profileSchema),
         defaultValues: {
             first_name: '',
+            birth_date: '',
         },
     });
 
@@ -46,15 +49,6 @@ const Profile: React.FC = () => {
             .replace(/(\d{3})(\d)/, '$1.$2')
             .replace(/(\d{3})(\d{1,2})/, '$1-$2')
             .replace(/(-\d{2})\d+?$/, '$1');
-    };
-
-    const formatBirthDate = (dateString: string | null | undefined) => {
-        if (!dateString) return '';
-        const [year, month, day] = dateString.split('-');
-        if (day && month && year) {
-            return `${day}/${month}/${year}`;
-        }
-        return '';
     };
 
     useEffect(() => {
@@ -77,7 +71,10 @@ const Profile: React.FC = () => {
                 console.error(error);
             } else if (data) {
                 setProfile(data);
-                form.reset({ first_name: data.first_name || '' });
+                form.reset({ 
+                    first_name: data.first_name || '',
+                    birth_date: data.birth_date || ''
+                });
             }
             setLoading(false);
         };
@@ -89,20 +86,34 @@ const Profile: React.FC = () => {
         setFormLoading(true);
         const { error } = await supabase
             .from('profiles')
-            .update({ first_name: values.first_name })
+            .update({ 
+                first_name: values.first_name,
+                birth_date: values.birth_date
+            })
             .eq('id', session.user.id);
 
         if (error) {
             showError("Erro ao atualizar o perfil.");
         } else {
             showSuccess("Perfil atualizado com sucesso!");
-            setProfile(prev => prev ? { ...prev, first_name: values.first_name } : null);
+            setProfile(prev => prev ? { ...prev, first_name: values.first_name, birth_date: values.birth_date } : null);
+            setIsEditing(false);
         }
         setFormLoading(false);
     };
 
     const handleAvatarUpload = (newUrl: string) => {
         setProfile(prev => prev ? { ...prev, avatar_url: newUrl } : null);
+    };
+
+    const handleCancelEdit = () => {
+        if (profile) {
+            form.reset({
+                first_name: profile.first_name || '',
+                birth_date: profile.birth_date || ''
+            });
+        }
+        setIsEditing(false);
     };
 
     if (loading) {
@@ -194,7 +205,7 @@ const Profile: React.FC = () => {
                                                     <FormItem>
                                                         <FormLabel className="text-white">Nome</FormLabel>
                                                         <FormControl>
-                                                            <Input placeholder="Seu nome" {...field} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
+                                                            <Input placeholder="Seu nome" {...field} disabled={!isEditing} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -220,19 +231,39 @@ const Profile: React.FC = () => {
                                                     />
                                                 </FormControl>
                                             </FormItem>
-                                            <FormItem>
-                                                <FormLabel className="text-white">Data de Nascimento</FormLabel>
-                                                <FormControl>
-                                                    <Input 
-                                                        value={formatBirthDate(profile?.birth_date)} 
-                                                        disabled 
-                                                        className="bg-black/60 border-yellow-500/30 text-gray-400 cursor-not-allowed" 
-                                                    />
-                                                </FormControl>
-                                            </FormItem>
-                                            <Button type="submit" disabled={formLoading} className="bg-yellow-500 text-black hover:bg-yellow-600 transition-all duration-300 cursor-pointer">
-                                                {formLoading ? 'Salvando...' : 'Salvar Alterações'}
-                                            </Button>
+                                            <FormField
+                                                control={form.control}
+                                                name="birth_date"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-white">Data de Nascimento</FormLabel>
+                                                        <FormControl>
+                                                            <Input 
+                                                                type="date" 
+                                                                {...field} 
+                                                                disabled={!isEditing} 
+                                                                className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            
+                                            {isEditing ? (
+                                                <div className="flex items-center space-x-4 pt-4">
+                                                    <Button type="submit" disabled={formLoading} className="bg-yellow-500 text-black hover:bg-yellow-600 transition-all duration-300 cursor-pointer">
+                                                        {formLoading ? 'Salvando...' : 'Salvar Alterações'}
+                                                    </Button>
+                                                    <Button type="button" variant="outline" onClick={handleCancelEdit} className="bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10">
+                                                        Cancelar
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <Button type="button" onClick={() => setIsEditing(true)} className="bg-yellow-500 text-black hover:bg-yellow-600 transition-all duration-300 cursor-pointer">
+                                                    Editar Perfil
+                                                </Button>
+                                            )}
                                         </form>
                                     </Form>
                                 </CardContent>
