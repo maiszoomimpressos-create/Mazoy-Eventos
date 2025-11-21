@@ -181,21 +181,23 @@ const ManagerNotifications: React.FC = () => {
                     
                     {/* Aviso de E-mail da Empresa */}
                     {!isEmailConfigured && (
-                        <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-xl flex items-start space-x-3 animate-fadeInUp">
-                            <i className="fas fa-exclamation-triangle text-xl mt-1 flex-shrink-0"></i>
-                            <div>
-                                <h3 className="font-semibold text-white mb-1">E-mail da Empresa Ausente</h3>
-                                <p className="text-sm">
-                                    Para receber notificações por e-mail, você deve cadastrar o E-mail da Empresa no 
-                                    <Button 
-                                        variant="link" 
-                                        className="h-auto p-0 ml-1 text-sm text-yellow-500 hover:text-yellow-400"
-                                        onClick={() => navigate('/manager/settings/company-profile')}
-                                    >
-                                        Perfil da Empresa.
-                                    </Button>
-                                </p>
+                        <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-3 sm:space-y-0 animate-fadeInUp">
+                            <div className="flex items-start space-x-3">
+                                <i className="fas fa-exclamation-triangle text-xl mt-1 flex-shrink-0"></i>
+                                <div>
+                                    <h3 className="font-semibold text-white mb-1">E-mail da Empresa Ausente</h3>
+                                    <p className="text-sm text-gray-300">
+                                        Para receber notificações por e-mail, cadastre o E-mail da Empresa.
+                                    </p>
+                                </div>
                             </div>
+                            <Button 
+                                variant="default" 
+                                className="bg-yellow-500 text-black hover:bg-yellow-600 h-8 px-4 text-sm w-full sm:w-auto flex-shrink-0"
+                                onClick={() => navigate('/manager/settings/company-profile')}
+                            >
+                                Configurar E-mail
+                            </Button>
                         </div>
                     )}
 
