@@ -36,7 +36,7 @@ const EventDetails: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-black text-white overflow-x-hidden">
-            <header className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md border-b border-yellow-500/20">
+            <header className="fixed top-0 left-0 right-0 z-[100] bg-black/80 backdrop-blur-md border-b border-yellow-500/20">
                 <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
                     <div className="text-2xl font-serif text-yellow-500 font-bold">
                         Mazoy

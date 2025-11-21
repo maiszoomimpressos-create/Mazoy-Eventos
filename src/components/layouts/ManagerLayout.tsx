@@ -16,7 +16,7 @@ const ManagerLayout: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-black text-white">
-            <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-yellow-500/20">
+            <header className="fixed top-0 left-0 right-0 z-[100] bg-black/90 backdrop-blur-md border-b border-yellow-500/20">
                 <div className="px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center space-x-6">
                         <div className="text-2xl font-serif text-yellow-500 font-bold flex items-center">
