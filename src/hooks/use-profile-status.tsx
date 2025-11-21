@@ -1,29 +1,35 @@
 import { useState, useEffect } from 'react';
-import { ProfileData } from './use-profile'; // Importando o tipo de dado
+import { ProfileData } from './use-profile';
 
 interface ProfileStatus {
     isComplete: boolean;
     hasPendingNotifications: boolean;
     loading: boolean;
+    missingFields: string[];
 }
 
-// Agora, todos estes campos são necessários para que a notificação desapareça.
-// O campo 'complemento' é o único considerado verdadeiramente opcional.
+const FIELD_NAMES: Record<keyof ProfileData, string> = {
+    first_name: 'Nome',
+    cpf: 'CPF',
+    birth_date: 'Data de Nascimento',
+    rg: 'RG',
+    gender: 'Gênero',
+    cep: 'CEP',
+    rua: 'Rua',
+    bairro: 'Bairro',
+    cidade: 'Cidade',
+    estado: 'Estado',
+    numero: 'Número',
+    avatar_url: 'Foto de Perfil',
+    tipo_usuario_id: 'Tipo de Usuário',
+    complemento: 'Complemento',
+};
+
 const ALL_REQUIRED_FIELDS: (keyof ProfileData)[] = [
-    'first_name',
-    'cpf',
-    'birth_date',
-    'rg',
-    'gender',
-    'cep',
-    'rua',
-    'bairro',
-    'cidade',
-    'estado',
-    'numero',
+    'first_name', 'cpf', 'birth_date', 'rg', 'gender',
+    'cep', 'rua', 'bairro', 'cidade', 'estado', 'numero',
 ];
 
-// Função auxiliar para verificar se um valor é considerado vazio
 const isValueEmpty = (value: any): boolean => {
     if (value === null || value === undefined) return true;
     if (typeof value === 'string') return value.trim() === '';
@@ -35,37 +41,34 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
         isComplete: true,
         hasPendingNotifications: false,
         loading: isLoading,
+        missingFields: [],
     });
 
     useEffect(() => {
-        setStatus(prev => ({ ...prev, loading: isLoading }));
+        setStatus(prev => ({ ...prev, loading: isLoading, missingFields: [] }));
 
         if (isLoading) return;
 
-        let isProfileConsideredComplete = true;
+        const missing: string[] = [];
 
         if (!profile) {
-            // Se não há perfil, ele está definitivamente incompleto.
-            isProfileConsideredComplete = false;
+            missing.push(...ALL_REQUIRED_FIELDS.map(field => FIELD_NAMES[field]));
         } else {
-            // Itera sobre a lista de TODOS os campos obrigatórios.
             for (const field of ALL_REQUIRED_FIELDS) {
                 const value = profile[field];
                 if (isValueEmpty(value)) {
-                    // Se qualquer um dos campos estiver vazio, o perfil é considerado incompleto.
-                    console.log(`[ProfileStatus] Profile incomplete. Missing field: ${field}`);
-                    isProfileConsideredComplete = false;
-                    break; // Encontrou um campo vazio, já pode parar a verificação.
+                    missing.push(FIELD_NAMES[field]);
                 }
             }
         }
         
-        console.log(`[ProfileStatus] Final check - Profile Complete: ${isProfileConsideredComplete}`);
+        const isProfileConsideredComplete = missing.length === 0;
 
         setStatus({
             isComplete: isProfileConsideredComplete,
             hasPendingNotifications: !isProfileConsideredComplete,
             loading: false,
+            missingFields: missing,
         });
     }, [profile, isLoading]);
 
