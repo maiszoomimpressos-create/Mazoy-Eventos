@@ -265,7 +265,7 @@ const Profile: React.FC = () => {
                 cep: cleanCEP,
                 rua: ruaToSave,
                 bairro: bairroToSave,
-                cidade: cidadeToToSave,
+                cidade: cidadeToSave, // Corrigido para usar cidadeToSave
                 estado: estadoToSave,
                 numero: numeroToSave,
                 complemento: complementoToSave,
