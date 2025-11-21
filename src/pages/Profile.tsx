@@ -141,8 +141,8 @@ const Profile: React.FC = () => {
         // Se RG for vazio ou nulo após a formatação, salva como null
         const cleanRG = values.rg ? values.rg.replace(/\D/g, '') : null;
         
-        // Se Gênero for vazio, salva como null
-        const genderToSave = values.gender || null;
+        // Se Gênero for 'not_specified' ou vazio, salva como null
+        const genderToSave = (values.gender === "not_specified" || !values.gender) ? null : values.gender;
 
         const { error } = await supabase
             .from('profiles')
@@ -325,7 +325,7 @@ const Profile: React.FC = () => {
                                                     name="rg"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel className="text-white">RG</FormLabel>
+                                                            <FormLabel className="text-white">RG (Opcional)</FormLabel>
                                                             <FormControl>
                                                                 <Input 
                                                                     placeholder="00.000.000-0"
@@ -368,8 +368,8 @@ const Profile: React.FC = () => {
                                                         <FormItem>
                                                             <FormLabel className="text-white">Gênero (Opcional)</FormLabel>
                                                             <Select 
-                                                                onValueChange={(value) => field.onChange(value === "" ? null : value)} 
-                                                                defaultValue={field.value || ""} 
+                                                                onValueChange={(value) => field.onChange(value === "not_specified" ? null : value)} 
+                                                                defaultValue={field.value || "not_specified"} 
                                                                 disabled={!isEditing}
                                                             >
                                                                 <FormControl>
@@ -380,7 +380,7 @@ const Profile: React.FC = () => {
                                                                     </SelectTrigger>
                                                                 </FormControl>
                                                                 <SelectContent className="bg-black border-yellow-500/30 text-white">
-                                                                    <SelectItem value="" className="text-gray-500">
+                                                                    <SelectItem value="not_specified" className="text-gray-500">
                                                                         Não especificado
                                                                     </SelectItem>
                                                                     {GENDER_OPTIONS.map(option => (
