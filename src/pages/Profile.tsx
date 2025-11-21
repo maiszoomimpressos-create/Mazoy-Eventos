@@ -13,6 +13,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import AuthStatusMenu from '@/components/AuthStatusMenu';
 import AvatarUpload from '@/components/AvatarUpload';
+import { useProfileStatus } from '@/hooks/use-profile-status'; // Importando o hook
 
 const GENDER_OPTIONS = [
     "Masculino",
@@ -78,6 +79,9 @@ const Profile: React.FC = () => {
     const [formLoading, setFormLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isCepLoading, setIsCepLoading] = useState(false);
+
+    const userId = session?.user?.id;
+    const { hasPendingNotifications, loading: statusLoading } = useProfileStatus(userId);
 
     const formatCPF = (value: string) => {
         if (!value) return '';
@@ -225,6 +229,15 @@ const Profile: React.FC = () => {
         getSessionAndProfile();
     }, [navigate, form]);
 
+    // Efeito para forçar o modo de edição se o perfil estiver incompleto
+    useEffect(() => {
+        if (!loading && !statusLoading && hasPendingNotifications && !isEditing) {
+            setIsEditing(true);
+            showError("Seu perfil está incompleto. Por favor, preencha os campos obrigatórios para continuar.");
+        }
+    }, [loading, statusLoading, hasPendingNotifications, isEditing]);
+
+
     const onSubmit = async (values: z.infer<typeof profileSchema>) => {
         if (!session) return;
         setFormLoading(true);
@@ -306,7 +319,7 @@ const Profile: React.FC = () => {
         setIsEditing(false);
     };
 
-    if (loading) {
+    if (loading || statusLoading) {
         return (
             <div className="min-h-screen bg-black text-white flex items-center justify-center">
                 <div className="w-full max-w-4xl p-6 space-y-8">
@@ -372,6 +385,20 @@ const Profile: React.FC = () => {
             <main className="pt-24 pb-12 px-6">
                 <div className="max-w-4xl mx-auto">
                     <h1 className="text-4xl font-serif text-yellow-500 mb-8">Meu Perfil</h1>
+                    
+                    {/* Alerta de Perfil Incompleto */}
+                    {hasPendingNotifications && (
+                        <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-xl mb-8 flex items-start space-x-3 animate-fadeInUp">
+                            <i className="fas fa-exclamation-triangle text-xl mt-1"></i>
+                            <div>
+                                <h3 className="font-semibold text-white mb-1">Atenção: Perfil Incompleto</h3>
+                                <p className="text-sm">
+                                    Por favor, preencha seu Nome, CPF e Data de Nascimento. Se você preencheu o CEP, certifique-se de que a Rua e o Número também estejam preenchidos.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div className="md:col-span-2">
                             <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl">
