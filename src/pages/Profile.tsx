@@ -22,10 +22,20 @@ const GENDER_OPTIONS = [
     "Prefiro não dizer"
 ];
 
+// Função de validação de CPF (simplificada para o frontend)
+const validateCPF = (cpf: string) => {
+    const cleanCPF = cpf.replace(/\D/g, '');
+    return cleanCPF.length === 11; // A validação completa é feita no backend (se necessário)
+};
+
 const profileSchema = z.object({
     first_name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
     birth_date: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de nascimento é obrigatória." }),
-    gender: z.string().min(1, { message: "Gênero é obrigatório." }), // Adicionado Gênero ao esquema
+    gender: z.string().min(1, { message: "Gênero é obrigatório." }),
+    
+    // Adicionando CPF e RG ao esquema para validação e submissão
+    cpf: z.string().refine(validateCPF, { message: "CPF inválido." }),
+    rg: z.string().optional(), // RG é opcional, mas pode ser validado se preenchido
 });
 
 interface ProfileData {
@@ -34,7 +44,7 @@ interface ProfileData {
     cpf: string | null;
     rg: string | null;
     birth_date: string | null;
-    gender: string | null; // Adicionado Gênero
+    gender: string | null;
 }
 
 const Profile: React.FC = () => {
@@ -44,15 +54,6 @@ const Profile: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [formLoading, setFormLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
-
-    const form = useForm<z.infer<typeof profileSchema>>({
-        resolver: zodResolver(profileSchema),
-        defaultValues: {
-            first_name: '',
-            birth_date: '',
-            gender: '',
-        },
-    });
 
     const formatCPF = (value: string) => {
         if (!value) return '';
@@ -75,6 +76,29 @@ const Profile: React.FC = () => {
             .replace(/(-\d{1})\d+?$/, '$1');
     };
 
+    const form = useForm<z.infer<typeof profileSchema>>({
+        resolver: zodResolver(profileSchema),
+        defaultValues: {
+            first_name: '',
+            birth_date: '',
+            gender: '',
+            cpf: '',
+            rg: '',
+        },
+    });
+
+    // Função para formatar CPF no input enquanto o usuário digita
+    const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const formattedCpf = formatCPF(e.target.value);
+        form.setValue('cpf', formattedCpf, { shouldValidate: true });
+    };
+
+    // Função para formatar RG no input enquanto o usuário digita
+    const handleRgChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const formattedRg = formatRG(e.target.value);
+        form.setValue('rg', formattedRg, { shouldValidate: true });
+    };
+
     useEffect(() => {
         const getSessionAndProfile = async () => {
             const { data: { session } } = await supabase.auth.getSession();
@@ -86,7 +110,7 @@ const Profile: React.FC = () => {
 
             const { data, error } = await supabase
                 .from('profiles')
-                .select('first_name, avatar_url, cpf, rg, birth_date, gender') // Incluindo Gênero
+                .select('first_name, avatar_url, cpf, rg, birth_date, gender')
                 .eq('id', session.user.id)
                 .single();
 
@@ -98,7 +122,9 @@ const Profile: React.FC = () => {
                 form.reset({ 
                     first_name: data.first_name || '',
                     birth_date: data.birth_date || '',
-                    gender: data.gender || '', // Definindo valor padrão para o formulário
+                    gender: data.gender || '',
+                    cpf: data.cpf ? formatCPF(data.cpf) : '', // Formata para exibição
+                    rg: data.rg ? formatRG(data.rg) : '', // Formata para exibição
                 });
             }
             setLoading(false);
@@ -109,12 +135,19 @@ const Profile: React.FC = () => {
     const onSubmit = async (values: z.infer<typeof profileSchema>) => {
         if (!session) return;
         setFormLoading(true);
+
+        // Remove formatação antes de salvar no banco de dados
+        const cleanCPF = values.cpf.replace(/\D/g, '');
+        const cleanRG = values.rg ? values.rg.replace(/\D/g, '') : null;
+
         const { error } = await supabase
             .from('profiles')
             .update({ 
                 first_name: values.first_name,
                 birth_date: values.birth_date,
-                gender: values.gender, // Salvando Gênero
+                gender: values.gender,
+                cpf: cleanCPF, // Salvando CPF limpo
+                rg: cleanRG, // Salvando RG limpo
             })
             .eq('id', session.user.id);
 
@@ -122,7 +155,15 @@ const Profile: React.FC = () => {
             showError("Erro ao atualizar o perfil.");
         } else {
             showSuccess("Perfil atualizado com sucesso!");
-            setProfile(prev => prev ? { ...prev, first_name: values.first_name, birth_date: values.birth_date, gender: values.gender } : null);
+            // Atualiza o estado local com os dados limpos (ou formatados, dependendo da necessidade)
+            setProfile(prev => prev ? { 
+                ...prev, 
+                first_name: values.first_name, 
+                birth_date: values.birth_date, 
+                gender: values.gender,
+                cpf: cleanCPF,
+                rg: cleanRG,
+            } : null);
             setIsEditing(false);
         }
         setFormLoading(false);
@@ -138,6 +179,8 @@ const Profile: React.FC = () => {
                 first_name: profile.first_name || '',
                 birth_date: profile.birth_date || '',
                 gender: profile.gender || '',
+                cpf: profile.cpf ? formatCPF(profile.cpf) : '',
+                rg: profile.rg ? formatRG(profile.rg) : '',
             });
         }
         setIsEditing(false);
@@ -254,26 +297,46 @@ const Profile: React.FC = () => {
                                             </FormItem>
                                             
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <FormItem>
-                                                    <FormLabel className="text-white">CPF</FormLabel>
-                                                    <FormControl>
-                                                        <Input 
-                                                            value={profile?.cpf ? formatCPF(profile.cpf) : ''} 
-                                                            disabled 
-                                                            className="bg-black/60 border-yellow-500/30 text-gray-400 cursor-not-allowed" 
-                                                        />
-                                                    </FormControl>
-                                                </FormItem>
-                                                <FormItem>
-                                                    <FormLabel className="text-white">RG</FormLabel>
-                                                    <FormControl>
-                                                        <Input 
-                                                            value={profile?.rg ? formatRG(profile.rg) : ''} 
-                                                            disabled 
-                                                            className="bg-black/60 border-yellow-500/30 text-gray-400 cursor-not-allowed" 
-                                                        />
-                                                    </FormControl>
-                                                </FormItem>
+                                                <FormField
+                                                    control={form.control}
+                                                    name="cpf"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-white">CPF</FormLabel>
+                                                            <FormControl>
+                                                                <Input 
+                                                                    placeholder="000.000.000-00"
+                                                                    {...field} 
+                                                                    onChange={handleCpfChange}
+                                                                    disabled={!isEditing} 
+                                                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
+                                                                    maxLength={14}
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="rg"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-white">RG</FormLabel>
+                                                            <FormControl>
+                                                                <Input 
+                                                                    placeholder="00.000.000-0"
+                                                                    {...field} 
+                                                                    onChange={handleRgChange}
+                                                                    disabled={!isEditing} 
+                                                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
+                                                                    maxLength={12}
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
                                             </div>
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
