@@ -7,8 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Loader2 } from 'lucide-react';
 import { useManagerEvents, ManagerEvent } from '@/hooks/use-manager-events';
 import { supabase } from '@/integrations/supabase/client';
-import { showSuccess, showError } from '@/utils/toast';
-import DeleteEventDialog from '@/components/DeleteEventDialog'; // Importando o novo componente
+import DeleteEventDialog from '@/components/DeleteEventDialog'; 
 
 const ManagerEventsList: React.FC = () => {
     const navigate = useNavigate();
@@ -21,28 +20,12 @@ const ManagerEventsList: React.FC = () => {
         });
     }, []);
 
+    // O hook agora retorna apenas id e title
     const { events, isLoading, isError, invalidateEvents } = useManagerEvents(userId);
 
     const filteredEvents = events.filter(event =>
         event.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
-
-    // Simulação de dados de métricas (já que não temos a tabela de tickets)
-    const getSimulatedMetrics = (event: ManagerEvent) => {
-        // Adicionando verificação de segurança para garantir que o ID exista e seja uma string
-        if (!event || typeof event.id !== 'string' || event.id.length === 0) {
-            return { ticketsSold: 0, totalRevenue: 0 };
-        }
-        
-        // Em um ambiente real, isso viria de um JOIN ou RPC
-        const seed = event.id.charCodeAt(0) + event.id.charCodeAt(event.id.length - 1);
-        const ticketsSold = 100 + (seed % 500);
-        const totalRevenue = ticketsSold * (event.price || 100);
-        return {
-            ticketsSold: ticketsSold,
-            totalRevenue: totalRevenue,
-        };
-    };
 
     // Estado de carregamento inicial (antes de saber se o usuário está logado)
     if (userId === undefined) {
@@ -100,38 +83,23 @@ const ManagerEventsList: React.FC = () => {
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <Table className="w-full min-w-[800px]">
+                        <Table className="w-full min-w-[500px]">
                             <TableHeader>
                                 <TableRow className="border-b border-yellow-500/20 text-sm hover:bg-black/40">
-                                    <TableHead className="text-left text-gray-400 font-semibold py-3 w-[40%]">Evento</TableHead>
-                                    <TableHead className="text-center text-gray-400 font-semibold py-3">Data</TableHead>
-                                    <TableHead className="text-center text-gray-400 font-semibold py-3">Ingressos Vendidos</TableHead>
-                                    <TableHead className="text-center text-gray-400 font-semibold py-3">Receita Total</TableHead>
+                                    <TableHead className="text-left text-gray-400 font-semibold py-3 w-[70%]">Nome do Evento</TableHead>
                                     <TableHead className="text-center text-gray-400 font-semibold py-3">Ações</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {filteredEvents.map((event) => {
-                                    const metrics = getSimulatedMetrics(event);
-                                    const formattedDate = new Date(event.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
-                                    
                                     return (
                                         <TableRow 
                                             key={event.id} 
                                             className="border-b border-yellow-500/10 hover:bg-black/40 transition-colors text-sm cursor-pointer"
-                                            onClick={() => handleRowClick(event.id)} // Adiciona o clique na linha
+                                            onClick={() => handleRowClick(event.id)}
                                         >
                                             <TableCell className="py-4">
-                                                <div className="text-white font-medium truncate max-w-[300px]">{event.title}</div>
-                                            </TableCell>
-                                            <TableCell className="text-center py-4">
-                                                <span className="text-white">{formattedDate}</span>
-                                            </TableCell>
-                                            <TableCell className="text-center py-4">
-                                                <span className="text-yellow-500 font-semibold">{metrics.ticketsSold.toLocaleString()}</span>
-                                            </TableCell>
-                                            <TableCell className="text-center py-4">
-                                                <span className="text-green-400 font-bold">R$ {metrics.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                                <div className="text-white font-medium truncate max-w-[400px]">{event.title}</div>
                                             </TableCell>
                                             <TableCell className="text-center py-4 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
                                                 <Button 

@@ -5,11 +5,7 @@ import { showError } from '@/utils/toast';
 export interface ManagerEvent {
     id: string;
     title: string;
-    date: string;
-    price: number;
-    // Adicione campos de métricas se necessário, mas por enquanto usaremos os dados brutos
-    // Para simular as métricas (ingressos vendidos, valor total), precisaríamos de uma tabela de tickets.
-    // Por enquanto, focaremos nos dados do evento.
+    // Removendo campos não essenciais para a listagem inicial
 }
 
 const fetchManagerEvents = async (userId: string): Promise<ManagerEvent[]> => {
@@ -18,30 +14,23 @@ const fetchManagerEvents = async (userId: string): Promise<ManagerEvent[]> => {
         return [];
     }
 
+    // Buscamos todos os eventos que o usuário tem permissão de ver (garantido pelo RLS)
+    // Se a política "Authenticated users can read all events" estiver ativa, ele verá todos.
     const { data, error } = await supabase
         .from('events')
         .select(`
             id,
-            title,
-            date,
-            price
-            -- Aqui você adicionaria joins para calcular ingressos vendidos e receita,
-            -- mas como não temos a tabela de tickets ainda, retornamos os dados básicos.
+            title
         `)
-        .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
     if (error) {
         console.error("Error fetching manager events from Supabase:", error);
-        // O erro será tratado pelo useQuery, mas o log detalhado ajuda na depuração.
+        // Lançamos o erro para que o useQuery o capture e dispare o onError
         throw new Error(error.message); 
     }
     
-    // Convertendo a data para string para manter a compatibilidade com o tipo
-    return data.map(event => ({
-        ...event,
-        date: event.date, // A data já vem como string (YYYY-MM-DD)
-    })) as ManagerEvent[];
+    return data as ManagerEvent[];
 };
 
 export const useManagerEvents = (userId: string | undefined) => {
@@ -55,7 +44,7 @@ export const useManagerEvents = (userId: string | undefined) => {
         // Adicionando tratamento de erro para exibir o toast
         onError: (error) => {
             console.error("Query Error:", error);
-            showError("Erro ao carregar seus eventos.");
+            showError("Erro ao carregar eventos. Tente recarregar a página.");
         }
     });
 
