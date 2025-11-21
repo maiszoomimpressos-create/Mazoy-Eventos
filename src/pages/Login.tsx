@@ -17,10 +17,6 @@ const Login: React.FC = () => {
 
         try {
             // 1. Autenticação com Supabase
-            // Nota: A duração da sessão é configurada no projeto Supabase. 
-            // Aqui, o checkbox é principalmente para UX, mas se quiséssemos controlar a duração, 
-            // precisaríamos de uma função de login customizada ou usar o refresh token.
-            // Por enquanto, apenas usamos a função padrão.
             const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
                 email: loginData.email,
                 password: loginData.password,
@@ -53,21 +49,23 @@ const Login: React.FC = () => {
                 }
 
                 const userType = profileData.tipo_usuario_id;
+                let successMessage = "Login realizado com sucesso!";
 
-                // 3. Roteamento Condicional
+                // 3. Determinar mensagem de sucesso
                 if (userType === 1 || userType === 2) {
-                    // Tipo 1 (Admin) ou Tipo 2 (Gestor) -> Dashboard PRO
-                    showSuccess("Login de Gestor realizado com sucesso!");
-                    navigate('/manager/dashboard');
+                    successMessage = "Login de Gestor realizado com sucesso!";
                 } else if (userType === 3) {
-                    // Tipo 3 (Cliente) -> Home/Index (onde o perfil será editável)
-                    showSuccess("Login de Cliente realizado com sucesso!");
-                    navigate('/');
+                    successMessage = "Login de Cliente realizado com sucesso!";
                 } else {
                     showError("Tipo de usuário desconhecido. Acesso negado.");
                     await supabase.auth.signOut();
-                    navigate('/login');
+                    setIsLoading(false);
+                    return;
                 }
+                
+                showSuccess(successMessage);
+                // 4. Roteamento unificado para a Home, conforme solicitado.
+                navigate('/');
             } else {
                 // Isso pode acontecer se o e-mail não estiver confirmado, dependendo da configuração do Supabase
                 showError("Login falhou. Verifique seu e-mail e senha.");
