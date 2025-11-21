@@ -125,6 +125,17 @@ const ManagerEventsList: React.FC = () => {
                     </div>
                 )}
             </Card>
+            
+            {/* Novo Botão CTA no final da tela */}
+            <div className="mt-10 text-center">
+                <Button 
+                    onClick={() => navigate('/manager/events/create')}
+                    className="bg-yellow-500 text-black hover:bg-yellow-600 py-3 px-8 text-lg font-semibold transition-all duration-300 cursor-pointer shadow-lg shadow-yellow-500/30 hover:shadow-yellow-500/50"
+                >
+                    <Plus className="mr-2 h-6 w-6" />
+                    Cadastrar Novo Evento
+                </Button>
+            </div>
         </div>
     );
 };
