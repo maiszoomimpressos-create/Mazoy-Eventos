@@ -58,7 +58,7 @@ const ManagerCreateEvent: React.FC = () => {
 
             <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
                 <CardHeader>
-                    <CardTitle className="text-white text-xl sm:text-2xl font-semibold">Detalhes do Evento Premium</CardTitle>
+                    <CardTitle className="text-white text-xl sm:text-2xl font-semibold">Detalhes do Evento</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-6">
@@ -129,7 +129,6 @@ const ManagerCreateEvent: React.FC = () => {
                                         <SelectValue placeholder="Selecione a Categoria" />
                                     </SelectTrigger>
                                     <SelectContent className="bg-black border-yellow-500/30 text-white">
-                                        {/* Adicionando um item de placeholder com valor não vazio, se necessário, mas aqui vamos confiar no placeholder do SelectValue */}
                                         {categories.map(cat => (
                                             <SelectItem key={cat.id} value={cat.name} className="hover:bg-yellow-500/10 cursor-pointer">
                                                 {cat.name}
