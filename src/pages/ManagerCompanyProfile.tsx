@@ -85,6 +85,7 @@ const companyProfileSchema = z.object({
     corporate_name: z.string().min(3, { message: "Razão Social é obrigatória." }),
     trade_name: z.string().optional().nullable(),
     phone: z.string().optional().nullable(),
+    email: z.string().email({ message: "E-mail inválido." }).optional().nullable(), // Novo campo de e-mail
     
     // Address Fields
     cep: z.string().optional().nullable().refine((val) => !val || val.replace(/\D/g, '').length === 8, { message: "CEP inválido (8 dígitos)." }),
@@ -115,6 +116,7 @@ const ManagerCompanyProfile: React.FC = () => {
             corporate_name: '',
             trade_name: '',
             phone: '',
+            email: '', // Default value
             cep: '',
             street: '',
             neighborhood: '',
@@ -154,6 +156,7 @@ const ManagerCompanyProfile: React.FC = () => {
                     corporate_name: data.corporate_name || '',
                     trade_name: data.trade_name || '',
                     phone: formatPhone(data.phone || ''),
+                    email: data.email || '', // Load email
                     cep: formatCEP(data.cep || ''),
                     street: data.street || '',
                     neighborhood: data.neighborhood || '',
@@ -234,6 +237,7 @@ const ManagerCompanyProfile: React.FC = () => {
             corporate_name: values.corporate_name,
             trade_name: values.trade_name || null,
             phone: values.phone ? values.phone.replace(/\D/g, '') : null,
+            email: values.email || null, // Save email
             
             cep: values.cep ? values.cep.replace(/\D/g, '') : null,
             street: values.street || null,
@@ -406,6 +410,25 @@ const ManagerCompanyProfile: React.FC = () => {
                                         )}
                                     />
                                 </div>
+                                
+                                {/* Novo campo de E-mail da Empresa */}
+                                <FormField
+                                    control={form.control}
+                                    name="email"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="text-white">E-mail da Empresa (Para Notificações)</FormLabel>
+                                            <FormControl>
+                                                <Input 
+                                                    placeholder="contato@empresa.com"
+                                                    {...field} 
+                                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                             </div>
 
                             {/* Seção de Endereço */}

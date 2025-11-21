@@ -31,8 +31,10 @@ const ManagerNotifications: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
+    const [companyEmail, setCompanyEmail] = useState<string | null>(null);
+    const isEmailConfigured = !!companyEmail;
 
-    // 1. Fetch User ID and Settings
+    // 1. Fetch User ID, Settings, and Company Email
     useEffect(() => {
         const fetchSettings = async () => {
             const { data: { user } } = await supabase.auth.getUser();
@@ -43,33 +45,63 @@ const ManagerNotifications: React.FC = () => {
             }
             setUserId(user.id);
 
-            const { data, error } = await supabase
+            // Fetch Company Email
+            const { data: companyData, error: companyError } = await supabase
+                .from('companies')
+                .select('email')
+                .eq('user_id', user.id)
+                .single();
+
+            if (companyError && companyError.code !== 'PGRST116') {
+                console.error("Error fetching company email:", companyError);
+            }
+            
+            const fetchedCompanyEmail = companyData?.email || null;
+            setCompanyEmail(fetchedCompanyEmail);
+
+            // Fetch Manager Settings
+            const { data: settingsData, error: settingsError } = await supabase
                 .from('manager_settings')
                 .select('*')
                 .eq('user_id', user.id)
                 .single();
 
-            if (error && error.code !== 'PGRST116') { // PGRST116 = No rows found
-                console.error("Error fetching settings:", error);
+            if (settingsError && settingsError.code !== 'PGRST116') { // PGRST116 = No rows found
+                console.error("Error fetching settings:", settingsError);
                 showError("Erro ao carregar configurações de notificação.");
             }
 
-            if (data) {
-                setSettings({
-                    newSaleEmail: data.new_sale_email ?? DEFAULT_SETTINGS.newSaleEmail,
-                    newSaleSystem: data.new_sale_system ?? DEFAULT_SETTINGS.newSaleSystem,
-                    eventUpdateEmail: data.event_update_email ?? DEFAULT_SETTINGS.eventUpdateEmail,
-                    eventUpdateSystem: data.event_update_system ?? DEFAULT_SETTINGS.eventUpdateSystem,
-                    lowStockEmail: data.low_stock_email ?? DEFAULT_SETTINGS.lowStockEmail,
-                    lowStockSystem: data.low_stock_system ?? DEFAULT_SETTINGS.lowStockSystem,
-                });
+            let initialSettings = DEFAULT_SETTINGS;
+            if (settingsData) {
+                initialSettings = {
+                    newSaleEmail: settingsData.new_sale_email ?? DEFAULT_SETTINGS.newSaleEmail,
+                    newSaleSystem: settingsData.new_sale_system ?? DEFAULT_SETTINGS.newSaleSystem,
+                    eventUpdateEmail: settingsData.event_update_email ?? DEFAULT_SETTINGS.eventUpdateEmail,
+                    eventUpdateSystem: settingsData.event_update_system ?? DEFAULT_SETTINGS.eventUpdateSystem,
+                    lowStockEmail: settingsData.low_stock_email ?? DEFAULT_SETTINGS.lowStockEmail,
+                    lowStockSystem: settingsData.low_stock_system ?? DEFAULT_SETTINGS.lowStockSystem,
+                };
             }
+            
+            // Se o e-mail da empresa não estiver configurado, desabilita as opções de e-mail
+            if (!fetchedCompanyEmail) {
+                initialSettings.newSaleEmail = false;
+                initialSettings.eventUpdateEmail = false;
+                initialSettings.lowStockEmail = false;
+            }
+
+            setSettings(initialSettings);
             setIsLoading(false);
         };
         fetchSettings();
     }, [navigate]);
 
     const handleSwitchChange = (key: keyof SettingsState, checked: boolean) => {
+        // Se for uma configuração de e-mail e o e-mail da empresa não estiver configurado, impede a mudança
+        if (key.endsWith('Email') && checked && !isEmailConfigured) {
+            showError("Para receber notificações por e-mail, cadastre o E-mail da Empresa no Perfil da Empresa.");
+            return;
+        }
         setSettings(prev => ({ ...prev, [key]: checked }));
     };
 
@@ -80,11 +112,12 @@ const ManagerNotifications: React.FC = () => {
 
         const dataToSave = {
             user_id: userId,
-            new_sale_email: settings.newSaleEmail,
+            // Garantir que as configurações de e-mail sejam salvas como FALSE se o e-mail da empresa não estiver configurado
+            new_sale_email: isEmailConfigured ? settings.newSaleEmail : false,
             new_sale_system: settings.newSaleSystem,
-            event_update_email: settings.eventUpdateEmail,
+            event_update_email: isEmailConfigured ? settings.eventUpdateEmail : false,
             event_update_system: settings.eventUpdateSystem,
-            low_stock_email: settings.lowStockEmail,
+            low_stock_email: isEmailConfigured ? settings.lowStockEmail : false,
             low_stock_system: settings.lowStockSystem,
         };
 
@@ -146,6 +179,26 @@ const ManagerNotifications: React.FC = () => {
                 </CardHeader>
                 <CardContent className="space-y-6">
                     
+                    {/* Aviso de E-mail da Empresa */}
+                    {!isEmailConfigured && (
+                        <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-xl flex items-start space-x-3 animate-fadeInUp">
+                            <i className="fas fa-exclamation-triangle text-xl mt-1 flex-shrink-0"></i>
+                            <div>
+                                <h3 className="font-semibold text-white mb-1">E-mail da Empresa Ausente</h3>
+                                <p className="text-sm">
+                                    Para receber notificações por e-mail, você deve cadastrar o E-mail da Empresa no 
+                                    <Button 
+                                        variant="link" 
+                                        className="h-auto p-0 ml-1 text-sm text-yellow-500 hover:text-yellow-400"
+                                        onClick={() => navigate('/manager/settings/company-profile')}
+                                    >
+                                        Perfil da Empresa.
+                                    </Button>
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Alertas de Vendas */}
                     <div className="space-y-4 pt-4 border-t border-yellow-500/10">
                         <h3 className="text-lg font-semibold text-white flex items-center">
@@ -155,14 +208,14 @@ const ManagerNotifications: React.FC = () => {
                         
                         <div className="flex items-center justify-between p-4 bg-black/60 rounded-xl border border-yellow-500/20">
                             <div>
-                                <p className="text-white font-medium">Nova Venda (E-mail)</p>
-                                <p className="text-gray-400 text-xs">Receba um e-mail a cada nova transação.</p>
+                                <p className={`font-medium ${isEmailConfigured ? 'text-white' : 'text-gray-500'}`}>Nova Venda (E-mail)</p>
+                                <p className="text-gray-400 text-xs">Receba um e-mail a cada nova transação no endereço: <span className="text-yellow-500">{companyEmail || 'Não configurado'}</span></p>
                             </div>
                             <Switch 
                                 checked={settings.newSaleEmail} 
                                 onCheckedChange={(checked) => handleSwitchChange('newSaleEmail', checked)}
                                 className="data-[state=checked]:bg-yellow-500 data-[state=unchecked]:bg-gray-700"
-                                disabled={isSaving}
+                                disabled={isSaving || !isEmailConfigured}
                             />
                         </div>
 
@@ -189,14 +242,14 @@ const ManagerNotifications: React.FC = () => {
                         
                         <div className="flex items-center justify-between p-4 bg-black/60 rounded-xl border border-yellow-500/20">
                             <div>
-                                <p className="text-white font-medium">Atualização de Evento (E-mail)</p>
+                                <p className={`font-medium ${isEmailConfigured ? 'text-white' : 'text-gray-500'}`}>Atualização de Evento (E-mail)</p>
                                 <p className="text-gray-400 text-xs">Notificações sobre alterações de data ou local.</p>
                             </div>
                             <Switch 
                                 checked={settings.eventUpdateEmail} 
                                 onCheckedChange={(checked) => handleSwitchChange('eventUpdateEmail', checked)}
                                 className="data-[state=checked]:bg-yellow-500 data-[state=unchecked]:bg-gray-700"
-                                disabled={isSaving}
+                                disabled={isSaving || !isEmailConfigured}
                             />
                         </div>
                     </div>
@@ -210,8 +263,21 @@ const ManagerNotifications: React.FC = () => {
                         
                         <div className="flex items-center justify-between p-4 bg-black/60 rounded-xl border border-yellow-500/20">
                             <div>
-                                <p className="text-white font-medium">Ingressos com Baixo Estoque (Sistema)</p>
+                                <p className={`font-medium ${isEmailConfigured ? 'text-white' : 'text-gray-500'}`}>Ingressos com Baixo Estoque (E-mail)</p>
                                 <p className="text-gray-400 text-xs">Alerta quando a disponibilidade de ingressos cai abaixo de 10%.</p>
+                            </div>
+                            <Switch 
+                                checked={settings.lowStockEmail} 
+                                onCheckedChange={(checked) => handleSwitchChange('lowStockEmail', checked)}
+                                className="data-[state=checked]:bg-yellow-500 data-[state=unchecked]:bg-gray-700"
+                                disabled={isSaving || !isEmailConfigured}
+                            />
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-4 bg-black/60 rounded-xl border border-yellow-500/20">
+                            <div>
+                                <p className="text-white font-medium">Ingressos com Baixo Estoque (Sistema)</p>
+                                <p className="text-gray-400 text-xs">Alerta visual no Dashboard PRO.</p>
                             </div>
                             <Switch 
                                 checked={settings.lowStockSystem} 
