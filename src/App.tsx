@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import ManagerLogin from "./pages/ManagerLogin";
 import ManagerDashboard from "./pages/ManagerDashboard";
 import ManagerCreateEvent from "./pages/ManagerCreateEvent";
+import ManagerLayout from "./components/layouts/ManagerLayout";
 
 const queryClient = new QueryClient();
 
@@ -26,8 +27,12 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/manager/login" element={<ManagerLogin />} />
-          <Route path="/manager/dashboard" element={<ManagerDashboard />} />
-          <Route path="/manager/events/create" element={<ManagerCreateEvent />} />
+          
+          <Route element={<ManagerLayout />}>
+            <Route path="/manager/dashboard" element={<ManagerDashboard />} />
+            <Route path="/manager/events/create" element={<ManagerCreateEvent />} />
+          </Route>
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
