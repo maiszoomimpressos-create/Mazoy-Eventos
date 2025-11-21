@@ -43,7 +43,8 @@ const profileSchema = z.object({
     rg: z.string().optional().nullable(), 
 
     // Campos de Endereço
-    cep: z.string().refine(validateCEP, { message: "CEP inválido (formato 00000-000)." }),
+    // CEP agora é opcional, mas se preenchido, deve ter 8 dígitos
+    cep: z.string().optional().nullable().refine((val) => !val || validateCEP(val), { message: "CEP inválido (8 dígitos)." }),
     rua: z.string().optional().nullable(),
     bairro: z.string().optional().nullable(),
     cidade: z.string().optional().nullable(),
@@ -76,6 +77,7 @@ const Profile: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [formLoading, setFormLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [isCepLoading, setIsCepLoading] = useState(false);
 
     const formatCPF = (value: string) => {
         if (!value) return '';
@@ -125,6 +127,41 @@ const Profile: React.FC = () => {
         },
     });
 
+    // Função para buscar endereço via ViaCEP
+    const fetchAddressByCep = async (cep: string) => {
+        const cleanCep = cep.replace(/\D/g, '');
+        if (cleanCep.length !== 8) return;
+
+        setIsCepLoading(true);
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+            const data = await response.json();
+
+            if (data.erro) {
+                showError("CEP não encontrado.");
+                form.setError('cep', { message: "CEP não encontrado." });
+                // Limpa campos de endereço se o CEP for inválido
+                form.setValue('rua', '');
+                form.setValue('bairro', '');
+                form.setValue('cidade', '');
+                form.setValue('estado', '');
+            } else {
+                form.clearErrors('cep');
+                form.setValue('rua', data.logradouro || '');
+                form.setValue('bairro', data.bairro || '');
+                form.setValue('cidade', data.localidade || '');
+                form.setValue('estado', data.uf || '');
+                // Foca no campo número após o preenchimento automático
+                document.getElementById('numero')?.focus();
+            }
+        } catch (error) {
+            console.error("Erro ao buscar CEP:", error);
+            showError("Erro na comunicação com o serviço de CEP.");
+        } finally {
+            setIsCepLoading(false);
+        }
+    };
+
     // Funções de formatação no input
     const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const formattedCpf = formatCPF(e.target.value);
@@ -137,8 +174,14 @@ const Profile: React.FC = () => {
     };
 
     const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const formattedCep = formatCEP(e.target.value);
+        const rawValue = e.target.value;
+        const formattedCep = formatCEP(rawValue);
         form.setValue('cep', formattedCep, { shouldValidate: true });
+
+        // Se o CEP atingir 8 dígitos (após formatação, 9 caracteres com hífen), busca o endereço
+        if (formattedCep.replace(/\D/g, '').length === 8) {
+            fetchAddressByCep(formattedCep);
+        }
     };
 
     useEffect(() => {
@@ -189,7 +232,8 @@ const Profile: React.FC = () => {
         // Limpeza e conversão para salvar no DB
         const cleanCPF = values.cpf.replace(/\D/g, '');
         const cleanRG = values.rg ? values.rg.replace(/\D/g, '') : null;
-        const cleanCEP = values.cep.replace(/\D/g, '');
+        // CEP é opcional, se for string vazia ou nula, salva como null
+        const cleanCEP = values.cep ? values.cep.replace(/\D/g, '') : null;
         
         const genderToSave = (values.gender === "not_specified" || !values.gender) ? null : values.gender;
 
@@ -477,16 +521,23 @@ const Profile: React.FC = () => {
                                                     name="cep"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel className="text-white">CEP *</FormLabel>
+                                                            <FormLabel className="text-white">CEP (Opcional)</FormLabel>
                                                             <FormControl>
-                                                                <Input 
-                                                                    placeholder="00000-000"
-                                                                    {...field} 
-                                                                    onChange={handleCepChange}
-                                                                    disabled={!isEditing} 
-                                                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
-                                                                    maxLength={9}
-                                                                />
+                                                                <div className="relative">
+                                                                    <Input 
+                                                                        placeholder="00000-000"
+                                                                        {...field} 
+                                                                        onChange={handleCepChange}
+                                                                        disabled={!isEditing || isCepLoading} 
+                                                                        className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed pr-10" 
+                                                                        maxLength={9}
+                                                                    />
+                                                                    {isCepLoading && (
+                                                                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                                                            <div className="w-4 h-4 border-2 border-yellow-500/20 border-t-yellow-500 rounded-full animate-spin"></div>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
@@ -503,7 +554,7 @@ const Profile: React.FC = () => {
                                                             <FormItem>
                                                                 <FormLabel className="text-white">Rua (Opcional)</FormLabel>
                                                                 <FormControl>
-                                                                    <Input placeholder="Ex: Av. Paulista" {...field} disabled={!isEditing} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
+                                                                    <Input id="rua" placeholder="Ex: Av. Paulista" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
                                                                 </FormControl>
                                                                 <FormMessage />
                                                             </FormItem>
@@ -517,7 +568,7 @@ const Profile: React.FC = () => {
                                                         <FormItem>
                                                             <FormLabel className="text-white">Número (Opcional)</FormLabel>
                                                             <FormControl>
-                                                                <Input placeholder="123" {...field} disabled={!isEditing} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
+                                                                <Input id="numero" placeholder="123" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
@@ -532,7 +583,7 @@ const Profile: React.FC = () => {
                                                     <FormItem>
                                                         <FormLabel className="text-white">Complemento (Opcional)</FormLabel>
                                                         <FormControl>
-                                                            <Input placeholder="Apto 101, Bloco B" {...field} disabled={!isEditing} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
+                                                            <Input placeholder="Apto 101, Bloco B" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -548,7 +599,7 @@ const Profile: React.FC = () => {
                                                             <FormItem>
                                                                 <FormLabel className="text-white">Bairro (Opcional)</FormLabel>
                                                                 <FormControl>
-                                                                    <Input placeholder="Jardim Paulista" {...field} disabled={!isEditing} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
+                                                                    <Input placeholder="Jardim Paulista" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
                                                                 </FormControl>
                                                                 <FormMessage />
                                                             </FormItem>
@@ -562,7 +613,7 @@ const Profile: React.FC = () => {
                                                         <FormItem>
                                                             <FormLabel className="text-white">Cidade (Opcional)</FormLabel>
                                                             <FormControl>
-                                                                <Input placeholder="São Paulo" {...field} disabled={!isEditing} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
+                                                                <Input placeholder="São Paulo" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
@@ -575,7 +626,7 @@ const Profile: React.FC = () => {
                                                         <FormItem>
                                                             <FormLabel className="text-white">Estado (Opcional)</FormLabel>
                                                             <FormControl>
-                                                                <Input placeholder="SP" {...field} disabled={!isEditing} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
+                                                                <Input placeholder="SP" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
