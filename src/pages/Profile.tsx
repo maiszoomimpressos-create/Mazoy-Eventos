@@ -229,13 +229,13 @@ const Profile: React.FC = () => {
         getSessionAndProfile();
     }, [navigate, form]);
 
-    // Efeito para forçar o modo de edição se o perfil estiver incompleto
-    useEffect(() => {
-        if (!loading && !statusLoading && hasPendingNotifications && !isEditing) {
-            setIsEditing(true);
-            showError("Seu perfil está incompleto. Por favor, preencha os campos obrigatórios para continuar.");
-        }
-    }, [loading, statusLoading, hasPendingNotifications, isEditing]);
+    // REMOVIDO: Efeito para forçar o modo de edição se o perfil estiver incompleto
+    // useEffect(() => {
+    //     if (!loading && !statusLoading && hasPendingNotifications && !isEditing) {
+    //         setIsEditing(true);
+    //         showError("Seu perfil está incompleto. Por favor, preencha os campos obrigatórios para continuar.");
+    //     }
+    // }, [loading, statusLoading, hasPendingNotifications, isEditing]);
 
 
     const onSubmit = async (values: z.infer<typeof profileSchema>) => {
