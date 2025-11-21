@@ -126,7 +126,7 @@ const MobileMenu: React.FC = () => {
                             <Button 
                                 onClick={() => handleNavigation('/profile')}
                                 variant="ghost"
-                                className={`w-full justify-start text-lg py-6 ${hasPendingNotifications ? 'text-red-400 hover:bg-red-500/10' : 'text-white hover:bg-yellow-500/10'}`}
+                                className="w-full justify-start text-lg py-6 text-white hover:bg-yellow-500/10"
                             >
                                 <User className="mr-3 h-5 w-5" />
                                 Editar Perfil

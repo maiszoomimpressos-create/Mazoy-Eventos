@@ -114,11 +114,10 @@ const AuthStatusMenu: React.FC = () => {
                         <DropdownMenuSeparator className="bg-yellow-500/20" />
                         <DropdownMenuItem 
                             onClick={() => navigate('/profile')} 
-                            className={`cursor-pointer hover:bg-yellow-500/10 ${hasPendingNotifications ? 'text-red-400 font-semibold' : ''}`}
+                            className="cursor-pointer hover:bg-yellow-500/10"
                         >
-                            <i className={`fas fa-user-circle mr-2 ${hasPendingNotifications ? 'text-red-400' : ''}`}></i>
+                            <i className="fas fa-user-circle mr-2"></i>
                             Editar Perfil
-                            {hasPendingNotifications && <span className="ml-auto w-2 h-2 bg-red-500 rounded-full"></span>}
                         </DropdownMenuItem>
                         <DropdownMenuItem 
                             onClick={() => navigate('/tickets')} 
