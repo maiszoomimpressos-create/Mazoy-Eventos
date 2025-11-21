@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const Register: React.FC = () => {
     const navigate = useNavigate();
@@ -11,6 +12,7 @@ const Register: React.FC = () => {
         email: '',
         cpf: '',
         birthDate: '',
+        gender: '', // Novo campo
         password: '',
         confirmPassword: ''
     });
@@ -19,6 +21,14 @@ const Register: React.FC = () => {
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    const GENDER_OPTIONS = [
+        "Masculino",
+        "Feminino",
+        "Não binário",
+        "Outro",
+        "Prefiro não dizer"
+    ];
 
     const validateCPF = (cpf: string) => {
         const cleanCPF = cpf.replace(/\D/g, '');
@@ -77,6 +87,9 @@ const Register: React.FC = () => {
                 errors.birthDate = 'A data de nascimento não pode ser futura';
             }
         }
+        if (!formData.gender.trim()) {
+            errors.gender = 'Gênero é obrigatório';
+        }
         if (!formData.password) {
             errors.password = 'Senha é obrigatória';
         } else if (formData.password.length < 6) {
@@ -95,6 +108,13 @@ const Register: React.FC = () => {
         if (field === 'cpf') {
             value = formatCPF(value);
         }
+        setFormData(prev => ({ ...prev, [field]: value }));
+        if (formErrors[field]) {
+            setFormErrors(prev => ({ ...prev, [field]: '' }));
+        }
+    };
+
+    const handleSelectChange = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
         if (formErrors[field]) {
             setFormErrors(prev => ({ ...prev, [field]: '' }));
@@ -127,6 +147,7 @@ const Register: React.FC = () => {
                         name: formData.name,
                         cpf: cleanCPF,
                         birth_date: formData.birthDate,
+                        gender: formData.gender, // Enviando Gênero
                     },
                 },
             });
@@ -263,30 +284,62 @@ const Register: React.FC = () => {
                                     </p>
                                 )}
                             </div>
-                            <div>
-                                <label htmlFor="birthDate" className="block text-sm font-medium text-white mb-2">
-                                    Data de Nascimento *
-                                </label>
-                                <div className="relative">
-                                    <input
-                                        type="date"
-                                        id="birthDate"
-                                        value={formData.birthDate}
-                                        onChange={(e) => handleInputChange('birthDate', e.target.value)}
-                                        className={`w-full bg-black/60 border rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-300 ${formErrors.birthDate
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label htmlFor="birthDate" className="block text-sm font-medium text-white mb-2">
+                                        Data de Nascimento *
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type="date"
+                                            id="birthDate"
+                                            value={formData.birthDate}
+                                            onChange={(e) => handleInputChange('birthDate', e.target.value)}
+                                            className={`w-full bg-black/60 border rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 transition-all duration-300 ${formErrors.birthDate
+                                                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
+                                                    : 'border-yellow-500/30 focus:border-yellow-500 focus:ring-yellow-500/20'
+                                                }`}
+                                        />
+                                        <i className="fas fa-calendar-alt absolute right-4 top-1/2 transform -translate-y-1/2 text-yellow-500/60 text-sm"></i>
+                                    </div>
+                                    {formErrors.birthDate && (
+                                        <p className="text-red-400 text-sm mt-1 flex items-center">
+                                            <i className="fas fa-exclamation-circle mr-1"></i>
+                                            {formErrors.birthDate}
+                                        </p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label htmlFor="gender" className="block text-sm font-medium text-white mb-2">
+                                        Gênero *
+                                    </label>
+                                    <Select onValueChange={(value) => handleSelectChange('gender', value)} required>
+                                        <SelectTrigger 
+                                            className={`w-full bg-black/60 border rounded-xl px-4 py-3 text-white focus:ring-2 transition-all duration-300 ${formErrors.gender
                                                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500/20'
                                                 : 'border-yellow-500/30 focus:border-yellow-500 focus:ring-yellow-500/20'
                                             }`}
-                                    />
-                                    <i className="fas fa-calendar-alt absolute right-4 top-1/2 transform -translate-y-1/2 text-yellow-500/60 text-sm"></i>
+                                        >
+                                            <SelectValue placeholder="Selecione seu gênero" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-black border-yellow-500/30 text-white">
+                                            {GENDER_OPTIONS.map(option => (
+                                                <SelectItem key={option} value={option} className="hover:bg-yellow-500/10 cursor-pointer">
+                                                    {option}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {formErrors.gender && (
+                                        <p className="text-red-400 text-sm mt-1 flex items-center">
+                                            <i className="fas fa-exclamation-circle mr-1"></i>
+                                            {formErrors.gender}
+                                        </p>
+                                    )}
                                 </div>
-                                {formErrors.birthDate && (
-                                    <p className="text-red-400 text-sm mt-1 flex items-center">
-                                        <i className="fas fa-exclamation-circle mr-1"></i>
-                                        {formErrors.birthDate}
-                                    </p>
-                                )}
                             </div>
+
                             <div>
                                 <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
                                     Senha *
