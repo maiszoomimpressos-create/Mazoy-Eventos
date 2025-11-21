@@ -11,9 +11,9 @@ const ManagerLayout: React.FC = () => {
     const navItems = [
         { path: '/manager/dashboard', label: 'Dashboard' },
         { path: '/manager/events', label: 'Eventos' },
-        { path: '#', label: 'Pulseiras' },
+        { path: '/manager/wristbands/create', label: 'Pulseiras' }, // Rota atualizada
         { path: '#', label: 'Relatórios' },
-        { path: '/manager/settings', label: 'Configurações' }, // Rota atualizada
+        { path: '/manager/settings', label: 'Configurações' },
     ];
 
     const NavLinks: React.FC<{ onClick?: () => void }> = ({ onClick }) => (
