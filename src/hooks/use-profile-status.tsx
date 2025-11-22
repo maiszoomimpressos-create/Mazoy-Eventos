@@ -35,8 +35,11 @@ const isValueEmpty = (value: any): boolean => {
     if (typeof value === 'string') {
         const trimmedValue = value.trim();
         if (trimmedValue === '') return true;
-        // Verifica se é uma data placeholder vazia (como 'dd/mm/aaaa' ou '0000-00-00')
+        // Verifica placeholders comuns de data
         if (trimmedValue === 'dd/mm/aaaa' || trimmedValue === '0000-00-00') return true;
+        
+        // Adicionando verificação para placeholders comuns de documentos/endereço (se o DB retornar strings formatadas vazias)
+        if (trimmedValue === '00.000.000-0' || trimmedValue === '00000-000') return true;
     }
     return false;
 };
@@ -107,8 +110,6 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
                 isComplete = !missingField;
                 hasPendingNotifications = !isComplete;
                 
-                // Nota: A lógica de consistência de endereço foi removida, pois agora verificamos se TODOS os campos estão preenchidos.
-                // Se o usuário deixar o CEP vazio, mas preencher a Rua, ele será marcado como incompleto.
             } 
             // --- Lógica de Gestor (Tipo 1 ou 2) ---
             else if (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2) {
