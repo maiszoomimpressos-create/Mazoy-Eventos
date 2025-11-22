@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { eventSlides, categories } from '@/data/events';
 import AuthStatusMenu from '@/components/AuthStatusMenu';
-import { Input } from '@/components/ui/input';
+import { Input } from "@/components/ui/input";
 import MobileMenu from '@/components/MobileMenu';
 import { supabase } from '@/integrations/supabase/client';
 import { trackAdvancedFilterUse } from '@/utils/metrics';
@@ -56,8 +56,12 @@ const Index: React.FC = () => {
             // Rola para o topo da seção de eventos, ajustando para o cabeçalho fixo
             const eventsSection = document.getElementById('eventos');
             if (eventsSection) {
-                const headerHeight = 80; // Altura aproximada do cabeçalho fixo (pt-20)
-                const topPosition = eventsSection.offsetTop - headerHeight;
+                // O cabeçalho tem uma altura de aproximadamente 64px (py-4) + 20px de padding superior da seção
+                // Vamos usar getBoundingClientRect para obter a posição exata e subtrair o offset do cabeçalho.
+                const headerHeight = 80; // Estimativa segura para o cabeçalho fixo
+                
+                // Calcula a posição absoluta do elemento e subtrai a altura do cabeçalho
+                const topPosition = eventsSection.getBoundingClientRect().top + window.scrollY - headerHeight;
                 
                 window.scrollTo({
                     top: topPosition,
