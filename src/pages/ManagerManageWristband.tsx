@@ -28,7 +28,7 @@ interface AnalyticsEntry {
     event_data: any;
     created_at: string;
     code_wristbands: string;
-    status: 'active' | 'used' | 'lost' | 'cancelled'; // Adicionado para refletir o status da pulseira no momento do evento
+    status: 'active' | 'used' | 'lost' | 'cancelled'; // Agora é obrigatório, pois o DB tem um default
 }
 
 const STATUS_OPTIONS = [
