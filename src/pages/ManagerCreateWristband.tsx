@@ -122,7 +122,7 @@ const ManagerCreateWristband: React.FC = () => {
                     wristband_id: wristbandId,
                     event_type: 'creation',
                     client_user_id: null, 
-                    code_wristbands: insertedWristband.code, // <-- Gravando o Código Base aqui
+                    code_wristbands: insertedWristband.code, // Gravando o Código Base aqui
                     event_data: {
                         code: insertedWristband.code, // Mantendo no event_data para histórico
                         access_type: formData.accessType,
@@ -260,7 +260,7 @@ const ManagerCreateWristband: React.FC = () => {
                             <div>
                                 <label htmlFor="quantity" className="block text-sm font-medium text-white mb-2 flex items-center">
                                     <Hash className="h-4 w-4 mr-2 text-yellow-500" />
-                                    Quantidade de Registros Analíticos *
+                                    Quantidade de Pulseiras *
                                 </label>
                                 <Input 
                                     id="quantity" 
@@ -273,7 +273,7 @@ const ManagerCreateWristband: React.FC = () => {
                                     max={100}
                                     required
                                 />
-                                <p className="text-xs text-gray-500 mt-1">Número de registros de 'criação' no histórico (máx. 100).</p>
+                                <p className="text-xs text-gray-500 mt-1">O número de registros de 'criação' no histórico será igual a esta quantidade (máx. 100).</p>
                             </div>
                             <div>
                                 <label htmlFor="accessType" className="block text-sm font-medium text-white mb-2 flex items-center">
