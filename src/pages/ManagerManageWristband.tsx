@@ -91,8 +91,6 @@ const ManagerManageWristband: React.FC = () => {
     const [newStatus, setNewStatus] = useState<WristbandDetails['status'] | string>('');
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
     
-    // Removendo o estado de usageQuantity
-
     useEffect(() => {
         if (data?.details) {
             setNewStatus(data.details.status);
@@ -149,43 +147,7 @@ const ManagerManageWristband: React.FC = () => {
         }
     };
     
-    const handleRegisterUsage = async () => {
-        if (!id || data?.details.status !== 'active') {
-            showError("Não é possível registrar uso em pulseiras inativas.");
-            return;
-        }
-        
-        setIsUpdatingStatus(true);
-        const toastId = showLoading("Registrando uso...");
-
-        try {
-            // 1. Inserir registro de analytics para uso
-            await supabase
-                .from('wristband_analytics')
-                .insert([{
-                    wristband_id: id,
-                    event_type: 'usage_entry',
-                    code_wristbands: data?.details.code,
-                    event_data: { 
-                        quantity: 1, // Uso único
-                        manager_id: data?.details.manager_user_id,
-                        location: 'Registro Manual'
-                    }
-                }]);
-
-            dismissToast(toastId);
-            showSuccess("Uso registrado com sucesso!");
-            invalidate(); // Recarrega os dados
-
-        } catch (e: any) {
-            dismissToast(toastId);
-            console.error("Usage registration error:", e);
-            showError(`Falha ao registrar uso: ${e.message || 'Erro desconhecido'}`);
-        } finally {
-            setIsUpdatingStatus(false);
-        }
-    };
-
+    // Removendo a função handleRegisterUsage
 
     if (isLoading) {
         return (
@@ -256,7 +218,7 @@ const ManagerManageWristband: React.FC = () => {
                         </div>
                     </Card>
 
-                    {/* Gerenciamento de Status e Uso */}
+                    {/* Gerenciamento de Status */}
                     <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
                         <CardTitle className="text-white text-xl mb-4 flex items-center">
                             <RefreshCw className="h-5 w-5 mr-2 text-yellow-500" />
@@ -304,26 +266,7 @@ const ManagerManageWristband: React.FC = () => {
                             </div>
                         </div>
                         
-                        <div className="border-t border-yellow-500/20 pt-4 mt-4">
-                            <CardTitle className="text-white text-xl mb-4 flex items-center">
-                                <Zap className="h-5 w-5 mr-2 text-yellow-500" />
-                                Ações Rápidas
-                            </CardTitle>
-                            <Button
-                                onClick={handleRegisterUsage}
-                                disabled={isUpdatingStatus || details.status !== 'active'}
-                                className="w-full bg-green-600 text-white hover:bg-green-700 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
-                            >
-                                {isUpdatingStatus ? (
-                                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                                ) : (
-                                    <>
-                                        <i className="fas fa-check-circle mr-2"></i>
-                                        Registrar Uso Único
-                                    </>
-                                )}
-                            </Button>
-                        </div>
+                        {/* Removendo a seção de Ações Rápidas */}
                     </Card>
                 </div>
 
@@ -361,7 +304,6 @@ const ManagerManageWristband: React.FC = () => {
                                             {entry.event_data && (
                                                 <span className="text-gray-500 text-xs">
                                                     {entry.event_data.new_status ? `Status: ${entry.event_data.new_status}` : ''}
-                                                    {/* Removendo a exibição de quantidade, pois agora é sempre 1 para uso manual */}
                                                     {entry.event_data.location ? ` | Local: ${entry.event_data.location}` : ''}
                                                 </span>
                                             )}
