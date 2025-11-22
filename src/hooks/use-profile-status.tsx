@@ -8,27 +8,31 @@ interface ProfileStatus {
     loading: boolean;
 }
 
-// Campos considerados essenciais para o perfil
+// Campos considerados essenciais para o perfil (Nome, CPF, Data de Nascimento)
 const ESSENTIAL_FIELDS = [
     'first_name', 
     'cpf', 
     'birth_date',
 ];
 
-// Campos de endereço que, se preenchidos, exigem atenção
-const ADDRESS_FIELDS_TO_CHECK = [
-    'rua',
-    'numero',
-    'bairro',
-    'cidade',
-    'estado',
+// Todos os campos que, se vazios, tornam o perfil 'incompleto' para o cliente (Tipo 3)
+const ALL_CLIENT_FIELDS_TO_CHECK = [
+    ...ESSENTIAL_FIELDS,
+    'rg', 
+    'gender', 
+    'cep', 
+    'rua', 
+    'bairro', 
+    'cidade', 
+    'estado', 
+    'numero', 
+    'complemento',
 ];
 
 // Função auxiliar para verificar se um valor é considerado vazio
 const isValueEmpty = (value: any): boolean => {
     if (value === null || value === undefined) return true;
     if (typeof value === 'string') {
-        // Verifica se é uma string vazia ou uma string que só contém espaços
         const trimmedValue = value.trim();
         if (trimmedValue === '') return true;
         // Verifica se é uma data placeholder vazia (como 'dd/mm/aaaa' ou '0000-00-00')
@@ -43,7 +47,7 @@ const checkManagerSystemNotifications = async (userId: string, settings: any): P
 
     // Exemplo 1: Alerta de Baixo Estoque (se a configuração estiver ativa)
     if (settings.low_stock_system) {
-        // Simulação: Se o gestor tiver mais de 5 eventos, simulamos que um deles está com baixo estoque.
+        // Simulação: Se o gestor tiver mais de 2 eventos cadastrados, simulamos um alerta de baixo estoque.
         const { count, error } = await supabase
             .from('events')
             .select('id', { count: 'exact', head: true })
@@ -54,15 +58,11 @@ const checkManagerSystemNotifications = async (userId: string, settings: any): P
             return false;
         }
 
-        // Se o gestor tiver mais de 2 eventos cadastrados, simulamos um alerta de baixo estoque.
         if (count && count > 2) {
             console.log("[ProfileStatus] Manager has active low stock system notification.");
             return true;
         }
     }
-
-    // Exemplo 2: Outras notificações de sistema (aqui iriam outras verificações)
-    // ...
 
     return false;
 };
@@ -91,44 +91,24 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
 
             // --- Lógica de Cliente (Tipo 3) ---
             if (profile.tipo_usuario_id === 3) {
-                let missingEssential = false;
-                let missingAddressDetail = false;
+                let missingField = false;
 
-                // 1. Verificar campos essenciais (Nome, CPF, Data de Nascimento)
-                for (const field of ESSENTIAL_FIELDS) {
+                // 1. Verificar TODOS os campos listados
+                for (const field of ALL_CLIENT_FIELDS_TO_CHECK) {
                     const value = profile[field as keyof ProfileData];
                     if (isValueEmpty(value)) {
-                        missingEssential = true;
-                        console.log(`[ProfileStatus] Missing essential field: ${field}`);
+                        missingField = true;
+                        console.log(`[ProfileStatus] Missing field: ${field}`);
                         break;
                     }
                 }
 
-                // 2. Verificar a consistência do endereço
-                const cep = profile.cep ? String(profile.cep).replace(/\D/g, '') : null;
-                
-                // Verifica se algum campo de endereço (Rua, Número, Bairro, Cidade, Estado) foi preenchido
-                const hasAnyAddressFieldFilled = ADDRESS_FIELDS_TO_CHECK.some(field => 
-                    !isValueEmpty(profile[field as keyof ProfileData])
-                );
-
-                if (hasAnyAddressFieldFilled) {
-                    // Se o usuário preencheu manualmente o endereço, mas o CEP está faltando ou inválido
-                    if (!cep || cep.length !== 8) {
-                        missingAddressDetail = true;
-                        console.log(`[ProfileStatus] Missing CEP or invalid when address fields are filled.`);
-                    } else {
-                        // Se o CEP está preenchido, mas Rua ou Número estão faltando
-                        if (isValueEmpty(profile.rua) || isValueEmpty(profile.numero)) {
-                            missingAddressDetail = true;
-                            console.log(`[ProfileStatus] Missing Rua or Numero when CEP is present.`);
-                        }
-                    }
-                }
-
-                isComplete = !missingEssential && !missingAddressDetail;
+                // 2. Se qualquer campo estiver faltando, o perfil é incompleto
+                isComplete = !missingField;
                 hasPendingNotifications = !isComplete;
                 
+                // Nota: A lógica de consistência de endereço foi removida, pois agora verificamos se TODOS os campos estão preenchidos.
+                // Se o usuário deixar o CEP vazio, mas preencher a Rua, ele será marcado como incompleto.
             } 
             // --- Lógica de Gestor (Tipo 1 ou 2) ---
             else if (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2) {
