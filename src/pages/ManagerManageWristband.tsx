@@ -3,8 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input"; // Importando Input
-import { ArrowLeft, Loader2, QrCode, Tag, Clock, AlertTriangle, CheckCircle, XCircle, RefreshCw, Zap } from 'lucide-react';
+import { Input } from "@/components/ui/input"; 
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ArrowLeft, Loader2, QrCode, Tag, Clock, AlertTriangle, CheckCircle, XCircle, RefreshCw, Search } from 'lucide-react';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -90,9 +91,7 @@ const ManagerManageWristband: React.FC = () => {
     const { data, isLoading, isError, invalidate } = useWristbandManagement(id);
     const [newStatus, setNewStatus] = useState<WristbandDetails['status'] | string>('');
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-    
-    // Estado para a quantidade de uso (reintroduzido)
-    const [usageQuantity, setUsageQuantity] = useState<number>(1);
+    const [searchTerm, setSearchTerm] = useState(''); // Novo estado para pesquisa
 
     useEffect(() => {
         if (data?.details) {
@@ -104,54 +103,41 @@ const ManagerManageWristband: React.FC = () => {
         if (!id || !newStatus) return;
         
         const statusChanged = newStatus !== data?.details.status;
-        const quantityUsed = usageQuantity > 0;
 
-        if (!statusChanged && !quantityUsed) {
-            showError("Nenhuma alteração detectada. Altere o status ou a quantidade de uso.");
+        if (!statusChanged) {
+            showError("Nenhuma alteração detectada. Selecione um novo status.");
             return;
         }
         
-        if (quantityUsed && data?.details.status !== 'active') {
-            showError("Não é possível registrar uso em pulseiras inativas.");
-            return;
-        }
-
         setIsUpdatingStatus(true);
         const toastId = showLoading("Gravando alterações...");
 
         try {
-            // 1. Atualizar Status (se mudou)
-            if (statusChanged) {
-                const { error } = await supabase
-                    .from('wristbands')
-                    .update({ status: newStatus })
-                    .eq('id', id);
+            // 1. Atualizar Status
+            const { error } = await supabase
+                .from('wristbands')
+                .update({ status: newStatus })
+                .eq('id', id);
 
-                if (error) throw error;
-            }
+            if (error) throw error;
 
-            // 2. Inserir registro de analytics (se status mudou OU quantidade foi registrada)
-            if (statusChanged || quantityUsed) {
-                const eventType = statusChanged ? 'status_change' : 'usage_entry';
-                
-                await supabase
-                    .from('wristband_analytics')
-                    .insert([{
-                        wristband_id: id,
-                        event_type: eventType,
-                        event_data: { 
-                            old_status: statusChanged ? data?.details.status : undefined, 
-                            new_status: statusChanged ? newStatus : undefined,
-                            quantity: quantityUsed ? usageQuantity : undefined,
-                            manager_id: data?.details.manager_user_id,
-                            location: 'Gerenciamento Manual'
-                        }
-                    }]);
-            }
+            // 2. Inserir registro de analytics para a mudança de status
+            await supabase
+                .from('wristband_analytics')
+                .insert([{
+                    wristband_id: id,
+                    event_type: 'status_change',
+                    code_wristbands: data?.details.code,
+                    event_data: { 
+                        old_status: data?.details.status, 
+                        new_status: newStatus,
+                        manager_id: data?.details.manager_user_id,
+                        location: 'Gerenciamento Manual'
+                    }
+                }]);
 
             dismissToast(toastId);
-            showSuccess("Alterações gravadas com sucesso!");
-            setUsageQuantity(1); // Resetar quantidade após uso
+            showSuccess("Status da pulseira atualizado com sucesso!");
             invalidate(); // Recarrega os dados
 
         } catch (e: any) {
@@ -162,6 +148,8 @@ const ManagerManageWristband: React.FC = () => {
             setIsUpdatingStatus(false);
         }
     };
+    
+    // Removendo a função handleRegisterUsage
 
     if (isLoading) {
         return (
@@ -186,6 +174,12 @@ const ManagerManageWristband: React.FC = () => {
 
     const { details, analytics } = data;
     const currentStatusOption = STATUS_OPTIONS.find(opt => opt.value === details.status);
+    
+    // Filtragem dos analytics
+    const filteredAnalytics = analytics.filter(entry => 
+        entry.event_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        JSON.stringify(entry.event_data).toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     return (
         <div className="max-w-7xl mx-auto">
@@ -205,51 +199,46 @@ const ManagerManageWristband: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Coluna de Detalhes e Status */}
+                {/* Coluna de Detalhes e Status (Compactada) */}
                 <div className="lg:col-span-1 space-y-6">
                     <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
                         <CardTitle className="text-white text-xl mb-4 flex items-center">
                             <Tag className="h-5 w-5 mr-2 text-yellow-500" />
-                            Informações Básicas
+                            Informações
                         </CardTitle>
                         <div className="space-y-3 text-sm">
                             <div className="flex justify-between border-b border-yellow-500/10 pb-2">
                                 <span className="text-gray-400">Evento:</span>
-                                <span className="text-white font-medium">{details.events?.title || 'N/A'}</span>
+                                <span className="text-white font-medium truncate max-w-[150px]">{details.events?.title || 'N/A'}</span>
                             </div>
                             <div className="flex justify-between border-b border-yellow-500/10 pb-2">
                                 <span className="text-gray-400">Tipo de Acesso:</span>
                                 <span className="text-yellow-500 font-medium">{details.access_type}</span>
                             </div>
-                            <div className="flex justify-between border-b border-yellow-500/10 pb-2">
-                                <span className="text-gray-400">Data de Criação:</span>
-                                <span className="text-gray-300">{new Date(details.created_at).toLocaleDateString('pt-BR')}</span>
-                            </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-400">Cadastrado por:</span>
-                                <span className="text-gray-300 truncate max-w-[150px]">{details.manager_user_id.substring(0, 8)}...</span>
+                                <span className="text-gray-400">Criação:</span>
+                                <span className="text-gray-300">{new Date(details.created_at).toLocaleDateString('pt-BR')}</span>
                             </div>
                         </div>
                     </Card>
 
-                    {/* Gerenciamento de Status e Uso */}
+                    {/* Gerenciamento de Status (Compactado) */}
                     <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
                         <CardTitle className="text-white text-xl mb-4 flex items-center">
                             <RefreshCw className="h-5 w-5 mr-2 text-yellow-500" />
                             Atualizar Status
                         </CardTitle>
                         <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <span className="text-gray-400">Status Atual:</span>
-                                <span className={`px-3 py-1 rounded-full text-sm font-semibold ${currentStatusOption?.color} bg-yellow-500/10`}>
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-gray-400 text-sm">Status Atual:</span>
+                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${currentStatusOption?.color} bg-yellow-500/10`}>
                                     {currentStatusOption?.label}
                                 </span>
                             </div>
                             
                             <div>
-                                <label htmlFor="status" className="block text-sm font-medium text-white mb-2">Novo Status</label>
                                 <Select onValueChange={setNewStatus} value={newStatus}>
-                                    <SelectTrigger className="w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500">
+                                    <SelectTrigger className="w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500 h-10">
                                         <SelectValue placeholder="Selecione o novo status" />
                                     </SelectTrigger>
                                     <SelectContent className="bg-black border-yellow-500/30 text-white">
@@ -265,48 +254,22 @@ const ManagerManageWristband: React.FC = () => {
                                 </Select>
                             </div>
                             
-                            {/* Campo Quantidade (reintroduzido) */}
-                            <div>
-                                <label htmlFor="usageQuantity" className="block text-sm font-medium text-white mb-2">Quantidade de Uso (Opcional)</label>
-                                <Input 
-                                    id="usageQuantity" 
-                                    type="number"
-                                    value={usageQuantity} 
-                                    onChange={(e) => setUsageQuantity(Math.max(0, parseInt(e.target.value) || 0))} 
-                                    placeholder="1"
-                                    className="bg-black/60 border-yellow-500/30 text-white focus:border-yellow-500"
-                                    min={0}
-                                />
-                                <p className="text-xs text-gray-500 mt-1">Se maior que 0, registra um evento de uso no histórico.</p>
-                            </div>
-
-                            <div className="flex space-x-4 pt-2">
-                                <Button
-                                    onClick={handleStatusUpdate}
-                                    disabled={isUpdatingStatus || !newStatus}
-                                    className="w-1/3 bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
-                                >
-                                    {isUpdatingStatus ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                    ) : (
-                                        'Gravar'
-                                    )}
-                                </Button>
-                                <Button
-                                    onClick={() => navigate('/manager/wristbands')}
-                                    variant="outline"
-                                    className="flex-1 bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer"
-                                    disabled={isUpdatingStatus}
-                                >
-                                    <ArrowLeft className="mr-2 h-5 w-5" />
-                                    Voltar para a Lista
-                                </Button>
-                            </div>
+                            <Button
+                                onClick={handleStatusUpdate}
+                                disabled={isUpdatingStatus || !newStatus || newStatus === details.status}
+                                className="w-full bg-yellow-500 text-black hover:bg-yellow-600 py-2 text-base font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50 h-10"
+                            >
+                                {isUpdatingStatus ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : (
+                                    'Salvar Status'
+                                )}
+                            </Button>
                         </div>
                     </Card>
                 </div>
 
-                {/* Coluna de Histórico de Analytics */}
+                {/* Coluna de Histórico de Analytics (Grid/Tabela) */}
                 <div className="lg:col-span-2">
                     <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
                         <CardTitle className="text-white text-xl mb-4 flex items-center">
@@ -317,36 +280,62 @@ const ManagerManageWristband: React.FC = () => {
                             Rastreamento de entradas, saídas e mudanças de status.
                         </CardDescription>
                         
-                        <div className="max-h-[500px] overflow-y-auto space-y-3">
-                            {analytics.length === 0 ? (
+                        {/* Campo de Pesquisa */}
+                        <div className="relative mb-6">
+                            <Input 
+                                type="search" 
+                                placeholder="Pesquisar por tipo de evento ou dados..." 
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 w-full pl-10 py-3 rounded-xl"
+                            />
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-yellow-500/60" />
+                        </div>
+
+                        <div className="max-h-[500px] overflow-y-auto">
+                            {filteredAnalytics.length === 0 ? (
                                 <div className="text-center py-8 text-gray-500">
-                                    Nenhum registro de uso encontrado para esta pulseira.
+                                    Nenhum registro encontrado.
                                 </div>
                             ) : (
-                                analytics.map((entry) => (
-                                    <div key={entry.id} className="p-3 bg-black/60 rounded-xl border border-yellow-500/10 flex justify-between items-center">
-                                        <div className="flex items-center space-x-3">
-                                            <div className="w-2 h-2 bg-yellow-500 rounded-full flex-shrink-0"></div>
-                                            <div>
-                                                <p className="text-white font-medium text-sm capitalize">
-                                                    {entry.event_type.replace(/_/g, ' ')}
-                                                </p>
-                                                <p className="text-gray-400 text-xs mt-0.5">
-                                                    {new Date(entry.created_at).toLocaleString('pt-BR')}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            {entry.event_data && (
-                                                <span className="text-gray-500 text-xs">
-                                                    {entry.event_data.new_status ? `Status: ${entry.event_data.new_status}` : ''}
-                                                    {entry.event_data.quantity ? ` | Qtd: ${entry.event_data.quantity}` : ''}
-                                                    {entry.event_data.location ? ` | Local: ${entry.event_data.location}` : ''}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))
+                                <Table className="w-full min-w-[500px]">
+                                    <TableHeader>
+                                        <TableRow className="border-b border-yellow-500/20 text-sm hover:bg-black/40">
+                                            <TableHead className="text-left text-gray-400 font-semibold py-3 w-[30%]">Tipo de Evento</TableHead>
+                                            <TableHead className="text-left text-gray-400 font-semibold py-3 w-[40%]">Detalhes</TableHead>
+                                            <TableHead className="text-right text-gray-400 font-semibold py-3 w-[30%]">Data/Hora</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredAnalytics.map((entry) => {
+                                            const eventTypeLabel = entry.event_type.replace(/_/g, ' ');
+                                            const detailsText = entry.event_data.new_status 
+                                                ? `Status alterado para: ${entry.event_data.new_status}`
+                                                : entry.event_data.location 
+                                                    ? `Local: ${entry.event_data.location}`
+                                                    : entry.event_data.initial_status 
+                                                        ? `Criação (Status: ${entry.event_data.initial_status})`
+                                                        : 'N/A';
+
+                                            return (
+                                                <TableRow 
+                                                    key={entry.id} 
+                                                    className="border-b border-yellow-500/10 hover:bg-black/40 transition-colors text-sm"
+                                                >
+                                                    <TableCell className="py-3 capitalize text-white font-medium">
+                                                        {eventTypeLabel}
+                                                    </TableCell>
+                                                    <TableCell className="py-3 text-gray-400 text-xs">
+                                                        {detailsText}
+                                                    </TableCell>
+                                                    <TableCell className="py-3 text-right text-gray-500 text-xs">
+                                                        {new Date(entry.created_at).toLocaleString('pt-BR')}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
+                                    </TableBody>
+                                </Table>
                             )}
                         </div>
                     </Card>
