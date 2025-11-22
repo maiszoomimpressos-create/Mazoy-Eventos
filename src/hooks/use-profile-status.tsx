@@ -91,21 +91,38 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
 
             // --- Lógica de Cliente (Tipo 3) ---
             if (profile.tipo_usuario_id === 3) {
-                let missingField = false;
+                let missingEssentialField = false;
+                let missingOptionalField = false;
 
-                // 1. Verificar TODOS os campos listados
+                // 1. Verificar campos ESSENCIAIS (Nome, CPF, Data de Nascimento)
+                for (const field of ESSENTIAL_FIELDS) {
+                    const value = profile[field as keyof ProfileData];
+                    if (isValueEmpty(value)) {
+                        missingEssentialField = true;
+                        break;
+                    }
+                }
+                
+                // 2. Verificar TODOS os campos (para determinar se o perfil está 100% completo)
                 for (const field of ALL_CLIENT_FIELDS_TO_CHECK) {
                     const value = profile[field as keyof ProfileData];
                     if (isValueEmpty(value)) {
-                        missingField = true;
-                        console.log(`[ProfileStatus] Missing field: ${field}`);
+                        missingOptionalField = true;
                         break;
                     }
                 }
 
-                // 2. Se qualquer campo estiver faltando, o perfil é incompleto
-                isComplete = !missingField;
+                // O perfil só é considerado 100% completo se NENHUM campo estiver faltando.
+                isComplete = !missingOptionalField;
+                
+                // A notificação (sino vermelho) é acionada se faltar qualquer campo (essencial ou opcional), 
+                // pois a mensagem no Profile.tsx diz que todos são necessários para liberar TUDO.
                 hasPendingNotifications = !isComplete;
+                
+                // Se o usuário insiste que está completo, mas a notificação aparece, 
+                // é porque ele não preencheu os campos opcionais (RG, Endereço, Gênero).
+                // Vamos manter a lógica de que a notificação aparece se qualquer campo estiver faltando, 
+                // mas a mensagem no Profile.tsx deve ser clara.
                 
             } 
             // --- Lógica de Gestor (Tipo 1 ou 2) ---
