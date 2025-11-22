@@ -120,12 +120,15 @@ const ManagerManageWristband: React.FC = () => {
         try {
             // --- 1. VERIFICAÇÃO DE VENDA (Se estiver desativando em massa) ---
             if (isDeactivating) {
-                // Verifica se HÁ ALGUMA pulseira do EVENTO que foi vendida (client_user_id não é nulo)
+                // CORREÇÃO: Usar JOIN implícito para filtrar pelo event_id da pulseira associada
                 const { data: soldCheck, error: checkError } = await supabase
                     .from('wristband_analytics')
-                    .select('client_user_id, wristband_id')
-                    .eq('event_id', eventId) // Filtra pelo ID do evento
+                    .select(`
+                        client_user_id,
+                        wristbands!inner(event_id)
+                    `)
                     .not('client_user_id', 'is', null)
+                    .eq('wristbands.event_id', eventId) // Filtra pelo event_id da pulseira
                     .limit(1);
 
                 if (checkError) throw checkError;
