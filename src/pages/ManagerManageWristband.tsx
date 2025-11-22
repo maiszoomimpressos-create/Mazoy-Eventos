@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input"; // Importando Input
+import { Input } from "@/components/ui/input"; 
 import { ArrowLeft, Loader2, QrCode, Tag, Clock, AlertTriangle, CheckCircle, XCircle, RefreshCw, Zap } from 'lucide-react';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -91,8 +91,7 @@ const ManagerManageWristband: React.FC = () => {
     const [newStatus, setNewStatus] = useState<WristbandDetails['status'] | string>('');
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
     
-    // Estado para a quantidade de uso (reintroduzido)
-    const [usageQuantity, setUsageQuantity] = useState<number>(1);
+    // Removendo o estado de usageQuantity
 
     useEffect(() => {
         if (data?.details) {
@@ -104,54 +103,41 @@ const ManagerManageWristband: React.FC = () => {
         if (!id || !newStatus) return;
         
         const statusChanged = newStatus !== data?.details.status;
-        const quantityUsed = usageQuantity > 0;
 
-        if (!statusChanged && !quantityUsed) {
-            showError("Nenhuma alteração detectada. Altere o status ou a quantidade de uso.");
+        if (!statusChanged) {
+            showError("Nenhuma alteração detectada. Selecione um novo status.");
             return;
         }
         
-        if (quantityUsed && data?.details.status !== 'active') {
-            showError("Não é possível registrar uso em pulseiras inativas.");
-            return;
-        }
-
         setIsUpdatingStatus(true);
         const toastId = showLoading("Gravando alterações...");
 
         try {
-            // 1. Atualizar Status (se mudou)
-            if (statusChanged) {
-                const { error } = await supabase
-                    .from('wristbands')
-                    .update({ status: newStatus })
-                    .eq('id', id);
+            // 1. Atualizar Status
+            const { error } = await supabase
+                .from('wristbands')
+                .update({ status: newStatus })
+                .eq('id', id);
 
-                if (error) throw error;
-            }
+            if (error) throw error;
 
-            // 2. Inserir registro de analytics (se status mudou OU quantidade foi registrada)
-            if (statusChanged || quantityUsed) {
-                const eventType = statusChanged ? 'status_change' : 'usage_entry';
-                
-                await supabase
-                    .from('wristband_analytics')
-                    .insert([{
-                        wristband_id: id,
-                        event_type: eventType,
-                        event_data: { 
-                            old_status: statusChanged ? data?.details.status : undefined, 
-                            new_status: statusChanged ? newStatus : undefined,
-                            quantity: quantityUsed ? usageQuantity : undefined,
-                            manager_id: data?.details.manager_user_id,
-                            location: 'Gerenciamento Manual'
-                        }
-                    }]);
-            }
+            // 2. Inserir registro de analytics para a mudança de status
+            await supabase
+                .from('wristband_analytics')
+                .insert([{
+                    wristband_id: id,
+                    event_type: 'status_change',
+                    code_wristbands: data?.details.code,
+                    event_data: { 
+                        old_status: data?.details.status, 
+                        new_status: newStatus,
+                        manager_id: data?.details.manager_user_id,
+                        location: 'Gerenciamento Manual'
+                    }
+                }]);
 
             dismissToast(toastId);
-            showSuccess("Alterações gravadas com sucesso!");
-            setUsageQuantity(1); // Resetar quantidade após uso
+            showSuccess("Status da pulseira atualizado com sucesso!");
             invalidate(); // Recarrega os dados
 
         } catch (e: any) {
@@ -162,6 +148,44 @@ const ManagerManageWristband: React.FC = () => {
             setIsUpdatingStatus(false);
         }
     };
+    
+    const handleRegisterUsage = async () => {
+        if (!id || data?.details.status !== 'active') {
+            showError("Não é possível registrar uso em pulseiras inativas.");
+            return;
+        }
+        
+        setIsUpdatingStatus(true);
+        const toastId = showLoading("Registrando uso...");
+
+        try {
+            // 1. Inserir registro de analytics para uso
+            await supabase
+                .from('wristband_analytics')
+                .insert([{
+                    wristband_id: id,
+                    event_type: 'usage_entry',
+                    code_wristbands: data?.details.code,
+                    event_data: { 
+                        quantity: 1, // Uso único
+                        manager_id: data?.details.manager_user_id,
+                        location: 'Registro Manual'
+                    }
+                }]);
+
+            dismissToast(toastId);
+            showSuccess("Uso registrado com sucesso!");
+            invalidate(); // Recarrega os dados
+
+        } catch (e: any) {
+            dismissToast(toastId);
+            console.error("Usage registration error:", e);
+            showError(`Falha ao registrar uso: ${e.message || 'Erro desconhecido'}`);
+        } finally {
+            setIsUpdatingStatus(false);
+        }
+    };
+
 
     if (isLoading) {
         return (
@@ -265,43 +289,40 @@ const ManagerManageWristband: React.FC = () => {
                                 </Select>
                             </div>
                             
-                            {/* Campo Quantidade (reintroduzido) */}
-                            <div>
-                                <label htmlFor="usageQuantity" className="block text-sm font-medium text-white mb-2">Quantidade de Uso (Opcional)</label>
-                                <Input 
-                                    id="usageQuantity" 
-                                    type="number"
-                                    value={usageQuantity} 
-                                    onChange={(e) => setUsageQuantity(Math.max(0, parseInt(e.target.value) || 0))} 
-                                    placeholder="1"
-                                    className="bg-black/60 border-yellow-500/30 text-white focus:border-yellow-500"
-                                    min={0}
-                                />
-                                <p className="text-xs text-gray-500 mt-1">Se maior que 0, registra um evento de uso no histórico.</p>
-                            </div>
-
                             <div className="flex space-x-4 pt-2">
                                 <Button
                                     onClick={handleStatusUpdate}
-                                    disabled={isUpdatingStatus || !newStatus}
-                                    className="w-1/3 bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
+                                    disabled={isUpdatingStatus || !newStatus || newStatus === details.status}
+                                    className="flex-1 bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
                                 >
                                     {isUpdatingStatus ? (
                                         <Loader2 className="w-5 h-5 animate-spin" />
                                     ) : (
-                                        'Gravar'
+                                        'Atualizar Status'
                                     )}
                                 </Button>
-                                <Button
-                                    onClick={() => navigate('/manager/wristbands')}
-                                    variant="outline"
-                                    className="flex-1 bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer"
-                                    disabled={isUpdatingStatus}
-                                >
-                                    <ArrowLeft className="mr-2 h-5 w-5" />
-                                    Voltar para a Lista
-                                </Button>
                             </div>
+                        </div>
+                        
+                        <div className="border-t border-yellow-500/20 pt-4 mt-4">
+                            <CardTitle className="text-white text-xl mb-4 flex items-center">
+                                <Zap className="h-5 w-5 mr-2 text-yellow-500" />
+                                Ações Rápidas
+                            </CardTitle>
+                            <Button
+                                onClick={handleRegisterUsage}
+                                disabled={isUpdatingStatus || details.status !== 'active'}
+                                className="w-full bg-green-600 text-white hover:bg-green-700 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
+                            >
+                                {isUpdatingStatus ? (
+                                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                                ) : (
+                                    <>
+                                        <i className="fas fa-check-circle mr-2"></i>
+                                        Registrar Uso Único
+                                    </>
+                                )}
+                            </Button>
                         </div>
                     </Card>
                 </div>
@@ -340,7 +361,7 @@ const ManagerManageWristband: React.FC = () => {
                                             {entry.event_data && (
                                                 <span className="text-gray-500 text-xs">
                                                     {entry.event_data.new_status ? `Status: ${entry.event_data.new_status}` : ''}
-                                                    {entry.event_data.quantity ? ` | Qtd: ${entry.event_data.quantity}` : ''}
+                                                    {/* Removendo a exibição de quantidade, pois agora é sempre 1 para uso manual */}
                                                     {entry.event_data.location ? ` | Local: ${entry.event_data.location}` : ''}
                                                 </span>
                                             )}
