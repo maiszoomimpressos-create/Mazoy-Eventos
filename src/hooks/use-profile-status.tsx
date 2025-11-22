@@ -35,11 +35,8 @@ const isValueEmpty = (value: any): boolean => {
     if (typeof value === 'string') {
         const trimmedValue = value.trim();
         if (trimmedValue === '') return true;
-        // Verifica placeholders comuns de data
-        if (trimmedValue === 'dd/mm/aaaa' || trimmedValue === '0000-00-00') return true;
-        
-        // Adicionando verificação para placeholders comuns de documentos/endereço (se o DB retornar strings formatadas vazias)
-        if (trimmedValue === '00.000.000-0' || trimmedValue === '00000-000') return true;
+        // Verifica placeholders comuns de data/documentos que podem ter sido salvos
+        if (trimmedValue === '0000-00-00' || trimmedValue === '00.000.000-0' || trimmedValue === '00000-000') return true;
     }
     return false;
 };
