@@ -284,22 +284,22 @@ const ManagerManageWristband: React.FC = () => {
                                 <Button
                                     onClick={handleStatusUpdate}
                                     disabled={isUpdatingStatus || !newStatus}
-                                    className="flex-1 bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
+                                    className="w-1/3 bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
                                 >
                                     {isUpdatingStatus ? (
-                                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                                        <Loader2 className="w-5 h-5 animate-spin" />
                                     ) : (
-                                        'Gravar Alterações'
+                                        'Gravar'
                                     )}
                                 </Button>
                                 <Button
-                                    onClick={() => navigate('/manager/wristbands/create')}
+                                    onClick={() => navigate('/manager/wristbands')}
                                     variant="outline"
-                                    className="bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer"
+                                    className="flex-1 bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer"
                                     disabled={isUpdatingStatus}
-                                    title="Voltar para a tela de cadastro de pulseiras"
                                 >
-                                    <ArrowLeft className="h-5 w-5" />
+                                    <ArrowLeft className="mr-2 h-5 w-5" />
+                                    Voltar para a Lista
                                 </Button>
                             </div>
                         </div>
