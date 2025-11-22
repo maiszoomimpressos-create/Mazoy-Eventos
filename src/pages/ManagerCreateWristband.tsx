@@ -98,7 +98,6 @@ const ManagerCreateWristband: React.FC = () => {
                 code: baseCodeClean, // Usando o Código Base como o código principal
                 access_type: formData.accessType,
                 status: 'active',
-                // client_user_id removido daqui
             };
 
             const { data: insertedWristband, error: insertError } = await supabase
@@ -122,15 +121,15 @@ const ManagerCreateWristband: React.FC = () => {
                 analyticsToInsert.push({
                     wristband_id: wristbandId,
                     event_type: 'creation',
-                    // client_user_id será NULL por enquanto, mas a coluna existe
                     client_user_id: null, 
+                    code_wristbands: insertedWristband.code, // <-- Gravando o Código Base aqui
                     event_data: {
-                        code: insertedWristband.code, // Código da pulseira
-                        access_type: formData.accessType, // Tipo de acesso
+                        code: insertedWristband.code, // Mantendo no event_data para histórico
+                        access_type: formData.accessType,
                         manager_id: userId,
                         event_id: formData.eventId,
                         initial_status: 'active',
-                        sequential_entry: i + 1, // Adiciona um sequencial para diferenciar os N registros
+                        sequential_entry: i + 1,
                     },
                 });
             }
@@ -141,7 +140,6 @@ const ManagerCreateWristband: React.FC = () => {
 
             if (analyticsError) {
                 console.error("Warning: Failed to insert analytics records:", analyticsError);
-                // Não lançamos erro fatal aqui, pois a pulseira já foi criada.
             }
 
             dismissToast(toastId);
