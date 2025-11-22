@@ -27,7 +27,8 @@ interface AnalyticsEntry {
     event_type: string;
     event_data: any;
     created_at: string;
-    code_wristbands: string; // Adicionado para clareza, embora já estivesse na query
+    code_wristbands: string;
+    status: 'active' | 'used' | 'lost' | 'cancelled'; // Adicionado para refletir o status da pulseira no momento do evento
 }
 
 const STATUS_OPTIONS = [
@@ -164,6 +165,7 @@ const ManagerManageWristband: React.FC = () => {
                     wristband_id: id,
                     event_type: 'status_change',
                     code_wristbands: data.details.code,
+                    status: newStatus as WristbandDetails['status'], // Garante que o novo status seja gravado no registro de analytics
                     event_data: { 
                         old_status: data.details.status, 
                         new_status: newStatus,
