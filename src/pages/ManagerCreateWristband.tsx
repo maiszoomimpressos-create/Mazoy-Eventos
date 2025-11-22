@@ -12,8 +12,8 @@ import { useManagerEvents, ManagerEvent } from '@/hooks/use-manager-events';
 
 interface WristbandFormData {
     eventId: string;
-    baseCode: string; // Código base para geração sequencial
-    quantity: number; // Quantidade de pulseiras a gerar
+    baseCode: string; // Código principal da pulseira
+    quantity: number; // Quantidade de registros de analytics a gerar
     accessType: string;
 }
 
@@ -52,7 +52,7 @@ const ManagerCreateWristband: React.FC = () => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value, type } = e.target;
         
-        if (type === 'number') {
+        if (id === 'quantity') {
             const numValue = parseInt(value);
             setFormData(prev => ({ ...prev, [id]: isNaN(numValue) || numValue < 1 ? 1 : numValue }));
         } else {
@@ -85,65 +85,65 @@ const ManagerCreateWristband: React.FC = () => {
         if (!validateForm() || !company?.id || !userId) return;
 
         setIsSaving(true);
-        const toastId = showLoading(`Gerando e cadastrando ${formData.quantity} pulseira(s)...`);
+        const toastId = showLoading(`Cadastrando pulseira e ${formData.quantity} registros de analytics...`);
 
         try {
-            const wristbandsToInsert = [];
             const baseCodeClean = formData.baseCode.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
             
-            // 1. Gerar códigos únicos sequenciais e preparar inserção
-            for (let i = 1; i <= formData.quantity; i++) {
-                const sequentialCode = `${baseCodeClean}-${String(i).padStart(3, '0')}`;
-                
-                wristbandsToInsert.push({
-                    event_id: formData.eventId,
-                    company_id: company.id,
-                    manager_user_id: userId,
-                    code: sequentialCode, // Código único gerado
-                    access_type: formData.accessType,
-                    status: 'active',
-                });
-            }
+            // 1. Inserir APENAS UM registro na tabela wristbands
+            const wristbandData = {
+                event_id: formData.eventId,
+                company_id: company.id,
+                manager_user_id: userId,
+                code: baseCodeClean, // Usando o Código Base como o código principal
+                access_type: formData.accessType,
+                status: 'active',
+                client_user_id: null, // Inicialmente nulo
+            };
 
-            // 2. Inserir em lote na tabela wristbands
-            const { data: insertedWristbands, error: insertError } = await supabase
+            const { data: insertedWristband, error: insertError } = await supabase
                 .from('wristbands')
-                .insert(wristbandsToInsert)
-                .select('id, code'); // Seleciona o ID e o código para usar no analytics
+                .insert([wristbandData])
+                .select('id, code')
+                .single();
 
             if (insertError) {
                 if (insertError.code === '23505') { // Unique violation (código da pulseira já existe)
-                    throw new Error("Um ou mais códigos gerados já estão em uso. Tente um Código Base diferente.");
+                    throw new Error("O Código Base informado já está em uso. Tente um código diferente.");
                 }
                 throw insertError;
             }
             
-            // 3. Inserir registros de analytics para cada pulseira criada
-            if (insertedWristbands && insertedWristbands.length > 0) {
-                const analyticsToInsert = insertedWristbands.map(wristband => ({
-                    wristband_id: wristband.id,
+            const wristbandId = insertedWristband.id;
+            
+            // 2. Inserir N registros de analytics (baseado na quantidade)
+            const analyticsToInsert = [];
+            for (let i = 0; i < formData.quantity; i++) {
+                analyticsToInsert.push({
+                    wristband_id: wristbandId,
                     event_type: 'creation',
                     event_data: {
-                        code: wristband.code,
-                        access_type: formData.accessType,
+                        code: insertedWristband.code, // Código da pulseira
+                        access_type: formData.accessType, // Tipo de acesso
                         manager_id: userId,
                         event_id: formData.eventId,
                         initial_status: 'active',
+                        sequential_entry: i + 1, // Adiciona um sequencial para diferenciar os N registros
                     },
-                }));
+                });
+            }
 
-                const { error: analyticsError } = await supabase
-                    .from('wristband_analytics')
-                    .insert(analyticsToInsert);
+            const { error: analyticsError } = await supabase
+                .from('wristband_analytics')
+                .insert(analyticsToInsert);
 
-                if (analyticsError) {
-                    console.error("Warning: Failed to insert analytics records:", analyticsError);
-                    // Não lançamos erro fatal aqui, pois as pulseiras já foram criadas.
-                }
+            if (analyticsError) {
+                console.error("Warning: Failed to insert analytics records:", analyticsError);
+                // Não lançamos erro fatal aqui, pois a pulseira já foi criada.
             }
 
             dismissToast(toastId);
-            showSuccess(`${formData.quantity} pulseira(s) cadastradas e registradas com sucesso!`);
+            showSuccess(`Pulseira "${baseCodeClean}" cadastrada com ${formData.quantity} registros de analytics!`);
             
             // Limpar formulário após sucesso
             setFormData(prev => ({ 
@@ -155,8 +155,8 @@ const ManagerCreateWristband: React.FC = () => {
 
         } catch (error: any) {
             dismissToast(toastId);
-            console.error("Erro ao cadastrar pulseiras:", error);
-            showError(`Falha ao cadastrar pulseiras: ${error.message || 'Erro desconhecido'}`);
+            console.error("Erro ao cadastrar pulseira:", error);
+            showError(`Falha ao cadastrar pulseira: ${error.message || 'Erro desconhecido'}`);
         } finally {
             setIsSaving(false);
         }
@@ -194,7 +194,7 @@ const ManagerCreateWristband: React.FC = () => {
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-2xl sm:text-3xl font-serif text-yellow-500 flex items-center">
                     <QrCode className="h-7 w-7 mr-3" />
-                    Cadastro de Pulseira em Lote
+                    Cadastro de Pulseira
                 </h1>
                 <Button 
                     onClick={() => navigate('/manager/wristbands')}
@@ -208,9 +208,9 @@ const ManagerCreateWristband: React.FC = () => {
 
             <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
                 <CardHeader>
-                    <CardTitle className="text-white text-xl sm:text-2xl font-semibold">Detalhes da Geração</CardTitle>
+                    <CardTitle className="text-white text-xl sm:text-2xl font-semibold">Detalhes da Pulseira</CardTitle>
                     <CardDescription className="text-gray-400 text-sm">
-                        Gere múltiplas pulseiras com códigos sequenciais para um evento.
+                        Cadastre uma pulseira e defina quantos registros de uso inicial ela representa.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -251,16 +251,16 @@ const ManagerCreateWristband: React.FC = () => {
                                     id="baseCode" 
                                     value={formData.baseCode} 
                                     onChange={handleChange} 
-                                    placeholder="Ex: CONCERTO-VIP"
+                                    placeholder="Ex: CONCERTO-VIP-A1"
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                     required
                                 />
-                                <p className="text-xs text-gray-500 mt-1">Códigos gerados: {formData.baseCode.trim().toUpperCase() || 'BASE'}-001, -002, etc.</p>
+                                <p className="text-xs text-gray-500 mt-1">Este será o código único da pulseira.</p>
                             </div>
                             <div>
                                 <label htmlFor="quantity" className="block text-sm font-medium text-white mb-2 flex items-center">
                                     <Hash className="h-4 w-4 mr-2 text-yellow-500" />
-                                    Quantidade *
+                                    Quantidade de Registros Analíticos *
                                 </label>
                                 <Input 
                                     id="quantity" 
@@ -273,7 +273,7 @@ const ManagerCreateWristband: React.FC = () => {
                                     max={100}
                                     required
                                 />
-                                <p className="text-xs text-gray-500 mt-1">Máximo de 100 pulseiras por lote.</p>
+                                <p className="text-xs text-gray-500 mt-1">Número de registros de 'criação' no histórico (máx. 100).</p>
                             </div>
                             <div>
                                 <label htmlFor="accessType" className="block text-sm font-medium text-white mb-2 flex items-center">
@@ -302,7 +302,7 @@ const ManagerCreateWristband: React.FC = () => {
                                 <div>
                                     <p className="text-white font-medium text-sm">Associação de Cliente</p>
                                     <p className="text-gray-400 text-xs mt-1">
-                                        A associação direta a um cliente será implementada em uma próxima atualização. Por enquanto, as pulseiras serão cadastradas sem um cliente específico.
+                                        A coluna para associação de cliente foi criada no banco de dados. A interface para associar a um cliente será implementada em uma próxima atualização.
                                     </p>
                                 </div>
                             </div>
@@ -318,12 +318,12 @@ const ManagerCreateWristband: React.FC = () => {
                                 {isSaving ? (
                                     <div className="flex items-center justify-center">
                                         <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                                        Gravando {formData.quantity} Pulseira(s)...
+                                        Gravando...
                                     </div>
                                 ) : (
                                     <>
                                         <i className="fas fa-save mr-2"></i>
-                                        Gerar e Gravar Pulseiras
+                                        Gerar e Gravar Pulseira
                                     </>
                                 )}
                             </Button>
