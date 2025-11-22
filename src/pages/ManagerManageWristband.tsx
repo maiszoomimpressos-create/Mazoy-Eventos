@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input"; 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, Loader2, QrCode, Tag, Clock, AlertTriangle, CheckCircle, XCircle, RefreshCw, Search } from 'lucide-react';
+import { ArrowLeft, Loader2, QrCode, Tag, Clock, AlertTriangle, CheckCircle, XCircle, RefreshCw, Search, Save } from 'lucide-react';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -238,7 +238,7 @@ const ManagerManageWristband: React.FC = () => {
                         </CardTitle>
                         
                         {/* Informações Básicas (Layout ajustado) */}
-                        <div className="space-y-3 text-sm pb-4 border-b border-yellow-500/10 mb-4">
+                        <div className="space-y-2 text-sm pb-4 border-b border-yellow-500/10 mb-4">
                             <InfoRow label="Evento" value={details.events?.title || 'N/A'} />
                             <InfoRow label="Tipo de Acesso" value={<span className="text-yellow-500">{details.access_type}</span>} />
                             <InfoRow label="Criação" value={new Date(details.created_at).toLocaleDateString('pt-BR')} />
@@ -276,17 +276,32 @@ const ManagerManageWristband: React.FC = () => {
                                 </Select>
                             </div>
                             
-                            <Button
-                                onClick={handleStatusUpdate}
-                                disabled={isUpdatingStatus || !newStatus || newStatus === details.status}
-                                className="w-full bg-yellow-500 text-black hover:bg-yellow-600 py-2 text-base font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50 h-10"
-                            >
-                                {isUpdatingStatus ? (
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                ) : (
-                                    'Salvar Status'
-                                )}
-                            </Button>
+                            {/* Botões de Ação (Ajustados) */}
+                            <div className="flex space-x-4 pt-2">
+                                <Button
+                                    onClick={handleStatusUpdate}
+                                    disabled={isUpdatingStatus || !newStatus || newStatus === details.status}
+                                    className="flex-1 bg-yellow-500 text-black hover:bg-yellow-600 py-2 text-base font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50 h-10"
+                                >
+                                    {isUpdatingStatus ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                        <>
+                                            <Save className="w-4 h-4 mr-2" />
+                                            Salvar Status
+                                        </>
+                                    )}
+                                </Button>
+                                <Button
+                                    onClick={() => navigate('/manager/wristbands')}
+                                    variant="outline"
+                                    className="flex-1 bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-2 text-base font-semibold transition-all duration-300 cursor-pointer h-10"
+                                    disabled={isUpdatingStatus}
+                                >
+                                    <ArrowLeft className="w-4 h-4 mr-2" />
+                                    Voltar
+                                </Button>
+                            </div>
                         </div>
                     </Card>
                 </div>
