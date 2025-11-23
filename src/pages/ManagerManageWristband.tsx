@@ -88,6 +88,7 @@ const useWristbandManagement = (id: string | undefined) => {
     return {
         ...query,
         invalidate: () => queryClient.invalidateQueries({ queryKey: ['wristbandManagement', id] }),
+        refetch: query.refetch, // Expondo o refetch
     };
 };
 
@@ -95,7 +96,7 @@ const useWristbandManagement = (id: string | undefined) => {
 const ManagerManageWristband: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
-    const { data, isLoading, isError, invalidate } = useWristbandManagement(id);
+    const { data, isLoading, isError, invalidate, refetch } = useWristbandManagement(id);
     const [newStatus, setNewStatus] = useState<WristbandDetails['status'] | string>('');
     const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
     const [searchTerm, setSearchTerm] = useState(''); // Novo estado para pesquisa
@@ -176,8 +177,7 @@ const ManagerManageWristband: React.FC = () => {
             if (updateWristbandError) throw updateWristbandError;
 
             // 2b. Atualizar status na tabela de analytics (wristband_analytics)
-            // Atualiza o campo 'status' em TODOS os registros de analytics associados às pulseiras atualizadas
-            // ESTA É A OPERAÇÃO QUE ATUALIZA OS REGISTROS ANTIGOS (CRIAÇÃO/USO)
+            // ATUALIZA O STATUS EM TODOS OS REGISTROS DE ANALYTICS EXISTENTES
             const { error: updateAnalyticsError } = await supabase
                 .from('wristband_analytics')
                 .update({ status: newStatus })
@@ -188,13 +188,13 @@ const ManagerManageWristband: React.FC = () => {
             }
 
             // --- 3. REMOVIDO: INSERÇÃO DE REGISTRO DE MUDANÇA DE STATUS ---
-            // O registro de auditoria foi removido para atender ao pedido de não inserir novos registros.
-            // Apenas os registros existentes são atualizados.
-
+            // Mantemos a remoção para atender ao pedido de não inserir novos registros.
 
             dismissToast(toastId);
             showSuccess(`Status atualizado com sucesso! ${isMassOperation ? `(${updateCount} pulseiras do evento foram desativadas)` : ''}`);
-            invalidate(); // Recarrega os dados
+            
+            // Força a re-busca dos dados para refletir a mudança na grade de analytics
+            refetch(); 
 
         } catch (e: any) {
             dismissToast(toastId);
