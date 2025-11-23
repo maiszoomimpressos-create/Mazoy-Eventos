@@ -30,6 +30,7 @@ interface AnalyticsEntry {
     created_at: string;
     code_wristbands: string;
     status: 'active' | 'used' | 'lost' | 'cancelled';
+    sequential_number: number | null; // Novo campo
 }
 
 const STATUS_OPTIONS = [
@@ -56,7 +57,10 @@ const fetchWristbandData = async (id: string): Promise<{ details: WristbandDetai
     // 2. Buscar histórico de analytics
     const { data: analyticsData, error: analyticsError } = await supabase
         .from('wristband_analytics')
-        .select('*')
+        .select(`
+            *,
+            sequential_number
+        `) // Incluindo sequential_number
         .eq('wristband_id', id)
         .order('created_at', { ascending: false });
 
@@ -411,9 +415,10 @@ const ManagerManageWristband: React.FC = () => {
                                     <TableHeader>
                                         <TableRow className="border-b border-yellow-500/20 text-sm hover:bg-black/40">
                                             <TableHead className="text-left text-gray-400 font-semibold py-3 w-[25%]">Evento</TableHead>
-                                            <TableHead className="text-left text-gray-400 font-semibold py-3 w-[25%]">Código Pulseira</TableHead>
-                                            <TableHead className="text-center text-gray-400 font-semibold py-3 w-[20%]">Status</TableHead>
-                                            <TableHead className="text-right text-gray-400 font-semibold py-3 w-[30%]">Data/Hora</TableHead>
+                                            <TableHead className="text-center text-gray-400 font-semibold py-3 w-[15%]">Nº Pulseira</TableHead>
+                                            <TableHead className="text-left text-gray-400 font-semibold py-3 w-[20%]">Código Pulseira</TableHead>
+                                            <TableHead className="text-center text-gray-400 font-semibold py-3 w-[15%]">Status</TableHead>
+                                            <TableHead className="text-right text-gray-400 font-semibold py-3 w-[25%]">Data/Hora</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -430,6 +435,9 @@ const ManagerManageWristband: React.FC = () => {
                                                 >
                                                     <TableCell className="py-3 text-white font-medium truncate max-w-[150px]">
                                                         {eventTitle}
+                                                    </TableCell>
+                                                    <TableCell className="text-center py-3 text-yellow-500 font-medium">
+                                                        {entry.sequential_number !== null ? entry.sequential_number : '-'}
                                                     </TableCell>
                                                     <TableCell className="py-3 text-yellow-500 font-medium">
                                                         {wristbandCode}
