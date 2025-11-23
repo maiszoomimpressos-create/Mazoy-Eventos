@@ -30,6 +30,7 @@ interface AnalyticsEntry {
     created_at: string;
     code_wristbands: string;
     status: 'active' | 'used' | 'lost' | 'cancelled';
+    sequential_number: number | null; // Novo campo
 }
 
 const STATUS_OPTIONS = [
@@ -56,7 +57,10 @@ const fetchWristbandData = async (id: string): Promise<{ details: WristbandDetai
     // 2. Buscar histórico de analytics
     const { data: analyticsData, error: analyticsError } = await supabase
         .from('wristband_analytics')
-        .select('*')
+        .select(`
+            *,
+            sequential_number
+        `) // Incluindo sequential_number
         .eq('wristband_id', id)
         .order('created_at', { ascending: false });
 
@@ -106,7 +110,9 @@ const ManagerManageWristband: React.FC = () => {
         if (!id || !newStatus || !data?.details) return;
         
         const statusChanged = newStatus !== data.details.status;
-        const isDeactivating = data.details.status === 'active' && newStatus !== 'active';
+        
+        // A desativação em massa ocorre se o status atual for 'active' e o novo status for 'lost' ou 'cancelled'.
+        const isMassDeactivation = data.details.status === 'active' && (newStatus === 'lost' || newStatus === 'cancelled');
         const eventId = data.details.event_id;
 
         if (!statusChanged) {
@@ -118,9 +124,13 @@ const ManagerManageWristband: React.FC = () => {
         const toastId = showLoading("Gravando alterações...");
 
         try {
-            // --- 1. VERIFICAÇÃO DE VENDA (Se estiver desativando em massa) ---
-            if (isDeactivating) {
-                // CORREÇÃO: Usar JOIN implícito para filtrar pelo event_id da pulseira associada
+            let wristbandsToUpdate: string[] = [id]; // Começa com a pulseira atual
+            let updateCount = 1;
+            let isMassOperation = false;
+
+            // --- 1. VERIFICAÇÃO DE VENDA E DEFINIÇÃO DE ESCOPO ---
+            if (isMassDeactivation) {
+                // Verifica se alguma pulseira do evento já foi vendida (associada a um cliente)
                 const { data: soldCheck, error: checkError } = await supabase
                     .from('wristband_analytics')
                     .select(`
@@ -128,7 +138,7 @@ const ManagerManageWristband: React.FC = () => {
                         wristbands!inner(event_id)
                     `)
                     .not('client_user_id', 'is', null)
-                    .eq('wristbands.event_id', eventId) // Filtra pelo event_id da pulseira
+                    .eq('wristbands.event_id', eventId) 
                     .limit(1);
 
                 if (checkError) throw checkError;
@@ -136,22 +146,12 @@ const ManagerManageWristband: React.FC = () => {
                 if (soldCheck && soldCheck.length > 0) {
                     dismissToast(toastId);
                     showError(`Não é possível desativar as pulseiras do evento "${data.details.events?.title || 'N/A'}". Pelo menos uma pulseira já foi vendida e associada a um cliente.`);
-                    // Reverte o status selecionado no frontend para o status atual
                     setNewStatus(data.details.status); 
                     setIsUpdatingStatus(false);
                     return;
                 }
-            }
-            
-            // --- 2. ATUALIZAÇÃO EM MASSA (Se for desativação) ou ATUALIZAÇÃO INDIVIDUAL (Se for reativação/uso) ---
-            
-            let wristbandsToUpdate: string[] = [id]; // Começa com a pulseira atual
-            let updateCount = 1;
-
-            if (isDeactivating) {
-                // Se for desativação, buscamos todas as pulseiras ATIVAS do evento que NÃO foram vendidas
                 
-                // Nota: A RLS garante que só veremos as pulseiras da nossa empresa.
+                // Se não houver vendas, buscamos todas as pulseiras ATIVAS do evento para desativação em massa
                 const { data: activeWristbands, error: fetchActiveError } = await supabase
                     .from('wristbands')
                     .select('id')
@@ -162,7 +162,10 @@ const ManagerManageWristband: React.FC = () => {
 
                 wristbandsToUpdate = activeWristbands.map(w => w.id);
                 updateCount = wristbandsToUpdate.length;
+                isMassOperation = true;
             }
+            
+            // --- 2. ATUALIZAÇÃO NO BANCO DE DADOS ---
             
             // 2a. Atualizar status na tabela principal (wristbands)
             const { error: updateWristbandError } = await supabase
@@ -174,6 +177,7 @@ const ManagerManageWristband: React.FC = () => {
 
             // 2b. Atualizar status na tabela de analytics (wristband_analytics)
             // Atualiza o campo 'status' em TODOS os registros de analytics associados às pulseiras atualizadas
+            // ESTA É A OPERAÇÃO QUE ATUALIZA OS REGISTROS ANTIGOS (CRIAÇÃO/USO)
             const { error: updateAnalyticsError } = await supabase
                 .from('wristband_analytics')
                 .update({ status: newStatus })
@@ -183,31 +187,13 @@ const ManagerManageWristband: React.FC = () => {
                 console.error("Warning: Failed to update status in analytics table:", updateAnalyticsError);
             }
 
-            // --- 3. INSERIR REGISTRO DE MUDANÇA DE STATUS (Para cada pulseira atualizada) ---
-            const analyticsInserts = wristbandsToUpdate.map(wristbandId => ({
-                wristband_id: wristbandId,
-                event_type: 'status_change',
-                code_wristbands: data.details.code, // Usando o código da pulseira original como referência
-                status: newStatus as WristbandDetails['status'],
-                event_data: { 
-                    old_status: data.details.status, 
-                    new_status: newStatus,
-                    manager_id: data.details.manager_user_id,
-                    location: isDeactivating ? 'Gerenciamento em Massa (Evento)' : 'Gerenciamento Manual'
-                }
-            }));
-            
-            const { error: insertAnalyticsError } = await supabase
-                .from('wristband_analytics')
-                .insert(analyticsInserts);
-                
-            if (insertAnalyticsError) {
-                console.error("Warning: Failed to insert status change analytics:", insertAnalyticsError);
-            }
+            // --- 3. REMOVIDO: INSERÇÃO DE REGISTRO DE MUDANÇA DE STATUS ---
+            // O registro de auditoria foi removido para atender ao pedido de não inserir novos registros.
+            // Apenas os registros existentes são atualizados.
 
 
             dismissToast(toastId);
-            showSuccess(`Status atualizado com sucesso! ${isDeactivating ? `(${updateCount} pulseiras do evento foram desativadas)` : ''}`);
+            showSuccess(`Status atualizado com sucesso! ${isMassOperation ? `(${updateCount} pulseiras do evento foram desativadas)` : ''}`);
             invalidate(); // Recarrega os dados
 
         } catch (e: any) {
@@ -411,9 +397,10 @@ const ManagerManageWristband: React.FC = () => {
                                     <TableHeader>
                                         <TableRow className="border-b border-yellow-500/20 text-sm hover:bg-black/40">
                                             <TableHead className="text-left text-gray-400 font-semibold py-3 w-[25%]">Evento</TableHead>
-                                            <TableHead className="text-left text-gray-400 font-semibold py-3 w-[25%]">Código Pulseira</TableHead>
-                                            <TableHead className="text-center text-gray-400 font-semibold py-3 w-[20%]">Status</TableHead>
-                                            <TableHead className="text-right text-gray-400 font-semibold py-3 w-[30%]">Data/Hora</TableHead>
+                                            <TableHead className="text-center text-gray-400 font-semibold py-3 w-[15%]">Nº Pulseira</TableHead>
+                                            <TableHead className="text-left text-gray-400 font-semibold py-3 w-[20%]">Código Pulseira</TableHead>
+                                            <TableHead className="text-center text-gray-400 font-semibold py-3 w-[15%]">Status</TableHead>
+                                            <TableHead className="text-right text-gray-400 font-semibold py-3 w-[25%]">Data/Hora</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -430,6 +417,9 @@ const ManagerManageWristband: React.FC = () => {
                                                 >
                                                     <TableCell className="py-3 text-white font-medium truncate max-w-[150px]">
                                                         {eventTitle}
+                                                    </TableCell>
+                                                    <TableCell className="text-center py-3 text-yellow-500 font-medium">
+                                                        {entry.sequential_number !== null ? entry.sequential_number : '-'}
                                                     </TableCell>
                                                     <TableCell className="py-3 text-yellow-500 font-medium">
                                                         {wristbandCode}
