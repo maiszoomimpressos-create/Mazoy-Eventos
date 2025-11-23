@@ -48,7 +48,6 @@ serve(async (req) => {
     }
     
     // 2. Security Check: Ensure the user is the manager of the event/company
-    // We rely on RLS for the actual update, but we check if the user is a manager type (1 or 2)
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('tipo_usuario_id')
@@ -62,8 +61,10 @@ serve(async (req) => {
         });
     }
 
-    // 3. Check for sold wristbands (if mass deactivation)
+    // 3. Check for sold wristbands (if mass deactivation is requested)
     if (new_status === 'lost' || new_status === 'cancelled') {
+        // Verifica se existe QUALQUER registro de analytics para pulseiras deste evento
+        // que tenha um client_user_id associado (indicando venda/associação a um cliente).
         const { data: soldCheck, error: checkError } = await supabase
             .from('wristband_analytics')
             .select(`
@@ -77,7 +78,7 @@ serve(async (req) => {
         if (checkError) throw checkError;
 
         if (soldCheck && soldCheck.length > 0) {
-            return new Response(JSON.stringify({ error: 'Cannot deactivate: At least one wristband for this event has been sold.' }), { 
+            return new Response(JSON.stringify({ error: 'Não é possível desativar: Pelo menos uma pulseira deste evento já foi vendida ou associada a um cliente.' }), { 
                 status: 403, 
                 headers: corsHeaders 
             });
@@ -85,6 +86,7 @@ serve(async (req) => {
     }
 
     // 4. Get all wristband IDs for the event (owned by the manager, RLS handles this)
+    // Note: RLS on 'wristbands' ensures only the manager's wristbands are fetched.
     const { data: wristbands, error: fetchError } = await supabase
         .from('wristbands')
         .select('id')
