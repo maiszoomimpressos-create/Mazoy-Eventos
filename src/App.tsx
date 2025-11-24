@@ -23,8 +23,10 @@ import ManagerPaymentSettings from "./pages/ManagerPaymentSettings";
 import ManagerCreateWristband from "./pages/ManagerCreateWristband"; 
 import ManagerWristbandsList from "./pages/ManagerWristbandsList"; 
 import ManagerManageWristband from "./pages/ManagerManageWristband";
+import ManagerReports from "./pages/ManagerReports";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminRouteGuard from "./components/AdminRouteGuard";
+import AdminMasterRouteGuard from "./components/AdminMasterRouteGuard"; // Novo Import
 import ManagerLayout from "./components/layouts/ManagerLayout";
 import ForgotPassword from "./pages/ForgotPassword";
 
@@ -56,13 +58,20 @@ const App = () => (
             <Route path="/manager/wristbands" element={<ManagerWristbandsList />} />
             <Route path="/manager/wristbands/create" element={<ManagerCreateWristband />} /> 
             <Route path="/manager/wristbands/manage/:id" element={<ManagerManageWristband />} />
+            <Route path="/manager/reports" element={<ManagerReports />} />
             <Route path="/manager/settings" element={<ManagerSettings />} />
             <Route path="/manager/settings/company-profile" element={<ManagerCompanyProfile />} />
             <Route path="/manager/settings/notifications" element={<ManagerNotifications />} />
-            <Route path="/manager/settings/advanced" element={<ManagerAdvancedSettings />} />
             <Route path="/manager/settings/payment" element={<ManagerPaymentSettings />} />
           </Route>
           
+          {/* Admin Master Routes (tipo_usuario_id = 1) */}
+          <Route element={<AdminMasterRouteGuard />}>
+            <Route element={<ManagerLayout />}>
+                <Route path="/manager/settings/advanced" element={<ManagerAdvancedSettings />} />
+            </Route>
+          </Route>
+
           {/* Admin Routes (Protected by AdminRouteGuard) */}
           <Route element={<AdminRouteGuard />}>
             <Route element={<ManagerLayout />}>
