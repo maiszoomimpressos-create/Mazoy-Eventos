@@ -69,11 +69,11 @@ const ManagerLayout: React.FC = () => {
     }
     
     const navItems = [
-        { path: '/', label: 'Home' }, // Novo item Home
+        { path: '/', label: 'Home' },
         { path: '/manager/dashboard', label: 'Dashboard PRO' },
         { path: '/manager/events', label: 'Eventos' },
         { path: '/manager/wristbands', label: 'Pulseiras' },
-        { path: '#', label: 'Relatórios' },
+        { path: '/manager/reports', label: 'Relatórios' }, // Rota atualizada
         { path: '/manager/settings', label: 'Configurações' },
     ];
     
