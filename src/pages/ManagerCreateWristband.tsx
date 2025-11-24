@@ -32,16 +32,23 @@ const parsePriceToNumeric = (value: string): number => {
     return parseFloat(cleanValue) || 0;
 };
 
-// Função utilitária para formatar a entrada do usuário (apenas dígitos e vírgula)
+// Função utilitária para formatar a entrada do usuário (apenas dígitos e vírgula, limitando a 2 casas decimais)
 const formatPriceInput = (value: string): string => {
-    // Remove tudo que não for dígito ou vírgula
+    // 1. Remove tudo que não for dígito ou vírgula
     let cleanValue = value.replace(/[^\d,]/g, '');
     
-    // Garante que haja no máximo uma vírgula
+    // 2. Garante que haja no máximo uma vírgula
     const parts = cleanValue.split(',');
     if (parts.length > 2) {
         cleanValue = parts[0] + ',' + parts.slice(1).join('');
     }
+    
+    // 3. Limita a 2 casas decimais após a vírgula
+    if (parts.length === 2) {
+        parts[1] = parts[1].substring(0, 2);
+        cleanValue = parts[0] + ',' + parts[1];
+    }
+
     return cleanValue;
 };
 
