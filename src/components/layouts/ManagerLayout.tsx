@@ -86,15 +86,6 @@ const ManagerLayout: React.FC = () => {
     
     const dashboardTitle = isAdminMaster && location.pathname.startsWith('/admin') ? 'ADMIN' : 'PRO';
     
-    let userRole = 'Usuário Desconhecido';
-    if (userType === ADMIN_USER_TYPE_ID) {
-        userRole = 'Administrador Master';
-    } else if (userType === MANAGER_USER_TYPE_ID) {
-        userRole = 'Administrador PRO';
-    } else if (userType === 3) {
-        userRole = 'Cliente';
-    }
-    
     const userName = profile?.first_name || 'Gestor';
     const userRole = userTypeName;
 
