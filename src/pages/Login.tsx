@@ -23,8 +23,20 @@ const Login: React.FC = () => {
             });
 
             if (authError) {
-                // Trata erros de credenciais inválidas ou usuário não encontrado
-                showError("Credenciais inválidas ou usuário não encontrado.");
+                let errorMessage = "Credenciais inválidas ou usuário não encontrado.";
+                
+                // Supabase retorna 'Invalid login credentials' para senha errada OU e-mail não confirmado
+                if (authError.message.includes('Invalid login credentials')) {
+                    // Tentativa de verificar se o usuário existe, mas não está confirmado (Supabase não expõe isso diretamente no signIn)
+                    // Por segurança, mantemos a mensagem genérica, mas podemos adicionar um aviso.
+                    errorMessage = "Credenciais inválidas. Verifique seu e-mail e senha. Se for um novo cadastro, confirme seu e-mail.";
+                } else if (authError.message.includes('Email not confirmed')) {
+                    errorMessage = "Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada.";
+                } else {
+                    errorMessage = authError.message;
+                }
+
+                showError(errorMessage);
                 setIsLoading(false);
                 return;
             }
@@ -64,7 +76,7 @@ const Login: React.FC = () => {
                 }
                 
                 showSuccess(successMessage);
-                // 4. Roteamento unificado para a Home, conforme solicitado.
+                // 4. Roteamento unificado para a Home.
                 navigate('/');
             } else {
                 // Isso pode acontecer se o e-mail não estiver confirmado, dependendo da configuração do Supabase

@@ -127,6 +127,9 @@ const Register: React.FC = () => {
         if (message.includes('Password should be at least 6 characters')) {
             return 'A senha deve ter no mínimo 6 caracteres.';
         }
+        if (message.includes('duplicate key value violates unique constraint')) {
+            return 'Erro de cadastro: O CPF ou outro dado único já está em uso.';
+        }
         return 'Ocorreu um erro ao processar seu cadastro. Tente novamente.';
     };
 
@@ -159,7 +162,17 @@ const Register: React.FC = () => {
                 return;
             }
 
+            // Se o Supabase estiver configurado para exigir confirmação de e-mail, 
+            // data.user e data.session podem ser null, mas o erro será null.
+            // Verificamos se a operação foi bem-sucedida.
             if (data.user || data.session) {
+                showSuccess("Cadastro realizado! Verifique seu e-mail para ativar sua conta.");
+                setShowSuccessMessage(true);
+                setTimeout(() => {
+                    navigate('/login');
+                }, 3000);
+            } else {
+                // Caso de sucesso sem sessão (confirmação de e-mail pendente)
                 showSuccess("Cadastro realizado! Verifique seu e-mail para ativar sua conta.");
                 setShowSuccessMessage(true);
                 setTimeout(() => {
