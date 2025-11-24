@@ -188,11 +188,17 @@ const ManagerDashboard: React.FC = () => {
                             <i className="fas fa-plus mr-2"></i>
                             Criar Novo Evento
                         </Button>
-                        <Button className="w-full bg-black/60 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 transition-all duration-300 cursor-pointer flex items-center justify-center text-sm sm:text-base">
+                        <Button 
+                            onClick={() => navigate('/manager/wristbands/create')}
+                            className="w-full bg-black/60 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 transition-all duration-300 cursor-pointer flex items-center justify-center text-sm sm:text-base"
+                        >
                             <i className="fas fa-id-badge mr-2"></i>
                             Gerar Pulseiras
                         </Button>
-                        <Button className="w-full bg-black/60 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 transition-all duration-300 cursor-pointer flex items-center justify-center text-sm sm:text-base">
+                        <Button 
+                            onClick={() => navigate('/manager/reports')}
+                            className="w-full bg-black/60 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 transition-all duration-300 cursor-pointer flex items-center justify-center text-sm sm:text-base"
+                        >
                             <i className="fas fa-chart-bar mr-2"></i>
                             Relatório Completo
                         </Button>
