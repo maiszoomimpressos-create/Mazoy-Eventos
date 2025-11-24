@@ -60,7 +60,7 @@ const ManagerLayout: React.FC = () => {
     // Check if user is authorized (Admin or Manager)
     const userType = profile?.tipo_usuario_id;
     const isManager = userType === ADMIN_USER_TYPE_ID || userType === MANAGER_USER_TYPE_ID;
-    const isAdmin = userType === ADMIN_USER_TYPE_ID;
+    const isAdminMaster = userType === ADMIN_USER_TYPE_ID;
 
     if (!isManager) {
         // If the user is logged in but not a manager/admin (e.g., client type 3), redirect them
@@ -79,14 +79,22 @@ const ManagerLayout: React.FC = () => {
         { path: '/manager/settings', label: 'Configurações' },
     ];
     
-    // Add Admin Dashboard link if the user is an Admin
-    if (isAdmin) {
+    // Add Admin Dashboard link if the user is an Admin Master
+    if (isAdminMaster) {
         navItems.splice(1, 0, { path: '/admin/dashboard', label: 'Dashboard Admin' });
     }
     
-    const dashboardTitle = isAdmin && location.pathname.startsWith('/admin') ? 'ADMIN' : 'PRO';
+    const dashboardTitle = isAdminMaster && location.pathname.startsWith('/admin') ? 'ADMIN' : 'PRO';
     
-    // Usando o nome do perfil e o tipo de usuário dinâmico
+    let userRole = 'Usuário Desconhecido';
+    if (userType === ADMIN_USER_TYPE_ID) {
+        userRole = 'Administrador Master';
+    } else if (userType === MANAGER_USER_TYPE_ID) {
+        userRole = 'Administrador PRO';
+    } else if (userType === 3) {
+        userRole = 'Cliente';
+    }
+    
     const userName = profile?.first_name || 'Gestor';
     const userRole = userTypeName;
 
