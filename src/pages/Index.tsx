@@ -11,6 +11,13 @@ import { trackAdvancedFilterUse } from '@/utils/metrics';
 
 const EVENTS_PER_PAGE = 12;
 
+// Helper function to get the minimum price from ticket types
+const getMinPriceDisplay = (event: typeof eventSlides[0]) => {
+    if (!event.ticketTypes || event.ticketTypes.length === 0) return 'Grátis';
+    const minPrice = Math.min(...event.ticketTypes.map(t => t.price));
+    return `R$ ${minPrice}`;
+};
+
 const Index: React.FC = () => {
     const [currentSlide, setCurrentSlide] = useState(0);
     const navigate = useNavigate();
@@ -197,7 +204,7 @@ const Index: React.FC = () => {
                                                     </div>
                                                     <div className="flex items-center space-x-4">
                                                         <span className="text-xl sm:text-2xl font-bold text-yellow-500">
-                                                            {slide.price}
+                                                            {getMinPriceDisplay(slide)}
                                                         </span>
                                                         <Button
                                                             className="bg-yellow-500 text-black hover:bg-yellow-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold transition-all duration-300 cursor-pointer hover:scale-105"
@@ -400,7 +407,7 @@ const Index: React.FC = () => {
                                                     <div className="flex flex-col">
                                                         <span className="text-sm text-gray-400">A partir de</span>
                                                         <span className="text-2xl font-bold text-yellow-500">
-                                                            {event.price}
+                                                            {getMinPriceDisplay(event)}
                                                         </span>
                                                     </div>
                                                     <Button

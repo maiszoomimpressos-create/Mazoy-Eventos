@@ -33,7 +33,7 @@ interface EventFormData {
     image_url: string; // Image URL (new mandatory field)
     min_age: number | string; // Minimum age (new mandatory field)
     category: string;
-    price: string;
+    // REMOVIDO: price: string;
 }
 
 const ManagerCreateEvent: React.FC = () => {
@@ -48,7 +48,7 @@ const ManagerCreateEvent: React.FC = () => {
         image_url: '',
         min_age: 0,
         category: '',
-        price: '',
+        // REMOVIDO: price: '',
     });
     const [isLoading, setIsLoading] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
@@ -116,7 +116,7 @@ const ManagerCreateEvent: React.FC = () => {
         }
 
         if (!formData.category) errors.push("Categoria é obrigatória.");
-        if (!formData.price || Number(formData.price) <= 0) errors.push("Preço Base é obrigatório e deve ser maior que zero.");
+        // REMOVIDO: if (!formData.price || Number(formData.price) <= 0) errors.push("Preço Base é obrigatório e deve ser maior que zero.");
 
         if (errors.length > 0) {
             showError(`Por favor, preencha todos os campos corretamente.`);
@@ -149,7 +149,7 @@ const ManagerCreateEvent: React.FC = () => {
                         image_url: formData.image_url,
                         min_age: Number(formData.min_age),
                         category: formData.category,
-                        price: Number(formData.price),
+                        // REMOVIDO: price: Number(formData.price),
                     },
                 ])
                 .select('id')
@@ -335,23 +335,9 @@ const ManagerCreateEvent: React.FC = () => {
                             </div>
                         </div>
                         
-                        {/* Linha 6: Preço Base e Idade Mínima */}
+                        {/* Linha 6: Idade Mínima (Preço Base removido) */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label htmlFor="price" className="block text-sm font-medium text-white mb-2">Preço Base (R$) *</label>
-                                <Input 
-                                    id="price" 
-                                    type="number"
-                                    value={formData.price} 
-                                    onChange={handleChange} 
-                                    placeholder="0.00"
-                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
-                                    min="0"
-                                    step="0.01"
-                                    required
-                                />
-                            </div>
-                            <div>
+                            <div className="md:col-span-1">
                                 <label htmlFor="min_age" className="block text-sm font-medium text-white mb-2">Idade Mínima (Anos) *</label>
                                 <Input 
                                     id="min_age" 
@@ -364,6 +350,12 @@ const ManagerCreateEvent: React.FC = () => {
                                     required
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Defina 0 para classificação livre.</p>
+                            </div>
+                            <div className="md:col-span-1 flex items-center">
+                                <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl mt-6 w-full">
+                                    <p className="text-yellow-500 text-sm font-semibold">Atenção ao Preço</p>
+                                    <p className="text-gray-400 text-xs">O preço será definido na tela de cadastro de Pulseiras, por Tipo de Acesso.</p>
+                                </div>
                             </div>
                         </div>
 

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, QrCode, Tag, User, Calendar, Hash } from 'lucide-react';
+import { ArrowLeft, Loader2, QrCode, Tag, User, Calendar, Hash, DollarSign } from 'lucide-react';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useManagerCompany } from '@/hooks/use-manager-company';
@@ -15,6 +15,7 @@ interface WristbandFormData {
     baseCode: string; // Código principal da pulseira
     quantity: number; // Quantidade de registros de analytics a gerar
     accessType: string;
+    price: string; // NOVO: Preço da pulseira/acesso
 }
 
 const ACCESS_TYPES = [
@@ -33,6 +34,7 @@ const ManagerCreateWristband: React.FC = () => {
         baseCode: '',
         quantity: 1,
         accessType: ACCESS_TYPES[0],
+        price: '0.00', // Novo campo
     });
     const [isSaving, setIsSaving] = useState(false);
 
@@ -49,7 +51,7 @@ const ManagerCreateWristband: React.FC = () => {
 
     const isLoading = isLoadingCompany || isLoadingEvents || !userId;
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value, type } = e.target;
         
         if (id === 'quantity') {
@@ -60,7 +62,7 @@ const ManagerCreateWristband: React.FC = () => {
         }
     };
 
-    const handleSelectChange = (field: keyof Omit<WristbandFormData, 'quantity' | 'baseCode'>, value: string) => {
+    const handleSelectChange = (field: keyof Omit<WristbandFormData, 'quantity' | 'baseCode' | 'price'>, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
@@ -72,6 +74,9 @@ const ManagerCreateWristband: React.FC = () => {
         if (formData.quantity < 1 || formData.quantity > 100) errors.push("A quantidade deve ser entre 1 e 100.");
         if (!formData.accessType) errors.push("O Tipo de Acesso é obrigatório.");
         if (!company?.id) errors.push("O Perfil da Empresa não está cadastrado. Cadastre-o em Configurações.");
+        
+        const priceValue = Number(formData.price);
+        if (isNaN(priceValue) || priceValue < 0) errors.push("O Preço deve ser um valor numérico positivo.");
 
         if (errors.length > 0) {
             showError(`Por favor, corrija os seguintes erros: ${errors.join(' ')}`);
@@ -89,6 +94,7 @@ const ManagerCreateWristband: React.FC = () => {
 
         try {
             const baseCodeClean = formData.baseCode.trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
+            const priceToSave = Number(formData.price);
             
             // 1. Inserir APENAS UM registro na tabela wristbands
             const wristbandData = {
@@ -98,6 +104,7 @@ const ManagerCreateWristband: React.FC = () => {
                 code: baseCodeClean, // Usando o Código Base como o código principal
                 access_type: formData.accessType,
                 status: 'active',
+                price: priceToSave, // NOVO: Salvando o preço
             };
 
             const { data: insertedWristband, error: insertError } = await supabase
@@ -128,6 +135,7 @@ const ManagerCreateWristband: React.FC = () => {
                     event_data: {
                         code: insertedWristband.code, // Mantendo no event_data para histórico
                         access_type: formData.accessType,
+                        price: priceToSave, // Incluindo preço no histórico de criação
                         manager_id: userId,
                         event_id: formData.eventId,
                         initial_status: 'active',
@@ -153,6 +161,7 @@ const ManagerCreateWristband: React.FC = () => {
                 baseCode: '',
                 quantity: 1,
                 accessType: ACCESS_TYPES[0],
+                price: '0.00', // Resetar preço
             }));
 
         } catch (error: any) {
@@ -212,7 +221,7 @@ const ManagerCreateWristband: React.FC = () => {
                 <CardHeader>
                     <CardTitle className="text-white text-xl sm:text-2xl font-semibold">Detalhes da Pulseira</CardTitle>
                     <CardDescription className="text-gray-400 text-sm">
-                        Cadastre uma pulseira e defina quantos registros de uso inicial ela representa.
+                        Cadastre uma pulseira, defina seu preço e quantos registros de uso inicial ela representa.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -295,6 +304,26 @@ const ManagerCreateWristband: React.FC = () => {
                                     </SelectContent>
                                 </Select>
                             </div>
+                        </div>
+                        
+                        {/* NOVO: Preço da Pulseira */}
+                        <div>
+                            <label htmlFor="price" className="block text-sm font-medium text-white mb-2 flex items-center">
+                                <DollarSign className="h-4 w-4 mr-2 text-yellow-500" />
+                                Preço da Pulseira (R$) *
+                            </label>
+                            <Input 
+                                id="price" 
+                                type="number"
+                                value={formData.price} 
+                                onChange={handleChange} 
+                                placeholder="0.00"
+                                className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                min="0"
+                                step="0.01"
+                                required
+                            />
+                            <p className="text-xs text-gray-500 mt-1">Este é o preço de venda para este tipo de acesso.</p>
                         </div>
 
                         {/* Associação de Cliente (Aviso atualizado) */}

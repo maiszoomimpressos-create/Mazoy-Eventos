@@ -6,6 +6,13 @@ import { eventSlides } from '@/data/events';
 import AuthStatusMenu from '@/components/AuthStatusMenu';
 import { Input } from '@/components/ui/input';
 
+// Helper function to get the minimum price from ticket types
+const getMinPriceDisplay = (event: typeof eventSlides[0]) => {
+    if (!event.ticketTypes || event.ticketTypes.length === 0) return 'Grátis';
+    const minPrice = Math.min(...event.ticketTypes.map(t => t.price));
+    return `R$ ${minPrice}`;
+};
+
 const EventDetails: React.FC = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -111,7 +118,7 @@ const EventDetails: React.FC = () => {
                                 </div>
                                 <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
                                     <span className="text-2xl sm:text-4xl font-bold text-yellow-500">
-                                        A partir de {selectedEvent.price}
+                                        A partir de {getMinPriceDisplay(selectedEvent)}
                                     </span>
                                     <Button className="w-full sm:w-auto bg-yellow-500 text-black hover:bg-yellow-600 px-6 sm:px-8 py-3 text-base sm:text-lg font-semibold transition-all duration-300 cursor-pointer hover:scale-105">
                                         Comprar Ingressos
@@ -258,66 +265,6 @@ const EventDetails: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </section>
-            <div className="w-full h-px bg-yellow-500"></div>
-            <section className="py-12 sm:py-20 px-4 sm:px-6">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-10 sm:mb-16">
-                        <h2 className="text-3xl sm:text-4xl font-serif text-yellow-500 mb-4">Eventos Relacionados</h2>
-                        <div className="w-16 sm:w-24 h-px bg-yellow-500 mx-auto"></div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-                        {eventSlides
-                            .filter(event => event.category === selectedEvent.category && event.id !== selectedEvent.id)
-                            .slice(0, 4)
-                            .map((event) => (
-                                <Card
-                                    key={event.id}
-                                    className="bg-black/60 backdrop-blur-sm border border-yellow-500/30 rounded-2xl overflow-hidden hover:border-yellow-500/60 hover:shadow-2xl hover:shadow-yellow-500/20 transition-all duration-300 cursor-pointer hover:scale-[1.02] group"
-                                    onClick={() => navigate(`/events/${event.id}`)}
-                                >
-                                    <div className="relative overflow-hidden">
-                                        <img
-                                            src={event.image}
-                                            alt={event.title}
-                                            className="w-full h-48 object-cover object-top group-hover:scale-110 transition-transform duration-500"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-                                        <div className="absolute top-4 left-4">
-                                            <span className="bg-yellow-500 text-black px-3 py-1 rounded-full text-xs sm:text-sm font-semibold">
-                                                {event.category}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <div className="p-6">
-                                        <h3 className="text-lg font-semibold text-white mb-3 line-clamp-2 group-hover:text-yellow-500 transition-colors duration-300">
-                                            {event.title}
-                                        </h3>
-                                        <div className="space-y-2 mb-4">
-                                            <div className="flex items-center text-gray-300 text-sm">
-                                                <i className="fas fa-calendar-alt text-yellow-500 mr-3 w-4"></i>
-                                                {event.date}
-                                            </div>
-                                            <div className="flex items-center text-gray-300 text-sm">
-                                                <i className="fas fa-map-marker-alt text-yellow-500 mr-3 w-4"></i>
-                                                {event.location}
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-between pt-4 border-t border-yellow-500/20">
-                                            <span className="text-xl font-bold text-yellow-500">
-                                                {event.price}
-                                            </span>
-                                            <Button
-                                                className="bg-yellow-500 text-black hover:bg-yellow-600 transition-all duration-300 cursor-pointer px-4 text-sm"
-                                            >
-                                                Ver Evento
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </Card>
-                            ))}
                     </div>
                 </div>
             </section>
