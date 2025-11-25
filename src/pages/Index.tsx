@@ -61,9 +61,9 @@ const Index: React.FC = () => {
 
 
     const handleEventClick = (event: PublicEvent) => {
-        // Corrigido: Navega para a página de detalhes do evento
-        navigate(`/events/${event.id}`);
-        console.log(`Navegando para detalhes do evento: ${event.title}`);
+        // Corrigido: Navega para a página de finalizar compra
+        navigate(`/finalizar-compra`);
+        console.log(`Navegando para Finalizar Compra para o evento: ${event.title}`);
     };
     
     // Funções para manipular a seleção dos filtros "em rascunho"
@@ -413,7 +413,7 @@ const Index: React.FC = () => {
                                 {isLoadingEvents ? (
                                     <div className="text-center py-20">
                                         <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
-                                        <p className="text-gray-400">Carregando eventos...</p>
+                                        <p className className="text-gray-400">Carregando eventos...</p>
                                     </div>
                                 ) : isErrorEvents || filteredEvents.length === 0 ? (
                                     <div className="text-center py-20">
@@ -427,7 +427,7 @@ const Index: React.FC = () => {
                                             <Card
                                                 key={event.id}
                                                 className="bg-black/60 backdrop-blur-sm border border-yellow-500/30 rounded-2xl overflow-hidden hover:border-yellow-500/60 hover:shadow-2xl hover:shadow-yellow-500/20 transition-all duration-300 cursor-pointer hover:scale-[1.02] group"
-                                                onClick={() => handleEventClick(event)} // Corrigido: Navega para detalhes do evento
+                                                onClick={() => handleEventClick(event)} // Redireciona para FinalizarCompra
                                             >
                                                 <div className="relative overflow-hidden">
                                                     <img
@@ -476,7 +476,7 @@ const Index: React.FC = () => {
                                                             </span>
                                                         </div>
                                                         <Button
-                                                            // Corrigido: Navega para a página de detalhes do evento
+                                                            // Garante que o clique no botão também chame a função de redirecionamento
                                                             onClick={(e) => { e.stopPropagation(); handleEventClick(event); }}
                                                             className="bg-yellow-500 text-black hover:bg-yellow-600 transition-all duration-300 cursor-pointer px-4 sm:px-6"
                                                         >
