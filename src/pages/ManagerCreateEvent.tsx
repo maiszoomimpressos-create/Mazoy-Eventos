@@ -33,7 +33,8 @@ interface EventFormData {
     image_url: string; // Image URL (new mandatory field)
     min_age: number | string; // Minimum age (new mandatory field)
     category: string;
-    capacity: number | string; // NOVO: Capacidade
+    capacity: number | string; // Capacidade
+    duration: string; // NOVO: Duração
     // REMOVIDO: price: string;
 }
 
@@ -50,6 +51,7 @@ const ManagerCreateEvent: React.FC = () => {
         min_age: 0,
         category: '',
         capacity: '', // Inicializado como string vazia
+        duration: '', // Inicializado como string vazia
         // REMOVIDO: price: '',
     });
     const [isLoading, setIsLoading] = useState(false);
@@ -103,6 +105,7 @@ const ManagerCreateEvent: React.FC = () => {
         if (!formData.location) errors.push("Localização é obrigatória.");
         if (!formData.address) errors.push("Endereço detalhado é obrigatório.");
         if (!formData.image_url) errors.push("URL da Imagem/Banner é obrigatória.");
+        if (!formData.duration) errors.push("Duração é obrigatória."); // NOVO: Validação de Duração
         
         // Validação da Data (agora é um objeto Date)
         if (!formData.date) {
@@ -157,6 +160,7 @@ const ManagerCreateEvent: React.FC = () => {
                         min_age: Number(formData.min_age),
                         category: formData.category,
                         capacity: Number(formData.capacity), // SALVANDO CAPACIDADE
+                        duration: formData.duration, // SALVANDO DURAÇÃO
                         // REMOVIDO: price: Number(formData.price),
                     },
                 ])
@@ -343,8 +347,8 @@ const ManagerCreateEvent: React.FC = () => {
                             </div>
                         </div>
                         
-                        {/* Linha 6: Idade Mínima e Capacidade */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Linha 6: Capacidade, Duração e Idade Mínima */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
                                 <label htmlFor="capacity" className="block text-sm font-medium text-white mb-2">Capacidade Máxima (Pessoas) *</label>
                                 <Input 
@@ -357,7 +361,20 @@ const ManagerCreateEvent: React.FC = () => {
                                     min="1"
                                     required
                                 />
-                                <p className="text-xs text-gray-500 mt-1">Número máximo de pessoas permitidas no evento.</p>
+                                <p className="text-xs text-gray-500 mt-1">Número máximo de pessoas permitidas.</p>
+                            </div>
+                            <div>
+                                <label htmlFor="duration" className="block text-sm font-medium text-white mb-2">Duração (Ex: 2h30min) *</label>
+                                <Input 
+                                    id="duration" 
+                                    type="text"
+                                    value={formData.duration} 
+                                    onChange={handleChange} 
+                                    placeholder="Ex: 3 horas ou 2h30min"
+                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    required
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Duração estimada do evento.</p>
                             </div>
                             <div>
                                 <label htmlFor="min_age" className="block text-sm font-medium text-white mb-2">Idade Mínima (Anos) *</label>

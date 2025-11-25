@@ -22,7 +22,8 @@ interface EventFormData {
     min_age: number | string; // Minimum age
     category: string;
     price: string;
-    capacity: number | string; // NOVO: Capacidade
+    capacity: number | string; // Capacidade
+    duration: string; // NOVO: Duração
 }
 
 const ManagerEditEvent: React.FC = () => {
@@ -85,6 +86,7 @@ const ManagerEditEvent: React.FC = () => {
                 category: eventData.category || '',
                 price: String(eventData.price || 0),
                 capacity: eventData.capacity || '', // Carregando capacidade
+                duration: eventData.duration || '', // Carregando duração
             });
             setIsFetching(false);
         };
@@ -121,6 +123,7 @@ const ManagerEditEvent: React.FC = () => {
         if (!formData.location) errors.push("Localização é obrigatória.");
         if (!formData.address) errors.push("Endereço detalhado é obrigatório.");
         if (!formData.image_url) errors.push("URL da Imagem/Banner é obrigatória.");
+        if (!formData.duration) errors.push("Duração é obrigatória."); // NOVO: Validação de Duração
         
         const minAge = Number(formData.min_age);
         if (formData.min_age === '' || formData.min_age === null || isNaN(minAge) || minAge < 0) {
@@ -164,6 +167,7 @@ const ManagerEditEvent: React.FC = () => {
                     category: formData.category,
                     price: Number(formData.price),
                     capacity: Number(formData.capacity), // SALVANDO CAPACIDADE
+                    duration: formData.duration, // SALVANDO DURAÇÃO
                 })
                 .eq('id', id)
                 .eq('user_id', userId); // Ensure only the owner can update
@@ -348,7 +352,7 @@ const ManagerEditEvent: React.FC = () => {
                             </div>
                         </div>
                         
-                        {/* Linha 6: Preço Base, Idade Mínima e Capacidade */}
+                        {/* Linha 6: Preço Base, Capacidade, Duração e Idade Mínima (Ajustado para 3 colunas) */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
                                 <label htmlFor="price" className="block text-sm font-medium text-white mb-2">Preço Base (R$) *</label>
@@ -376,8 +380,25 @@ const ManagerEditEvent: React.FC = () => {
                                     min="1"
                                     required
                                 />
-                                <p className="text-xs text-gray-500 mt-1">Número máximo de pessoas permitidas no evento.</p>
+                                <p className="text-xs text-gray-500 mt-1">Número máximo de pessoas.</p>
                             </div>
+                            <div>
+                                <label htmlFor="duration" className="block text-sm font-medium text-white mb-2">Duração (Ex: 2h30min) *</label>
+                                <Input 
+                                    id="duration" 
+                                    type="text"
+                                    value={formData.duration} 
+                                    onChange={handleChange} 
+                                    placeholder="Ex: 3 horas ou 2h30min"
+                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    required
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Duração estimada do evento.</p>
+                            </div>
+                        </div>
+                        
+                        {/* Linha 7: Idade Mínima (Ajustado para ficar sozinho ou em uma nova linha se necessário) */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
                                 <label htmlFor="min_age" className="block text-sm font-medium text-white mb-2">Idade Mínima (Anos) *</label>
                                 <Input 
@@ -392,6 +413,9 @@ const ManagerEditEvent: React.FC = () => {
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Defina 0 para classificação livre.</p>
                             </div>
+                            {/* Espaços vazios para manter o layout de 3 colunas, se desejado */}
+                            <div className="hidden md:block"></div>
+                            <div className="hidden md:block"></div>
                         </div>
 
                         <div className="flex items-center space-x-4 pt-4">
