@@ -4,35 +4,57 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, ArrowLeft, ShoppingCart, CreditCard, CheckCircle } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
+import { usePurchaseTicket } from '@/hooks/use-purchase-ticket'; // Importando o hook de compra
 
-// Mock de dados de pedido (em um app real, isso viria do estado ou de props)
+// Mock de dados de pedido (Em um app real, isso viria do state do router ou de um contexto)
+// Usamos um ID de pulseira mockado (ticketTypeId) para simular o tipo de ingresso
 const mockOrder = {
     eventName: "Concerto Sinfônico Premium",
     totalTickets: 2,
     totalPrice: 560.00,
     items: [
-        { name: "Plateia Premium", quantity: 2, price: 280.00 },
+        { 
+            name: "Plateia Premium", 
+            quantity: 2, 
+            price: 280.00,
+            // Este ID deve ser o ID de uma pulseira base (wristband) ativa no seu DB
+            ticketTypeId: "00000000-0000-0000-0000-000000000001", 
+            eventId: "00000000-0000-0000-0000-000000000001", // ID do evento mockado
+        },
     ],
     paymentMethod: "Cartão de Crédito",
 };
 
 const Checkout: React.FC = () => {
     const navigate = useNavigate();
-    const [isProcessing, setIsProcessing] = useState(false);
+    const { isLoading: isProcessing, purchaseTicket } = usePurchaseTicket();
     const [isConfirmed, setIsConfirmed] = useState(false);
 
-    const handlePayment = () => {
-        setIsProcessing(true);
+    const handlePayment = async () => {
+        // 1. Simulação de validação de pagamento (Gateway)
+        // ... (Aqui ocorreria a chamada ao gateway de pagamento)
         
-        // Simulação de processamento de pagamento
-        setTimeout(() => {
-            setIsProcessing(false);
-            // Em um cenário real, aqui haveria a integração com o gateway de pagamento
+        // 2. Processamento da Transação no Supabase (Associação de Ingressos)
+        let success = true;
+        
+        // Itera sobre os itens do pedido (mockados)
+        for (const item of mockOrder.items) {
+            const purchaseSuccess = await purchaseTicket({
+                eventId: item.eventId,
+                ticketTypeId: item.ticketTypeId,
+                quantity: item.quantity,
+                price: item.price,
+            });
             
-            // Simulação de sucesso
-            showSuccess("Pagamento processado com sucesso!");
+            if (!purchaseSuccess) {
+                success = false;
+                break; // Interrompe se uma transação falhar
+            }
+        }
+
+        if (success) {
             setIsConfirmed(true);
-        }, 2000);
+        }
     };
 
     if (isConfirmed) {
