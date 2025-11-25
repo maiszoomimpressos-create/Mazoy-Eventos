@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { trackAdvancedFilterUse } from '@/utils/metrics';
 import { usePublicEvents, PublicEvent } from '@/hooks/use-public-events';
 import { Loader2 } from 'lucide-react';
+import EventCarousel from '@/components/EventCarousel'; // Importando o novo componente
 
 const EVENTS_PER_PAGE = 12;
 
@@ -121,14 +122,13 @@ const Index: React.FC = () => {
             <section id="home" className="pt-20 pb-8 px-4 sm:px-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="relative h-[300px] sm:h-[400px] lg:h-[500px] overflow-hidden">
-                        {/* Placeholder para o Carrossel */}
-                        <div className="flex items-center justify-center h-full bg-black/60 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/20">
-                            <div className="text-center">
-                                <i className="fas fa-star text-yellow-500 text-4xl mb-4"></i>
-                                <h2 className="text-xl sm:text-2xl font-serif text-white mb-2">Destaques Premium</h2>
-                                <p className="text-gray-400 text-sm">O carrossel será preenchido com eventos destacados do banco de dados.</p>
+                        {isLoadingEvents ? (
+                            <div className="flex items-center justify-center h-full bg-black/60 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/20">
+                                <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
                             </div>
-                        </div>
+                        ) : (
+                            <EventCarousel events={allEvents} />
+                        )}
                     </div>
                 </div>
             </section>
