@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { categories } from '@/data/events'; // Mantendo categories
+import { categories } from '@/data/events';
 import AuthStatusMenu from '@/components/AuthStatusMenu';
 import { Input } from "@/components/ui/input";
 import MobileMenu from '@/components/MobileMenu';
@@ -10,15 +10,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { trackAdvancedFilterUse } from '@/utils/metrics';
 import { usePublicEvents, PublicEvent } from '@/hooks/use-public-events';
 import { Loader2 } from 'lucide-react';
-// import EventCarousel from '@/components/EventCarousel'; // Importação removida
-import { showError } from '@/utils/toast'; // Importando showError
+import { showError } from '@/utils/toast';
 
 const EVENTS_PER_PAGE = 12;
 
 // Helper function to get the minimum price display
 const getMinPriceDisplay = (price: number | null): string => {
-    if (price === null) return 'Grátis'; // Se não houver ingressos ativos ou preço nulo
-    // Se o preço for 0, exibe "R$ 0,00". Caso contrário, formata o preço.
+    if (price === null) return 'Grátis';
     return `R$ ${price.toFixed(2).replace('.', ',')}`;
 };
 
@@ -26,32 +24,26 @@ const Index: React.FC = () => {
     const navigate = useNavigate();
     const [userId, setUserId] = useState<string | undefined>(undefined);
     
-    // Carregamento de eventos do Supabase
     const { events: allEvents, isLoading: isLoadingEvents, isError: isErrorEvents } = usePublicEvents();
     
-    // Estados para os filtros "em rascunho" (atualizados pelos inputs, mas não aplicados ainda)
     const [stagedSearchTerm, setStagedSearchTerm] = useState('');
     const [stagedPriceRanges, setStagedPriceRanges] = useState<string[]>([]);
     const [stagedTimeRanges, setStagedTimeRanges] = useState<string[]>([]);
     const [stagedStatuses, setStagedStatuses] = useState<string[]>([]);
 
-    // Estados para os filtros "aplicados" (usados para filtrar os eventos)
     const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
     const [appliedPriceRanges, setAppliedPriceRanges] = useState<string[]>([]);
     const [appliedTimeRanges, setAppliedTimeRanges] = useState<string[]>([]);
     const [appliedStatuses, setAppliedStatuses] = useState<string[]>([]);
 
-    // Paginação
     const [currentPage, setCurrentPage] = useState(1);
 
-    // Fetch user ID on mount
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
             setUserId(user?.id);
         });
     }, []);
 
-    // Sincroniza os filtros "em rascunho" com os "aplicados" quando a página carrega ou eventos mudam
     useEffect(() => {
         setStagedSearchTerm(appliedSearchTerm);
         setStagedPriceRanges(appliedPriceRanges);
@@ -61,12 +53,10 @@ const Index: React.FC = () => {
 
 
     const handleEventClick = (event: PublicEvent) => {
-        // Mantido: Navega para a página de finalizar compra
         navigate(`/finalizar-compra`);
         console.log(`Navegando para Finalizar Compra para o evento: ${event.title}`);
     };
     
-    // Funções para manipular a seleção dos filtros "em rascunho"
     const handleStagedPriceRangeChange = (range: string, isChecked: boolean) => {
         setStagedPriceRanges(prev => 
             isChecked ? [...prev, range] : prev.filter(r => r !== range)
@@ -85,20 +75,20 @@ const Index: React.FC = () => {
         );
     };
 
-    // Função chamada ao clicar em "Aplicar Filtros"
     const handleApplyFilters = () => {
         if (userId) {
             trackAdvancedFilterUse(userId);
         }
-        // Copia os filtros "em rascunho" para os filtros "aplicados"
         setAppliedSearchTerm(stagedSearchTerm);
         setAppliedPriceRanges(stagedPriceRanges);
         setAppliedTimeRanges(stagedTimeRanges);
         setAppliedStatuses(stagedStatuses);
-        setCurrentPage(1); // Resetar para a primeira página ao aplicar novos filtros
+        setCurrentPage(1);
         console.log("Filtros aplicados!");
     };
     
+    const totalPages = Math.ceil(allEvents.length / EVENTS_PER_PAGE);
+
     const handlePageChange = (page: number) => {
         if (page >= 1 && page <= totalPages) {
             setCurrentPage(page);
@@ -116,11 +106,9 @@ const Index: React.FC = () => {
         }
     };
 
-    // Lógica de Filtragem (agora depende dos estados 'applied')
     const filteredEvents = useMemo(() => {
         let tempEvents = allEvents;
 
-        // 1. Filtro por termo de busca (título, descrição, localização, categoria)
         if (appliedSearchTerm) {
             tempEvents = tempEvents.filter(event =>
                 event.title.toLowerCase().includes(appliedSearchTerm.toLowerCase()) ||
@@ -130,7 +118,6 @@ const Index: React.FC = () => {
             );
         }
 
-        // 2. Filtro por Faixa de Preço
         if (appliedPriceRanges.length > 0) {
             tempEvents = tempEvents.filter(event => {
                 const price = event.min_price;
@@ -147,10 +134,9 @@ const Index: React.FC = () => {
             });
         }
 
-        // 3. Filtro por Horário
         if (appliedTimeRanges.length > 0) {
             tempEvents = tempEvents.filter(event => {
-                const eventTime = event.time; // Ex: "20:00 - 23:00"
+                const eventTime = event.time;
                 const [startTimeStr] = eventTime.split(' - ');
                 const [hours] = startTimeStr.split(':').map(Number);
                 const eventHour = hours;
@@ -159,21 +145,19 @@ const Index: React.FC = () => {
                     switch (range) {
                         case 'morning': return eventHour >= 6 && eventHour < 12;
                         case 'afternoon': return eventHour >= 12 && eventHour < 18;
-                        case 'night': return eventHour >= 18 || eventHour < 6; // Inclui 18:00 até 05:59
+                        case 'night': return eventHour >= 18 || eventHour < 6;
                         default: return false;
                     }
                 });
             });
         }
 
-        // 4. Filtro por Status
         if (appliedStatuses.length > 0) {
             tempEvents = tempEvents.filter(event => {
                 return appliedStatuses.some(status => {
                     switch (status) {
                         case 'open_sales': return event.total_available_tickets > 0;
                         case 'low_stock': 
-                            // Considera "Últimos Ingressos" se menos de 10% da capacidade estiver disponível
                             return event.total_available_tickets > 0 && event.capacity > 0 && 
                                    (event.total_available_tickets / event.capacity) <= 0.1;
                         default: return false;
@@ -185,8 +169,6 @@ const Index: React.FC = () => {
         return tempEvents;
     }, [allEvents, appliedSearchTerm, appliedPriceRanges, appliedTimeRanges, appliedStatuses]);
 
-    // Lógica de Paginação
-    const totalPages = Math.ceil(filteredEvents.length / EVENTS_PER_PAGE);
     const startIndex = (currentPage - 1) * EVENTS_PER_PAGE;
     const endIndex = startIndex + EVENTS_PER_PAGE;
     const displayedEvents = filteredEvents.slice(startIndex, endIndex);
