@@ -42,8 +42,12 @@ const fetchPublicEvents = async (): Promise<PublicEvent[]> => {
     }
     
     const minPricesMap = minPricesData ? minPricesData.reduce((acc, item) => {
-        if (!acc[item.event_id] || item.price < acc[item.event_id]) {
-            acc[item.event_id] = item.price;
+        const priceValue = Number(item.price); // Garantindo que é um número
+        
+        if (isNaN(priceValue) || priceValue < 0) return acc; // Ignora preços inválidos
+        
+        if (!acc[item.event_id] || priceValue < acc[item.event_id]) {
+            acc[item.event_id] = priceValue;
         }
         return acc;
     }, {} as { [eventId: string]: number }) : {};
@@ -58,7 +62,7 @@ const fetchPublicEvents = async (): Promise<PublicEvent[]> => {
         location: event.location,
         image_url: event.image_url,
         category: event.category,
-        min_price: minPricesMap[event.id] || null,
+        min_price: minPricesMap[event.id] !== undefined ? minPricesMap[event.id] : null,
     }));
 };
 
