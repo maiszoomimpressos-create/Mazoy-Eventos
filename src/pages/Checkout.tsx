@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2, ArrowLeft, ShoppingCart, CreditCard, CheckCircle, CalendarAlt, Clock, MapMarkerAlt, Users, UserCheck, UserTie } from 'lucide-react'; // Importando ícones adicionais
+import { Loader2, ArrowLeft, ShoppingCart, CreditCard, CheckCircle, Calendar, Clock, MapMarkerAlt, Users, UserCheck, UserTie } from 'lucide-react'; // Importando ícones adicionais
 import { showSuccess, showError } from '@/utils/toast';
 import { usePurchaseTicket } from '@/hooks/use-purchase-ticket';
 import { useEventDetails } from '@/hooks/use-event-details'; // Importando o hook de detalhes do evento
@@ -198,7 +198,7 @@ const Checkout: React.FC = () => {
                                 </p>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
                                     <div className="flex items-center">
-                                        <CalendarAlt className="h-4 w-4 mr-2 text-yellow-500" />
+                                        <Calendar className="h-4 w-4 mr-2 text-yellow-500" />
                                         <span>Data: {new Date(event.date).toLocaleDateString('pt-BR')}</span>
                                     </div>
                                     <div className="flex items-center">
