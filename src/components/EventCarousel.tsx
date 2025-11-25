@@ -23,7 +23,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         loop: true,
         align: 'start',
         slidesToScroll: 1,
-        // Configuração responsiva para mostrar múltiplos slides
         breakpoints: {
             '(min-width: 640px)': { slidesToScroll: 2 },
             '(min-width: 1024px)': { slidesToScroll: 3 },
@@ -70,6 +69,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     useEffect(() => {
         if (!emblaApi) return;
         onInit(emblaApi);
+        onSelect(emblaApi); // Chamada inicial
         emblaApi.on('reInit', onInit);
         emblaApi.on('select', onSelect);
     }, [emblaApi, onInit, onSelect]);
@@ -150,7 +150,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                                         </div>
                                     </div>
                                 </CardContent>
-                            </div>
+                            </Card>
                         </div>
                     ))}
                 </div>
