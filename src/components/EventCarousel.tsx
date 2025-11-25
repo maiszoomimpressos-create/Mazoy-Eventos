@@ -28,19 +28,16 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
 
     const [emblaRef, emblaApi] = useEmblaCarousel({ 
         loop: true,
-        align: 'start',
+        align: 'center', // Centraliza o slide ativo
         slidesToScroll: 1,
-        // Removendo breakpoints para garantir que cada slide ocupe a largura total do contêiner
-        // breakpoints: {
-        //     '(min-width: 640px)': { slidesToScroll: 2 },
-        //     '(min-width: 1024px)': { slidesToScroll: 3 },
-        // },
-        watchDrag: true,
+        dragFree: false, // Garante que os slides se encaixem
+        containScroll: 'trimSnaps', // Remove o espaço extra no final
     });
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
     const [prevBtnDisabled, setPrevBtnDisabled] = useState(true);
     const [nextBtnDisabled, setNextBtnDisabled] = useState(true);
+    const [scrollProgress, setScrollProgress] = useState(0);
 
 
     // --- Lógica de Auto-Play ---
@@ -72,6 +69,11 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
 
     const onInit = useCallback((emblaApi: EmblaCarouselType) => {
         setScrollSnaps(emblaApi.scrollSnapList());
+        setScrollProgress(emblaApi.scrollProgress());
+    }, []);
+
+    const onScroll = useCallback((emblaApi: EmblaCarouselType) => {
+        setScrollProgress(emblaApi.scrollProgress());
     }, []);
 
     useEffect(() => {
@@ -80,7 +82,8 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         onSelect(emblaApi);
         emblaApi.on('reInit', onInit);
         emblaApi.on('select', onSelect);
-    }, [emblaApi, onInit, onSelect]);
+        emblaApi.on('scroll', onScroll);
+    }, [emblaApi, onInit, onSelect, onScroll]);
 
     const scrollTo = useCallback((index: number) => {
         emblaApi && emblaApi.scrollTo(index);
@@ -97,7 +100,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
 
     if (featuredEvents.length === 0) {
         return (
-            <div className="flex items-center justify-center h-full bg-black/60 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/20">
+            <div className="w-[750px] h-[450px] mx-auto rounded-2xl flex items-center justify-center bg-black/60 border border-yellow-500/30 shadow-2xl shadow-yellow-500/20">
                 <div className="text-center p-8">
                     <i className="fas fa-star text-yellow-500 text-4xl mb-4"></i>
                     <h2 className="text-xl sm:text-2xl font-serif text-white mb-2">Destaques Premium</h2>
@@ -108,62 +111,79 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     }
 
     return (
-        <div className="relative">
-            <div className="overflow-hidden" ref={emblaRef}>
-                <div className="flex touch-pan-y ml-[-1rem]"> {/* Ajuste de margem para compensar o padding/gap */}
-                    {featuredEvents.map((event, index) => (
-                        <div 
-                            key={event.id} 
-                            className="pl-4 basis-full flex-shrink-0 min-w-0" // Removido sm:basis-1/2 lg:basis-1/3
-                        >
-                            <Card 
-                                className="bg-black/60 backdrop-blur-sm border border-yellow-500/30 rounded-2xl overflow-hidden h-full cursor-pointer hover:border-yellow-500/60 transition-all duration-300 group"
-                                // Mantido: Redireciona para a página de finalizar compra
-                                onClick={() => navigate(`/finalizar-compra`)} 
+        <div className="relative w-[750px] h-[450px] mx-auto rounded-2xl overflow-hidden">
+            <div className="embla__viewport h-full" ref={emblaRef}>
+                <div className="embla__container flex h-full gap-4"> {/* Adicionado gap-4 */}
+                    {featuredEvents.map((event, index) => {
+                        const isSelected = index === selectedIndex;
+                        
+                        // Calcula a distância do slide atual para o slide selecionado (central)
+                        // Isso é uma simplificação, em um Embla mais complexo usaríamos emblaApi.scrollProgress()
+                        // para calcular a posição real no viewport.
+                        const distance = Math.abs(index - selectedIndex); 
+
+                        let scale = 1;
+                        let opacity = 1;
+                        let zIndex = 3;
+                        let translateX = 0;
+
+                        // Lógica para o efeito de escada
+                        if (distance === 1) { // Vizinhos imediatos (1 à esquerda, 1 à direita)
+                            scale = 0.85;
+                            opacity = 0.7;
+                            zIndex = 2;
+                            translateX = (index > selectedIndex ? 1 : -1) * 50; // Desloca para fora
+                        } else if (distance === 2) { // Próximos vizinhos (2 à esquerda, 2 à direita)
+                            scale = 0.7;
+                            opacity = 0.4;
+                            zIndex = 1;
+                            translateX = (index > selectedIndex ? 1 : -1) * 100; // Desloca mais
+                        } else if (distance > 2) { // Mais distantes (3+ à esquerda, 3+ à direita)
+                            scale = 0.6;
+                            opacity = 0.2;
+                            zIndex = 0;
+                            translateX = (index > selectedIndex ? 1 : -1) * 150; // Desloca ainda mais
+                        }
+
+                        const transformStyle = `translateX(${translateX}px) scale(${scale})`;
+
+                        return (
+                            <div 
+                                key={event.id} 
+                                className="embla__slide flex-shrink-0 relative h-full"
+                                style={{ 
+                                    width: `calc(100% / 3)`, // Mostra 3 slides no viewport
+                                    transform: transformStyle,
+                                    opacity: opacity,
+                                    zIndex: zIndex,
+                                    transition: 'transform 0.6s ease-out, opacity 0.6s ease-out',
+                                }}
                             >
-                                <CardContent className="flex flex-col p-0">
-                                    <div className="relative h-[450px] overflow-hidden"> {/* Altura ajustada para 450px */}
-                                        <img
-                                            src={event.image_url}
-                                            alt={event.title}
-                                            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent p-4 flex flex-col justify-end">
-                                            <span className="bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-semibold mb-2 self-start">
-                                                {event.category}
-                                            </span>
-                                            <h3 className="text-xl font-serif text-white line-clamp-2 group-hover:text-yellow-400 transition-colors">
-                                                {event.title}
-                                            </h3>
+                                <Card 
+                                    className="bg-black/60 backdrop-blur-sm border border-yellow-500/30 rounded-2xl overflow-hidden h-full w-full cursor-pointer hover:border-yellow-500/60 transition-all duration-300 group"
+                                    onClick={() => navigate(`/finalizar-compra`)} 
+                                >
+                                    <CardContent className="flex flex-col p-0 h-full">
+                                        <div className="relative h-full overflow-hidden">
+                                            <img
+                                                src={event.image_url}
+                                                alt={event.title}
+                                                className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent p-4 flex flex-col justify-end">
+                                                <span className="bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-semibold mb-2 self-start">
+                                                    {event.category}
+                                                </span>
+                                                <h3 className="text-xl font-serif text-white line-clamp-2 group-hover:text-yellow-400 transition-colors">
+                                                    {event.title}
+                                                </h3>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="p-4 space-y-2">
-                                        <div className="flex items-center text-sm text-gray-300">
-                                            <i className="fas fa-calendar-alt mr-2 text-yellow-500"></i>
-                                            {event.date}
-                                        </div>
-                                        <div className="flex items-center text-sm text-gray-300">
-                                            <i className="fas fa-map-marker-alt mr-2 text-yellow-500"></i>
-                                            {event.location}
-                                        </div>
-                                        <div className="flex justify-between items-center pt-2">
-                                            <span className="text-lg font-bold text-yellow-500">
-                                                {getMinPriceDisplay(event.min_price)}
-                                            </span>
-                                            <Button 
-                                                variant="default" 
-                                                className="bg-yellow-500 text-black hover:bg-yellow-600 px-4 py-2 text-xs"
-                                                // Mantido: Redireciona para a página de finalizar compra
-                                                onClick={(e) => { e.stopPropagation(); navigate(`/finalizar-compra`); }}
-                                            >
-                                                Detalhes <ArrowRight className="h-3 w-3 ml-1" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    ))}
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
             
