@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2, ArrowLeft, ShoppingCart, CreditCard, CheckCircle, Calendar, Clock, MapPin, Users, UserCheck, Briefcase } from 'lucide-react'; // Importando ícones adicionais
+import { Loader2, ArrowLeft, ShoppingCart, CreditCard, CheckCircle, Calendar, Clock, MapPin, Users, UserCheck, Briefcase, AlertTriangle } from 'lucide-react'; // Importando ícones adicionais
 import { showSuccess, showError } from '@/utils/toast';
 import { usePurchaseTicket } from '@/hooks/use-purchase-ticket';
 import { useEventDetails } from '@/hooks/use-event-details'; // Importando o hook de detalhes do evento
@@ -234,8 +234,8 @@ const Checkout: React.FC = () => {
                                 <p>Nome: [Nome do Usuário Logado]</p>
                                 <p>E-mail: [Email do Usuário Logado]</p>
                                 <p>CPF: [CPF do Usuário Logado]</p>
-                                <p className="text-yellow-500 pt-2">
-                                    <i className="fas fa-exclamation-triangle mr-2"></i>
+                                <p className="text-yellow-500 pt-2 flex items-center">
+                                    <AlertTriangle className="h-4 w-4 mr-2" />
                                     Certifique-se de que seu perfil está completo para a emissão correta do ingresso.
                                 </p>
                             </CardContent>
