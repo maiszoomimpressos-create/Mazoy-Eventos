@@ -24,12 +24,13 @@ import ManagerCreateWristband from "./pages/ManagerCreateWristband";
 import ManagerWristbandsList from "./pages/ManagerWristbandsList"; 
 import ManagerManageWristband from "./pages/ManagerManageWristband";
 import ManagerReports from "./pages/ManagerReports";
+import ManagerAccessTypes from "./pages/ManagerAccessTypes"; // Nova importação
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminRouteGuard from "./components/AdminRouteGuard";
 import AdminMasterRouteGuard from "./components/AdminMasterRouteGuard";
 import ManagerLayout from "./components/layouts/ManagerLayout";
 import ForgotPassword from "./pages/ForgotPassword";
-import FinalizarCompra from "./pages/FinalizarCompra"; // Nova importação
+import FinalizarCompra from "./pages/FinalizarCompra";
 
 const queryClient = new QueryClient();
 
@@ -48,7 +49,7 @@ const App = () => (
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/tickets" element={<MyTickets />} />
-          <Route path="/finalizar-compra" element={<FinalizarCompra />} /> {/* Nova rota */}
+          <Route path="/finalizar-compra" element={<FinalizarCompra />} />
           <Route path="/manager/login" element={<ManagerLogin />} />
           
           {/* Manager Routes (Protected by ManagerLayout, which handles auth/redirect) */}
@@ -65,6 +66,7 @@ const App = () => (
             <Route path="/manager/settings/company-profile" element={<ManagerCompanyProfile />} />
             <Route path="/manager/settings/notifications" element={<ManagerNotifications />} />
             <Route path="/manager/settings/payment" element={<ManagerPaymentSettings />} />
+            <Route path="/manager/settings/access-types" element={<ManagerAccessTypes />} /> {/* Nova rota */}
           </Route>
           
           {/* Admin Master Routes (tipo_usuario_id = 1) */}
