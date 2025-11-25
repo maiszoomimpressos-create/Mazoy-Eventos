@@ -33,6 +33,7 @@ interface EventFormData {
     image_url: string; // Image URL (new mandatory field)
     min_age: number | string; // Minimum age (new mandatory field)
     category: string;
+    capacity: number | string; // NOVO: Capacidade
     // REMOVIDO: price: string;
 }
 
@@ -48,6 +49,7 @@ const ManagerCreateEvent: React.FC = () => {
         image_url: '',
         min_age: 0,
         category: '',
+        capacity: '', // Inicializado como string vazia
         // REMOVIDO: price: '',
     });
     const [isLoading, setIsLoading] = useState(false);
@@ -114,6 +116,11 @@ const ManagerCreateEvent: React.FC = () => {
         if (formData.min_age === '' || formData.min_age === null || isNaN(minAge) || minAge < 0) {
             errors.push("Idade Mínima é obrigatória e deve ser 0 ou maior.");
         }
+        
+        const capacity = Number(formData.capacity);
+        if (formData.capacity === '' || formData.capacity === null || isNaN(capacity) || capacity <= 0) {
+            errors.push("Capacidade é obrigatória e deve ser maior que zero.");
+        }
 
         if (!formData.category) errors.push("Categoria é obrigatória.");
         // REMOVIDO: if (!formData.price || Number(formData.price) <= 0) errors.push("Preço Base é obrigatório e deve ser maior que zero.");
@@ -149,6 +156,7 @@ const ManagerCreateEvent: React.FC = () => {
                         image_url: formData.image_url,
                         min_age: Number(formData.min_age),
                         category: formData.category,
+                        capacity: Number(formData.capacity), // SALVANDO CAPACIDADE
                         // REMOVIDO: price: Number(formData.price),
                     },
                 ])
@@ -314,7 +322,7 @@ const ManagerCreateEvent: React.FC = () => {
                                     type="time"
                                     value={formData.time} 
                                     onChange={handleChange} 
-                                    className="w-full bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                     required
                                 />
                             </div>
@@ -335,9 +343,23 @@ const ManagerCreateEvent: React.FC = () => {
                             </div>
                         </div>
                         
-                        {/* Linha 6: Idade Mínima (Preço Base removido) */}
+                        {/* Linha 6: Idade Mínima e Capacidade */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="md:col-span-1">
+                            <div>
+                                <label htmlFor="capacity" className="block text-sm font-medium text-white mb-2">Capacidade Máxima (Pessoas) *</label>
+                                <Input 
+                                    id="capacity" 
+                                    type="number"
+                                    value={formData.capacity} 
+                                    onChange={handleChange} 
+                                    placeholder="Ex: 500"
+                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    min="1"
+                                    required
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Número máximo de pessoas permitidas no evento.</p>
+                            </div>
+                            <div>
                                 <label htmlFor="min_age" className="block text-sm font-medium text-white mb-2">Idade Mínima (Anos) *</label>
                                 <Input 
                                     id="min_age" 
@@ -350,12 +372,6 @@ const ManagerCreateEvent: React.FC = () => {
                                     required
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Defina 0 para classificação livre.</p>
-                            </div>
-                            <div className="md:col-span-1 flex items-center">
-                                <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl mt-6 w-full">
-                                    <p className="text-yellow-500 text-sm font-semibold">Atenção ao Preço</p>
-                                    <p className="text-gray-400 text-xs">O preço será definido na tela de cadastro de Pulseiras, por Tipo de Acesso.</p>
-                                </div>
                             </div>
                         </div>
 
