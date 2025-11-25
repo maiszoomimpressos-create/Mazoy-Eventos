@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { categories, eventSlides as mockEventSlides } from '@/data/events'; // Mantendo mockEventSlides apenas para o carrossel temporariamente
+import { categories } from '@/data/events'; // Mantendo categories
 import AuthStatusMenu from '@/components/AuthStatusMenu';
 import { Input } from "@/components/ui/input";
 import MobileMenu from '@/components/MobileMenu';
@@ -20,7 +20,6 @@ const getMinPriceDisplay = (price: number | null): string => {
 };
 
 const Index: React.FC = () => {
-    const [currentSlide, setCurrentSlide] = useState(0);
     const navigate = useNavigate();
     const [userId, setUserId] = useState<string | undefined>(undefined);
     
@@ -37,14 +36,6 @@ const Index: React.FC = () => {
             setUserId(user?.id);
         });
     }, []);
-
-    // Carrossel (usando mockEventSlides para ter conteúdo visual enquanto o DB não tem muitos banners)
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setCurrentSlide((prev) => (prev + 1) % mockEventSlides.length);
-        }, 6000);
-        return () => clearInterval(interval);
-    }, [mockEventSlides.length]);
 
     const handleEventClick = (event: PublicEvent) => {
         navigate(`/events/${event.id}`);
@@ -96,24 +87,6 @@ const Index: React.FC = () => {
         return pages;
     };
 
-    // Lógica de transformação do carrossel (mantida)
-    const getTransform = (pos: number) => {
-        if (pos === 0) return 'translateX(-50%) scale(1)';
-        if (pos === -1) return 'translateX(calc(-50% - 18rem)) scale(0.85)';
-        if (pos === 1) return 'translateX(calc(-50% + 18rem)) scale(0.85)';
-        return 'translateX(-50%) scale(0.5)';
-    };
-    
-    const getOpacity = (pos: number) => {
-        if (pos === 0) return 1;
-        if (Math.abs(pos) === 1) return 0.9;
-        return 0;
-    };
-    
-    const getZIndex = (pos: number) => {
-        return 50 - Math.abs(pos);
-    };
-
     return (
         <div className="min-h-screen bg-black text-white overflow-x-hidden">
             <header className="fixed top-0 left-0 right-0 z-[100] bg-black/80 backdrop-blur-md border-b border-yellow-500/20">
@@ -148,96 +121,13 @@ const Index: React.FC = () => {
             <section id="home" className="pt-20 pb-8 px-4 sm:px-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="relative h-[300px] sm:h-[400px] lg:h-[500px] overflow-hidden">
-                        <div className="flex items-center justify-center h-full">
-                            {/* Usando mockEventSlides para o carrossel, pois a lista de eventos do DB pode ser pequena */}
-                            {mockEventSlides.map((slide, index) => {
-                                let position = (index - currentSlide + mockEventSlides.length) % mockEventSlides.length;
-                                if (position > mockEventSlides.length / 2) position -= mockEventSlides.length;
-                                
-                                const isCenter = position === 0;
-
-                                return (
-                                    <div
-                                        key={slide.id}
-                                        className={`absolute transition-all duration-1000 ease-in-out ${isCenter ? 'w-full max-w-md sm:max-w-xl lg:max-w-[750px]' : 'w-full max-w-xs sm:max-w-sm lg:max-w-[750px] hidden lg:block'}`}
-                                        style={{
-                                            left: '50%',
-                                            transform: isCenter ? 'translateX(-50%) scale(1)' : getTransform(position),
-                                            opacity: isCenter ? 1 : getOpacity(position),
-                                            zIndex: getZIndex(position),
-                                            ...(window.innerWidth < 1024 && !isCenter && { display: 'none' })
-                                        }}
-                                    >
-                                        <div className="relative h-[300px] sm:h-[450px] bg-black rounded-2xl overflow-hidden shadow-2xl shadow-yellow-500/20 cursor-pointer" onClick={() => navigate(`/events/${slide.id}`)}>
-                                            <img
-                                                src={slide.image}
-                                                alt={slide.title}
-                                                className="w-full h-full object-cover object-top"
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent"></div>
-                                            <div className="absolute inset-0 flex items-center">
-                                                <div className="px-6 sm:px-12 py-8 max-w-full lg:max-w-2xl">
-                                                    <div className="inline-block bg-yellow-500 text-black px-3 py-1 rounded-full text-xs sm:text-sm font-semibold mb-2 sm:mb-3">
-                                                        {slide.category}
-                                                    </div>
-                                                    <h2 className="text-2xl sm:text-4xl font-serif text-white mb-2 sm:mb-3 leading-tight">
-                                                        {slide.title}
-                                                    </h2>
-                                                    <p className="text-sm sm:text-lg text-gray-200 mb-3 sm:mb-4 font-light line-clamp-2 hidden sm:block">
-                                                        {slide.description}
-                                                    </p>
-                                                    <div className="flex flex-wrap items-center space-x-4 sm:space-x-6 mb-4 sm:mb-6 text-sm">
-                                                        <div className="flex items-center text-yellow-500">
-                                                            <i className="fas fa-calendar-alt mr-2"></i>
-                                                            <span className="text-white">{slide.date}</span>
-                                                        </div>
-                                                        <div className="flex items-center text-yellow-500">
-                                                            <i className="fas fa-map-marker-alt mr-2"></i>
-                                                            <span className="text-white">{slide.location}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center space-x-4">
-                                                        <span className="text-xl sm:text-2xl font-bold text-yellow-500">
-                                                            {/* Usando o preço mockado para o carrossel */}
-                                                            {slide.ticketTypes && slide.ticketTypes.length > 0 ? getMinPriceDisplay(Math.min(...slide.ticketTypes.map(t => t.price))) : 'Grátis'}
-                                                        </span>
-                                                        <Button
-                                                            className="bg-yellow-500 text-black hover:bg-yellow-600 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold transition-all duration-300 cursor-pointer hover:scale-105"
-                                                            onClick={() => navigate(`/events/${slide.id}`)}
-                                                        >
-                                                            Ver Evento
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        <button
-                            onClick={() => setCurrentSlide((prev) => (prev - 1 + mockEventSlides.length) % mockEventSlides.length)}
-                            className="absolute left-2 sm:left-4 top-1/2 transform -translate-y-1/2 z-50 w-10 h-10 sm:w-14 sm:h-14 bg-black/80 border-2 border-yellow-500/60 rounded-full flex items-center justify-center text-yellow-500 hover:bg-yellow-500/20 hover:border-yellow-500 hover:scale-110 transition-all duration-300 cursor-pointer shadow-lg shadow-black/50"
-                        >
-                            <i className="fas fa-chevron-left text-sm sm:text-lg"></i>
-                        </button>
-                        <button
-                            onClick={() => setCurrentSlide((prev) => (prev + 1) % mockEventSlides.length)}
-                            className="absolute right-2 sm:right-4 top-1/2 transform -translate-y-1/2 z-50 w-10 h-10 sm:w-14 sm:h-14 bg-black/80 border-2 border-yellow-500/60 rounded-full flex items-center justify-center text-yellow-500 hover:bg-yellow-500/20 hover:border-yellow-500 hover:scale-110 transition-all duration-300 cursor-pointer shadow-lg shadow-black/50"
-                        >
-                            <i className="fas fa-chevron-right text-sm sm:text-lg"></i>
-                        </button>
-                        <div className="absolute bottom-4 sm:bottom-8 left-1/2 transform -translate-x-1/2 z-50 flex space-x-2 sm:space-x-3 bg-black/70 backdrop-blur-sm px-4 sm:px-6 py-2 sm:py-3 rounded-full border border-yellow-500/30">
-                            {mockEventSlides.map((_, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => setCurrentSlide(index)}
-                                    className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full transition-all duration-300 cursor-pointer ${currentSlide === index
-                                            ? 'bg-yellow-500 scale-125 shadow-lg shadow-yellow-500/50'
-                                            : 'bg-yellow-500/40 hover:bg-yellow-500/70 hover:scale-110'
-                                        }`}
-                                ></button>
-                            ))}
+                        {/* Placeholder para o Carrossel */}
+                        <div className="flex items-center justify-center h-full bg-black/60 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/20">
+                            <div className="text-center">
+                                <i className="fas fa-star text-yellow-500 text-4xl mb-4"></i>
+                                <h2 className="text-xl sm:text-2xl font-serif text-white mb-2">Destaques Premium</h2>
+                                <p className="text-gray-400 text-sm">O carrossel será preenchido com eventos destacados do banco de dados.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -361,6 +251,7 @@ const Index: React.FC = () => {
                                     <div className="text-center py-20">
                                         <i className="fas fa-calendar-times text-5xl text-gray-600 mb-4"></i>
                                         <p className="text-gray-400 text-lg">Nenhum evento encontrado.</p>
+                                        <p className="text-gray-500 text-sm mt-2">Cadastre um evento na área do gestor para vê-lo aqui.</p>
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
