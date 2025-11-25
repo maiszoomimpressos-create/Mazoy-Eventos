@@ -13,7 +13,7 @@ interface EventCarouselProps {
 
 const AUTOPLAY_DELAY = 6000; // 6 segundos
 
-const EventCarousel: React.FC<EventCarouselProps> = ({ events }) => {
+const EventCarousel = ({ events }: EventCarouselProps) => {
     const navigate = useNavigate();
     
     // Limita a 20 eventos
