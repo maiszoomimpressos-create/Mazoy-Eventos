@@ -95,9 +95,10 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         );
     }
 
-    const BASE_SLIDE_WIDTH = 100; // Largura base para cálculo, não a largura final
     const CAROUSEL_WIDTH = 750; 
     const CAROUSEL_HEIGHT = 450;
+    const SLIDE_OFFSET_PERCENTAGE = 0.35; // 35% de deslocamento
+    const SLIDE_OFFSET_PX = CAROUSEL_WIDTH * SLIDE_OFFSET_PERCENTAGE;
 
     return (
         <div className="relative w-[750px] h-[450px] mx-auto rounded-2xl overflow-hidden">
@@ -106,62 +107,55 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                     {featuredEvents.map((event, index) => {
                         const relativeIndex = index - selectedIndex;
                         
-                        let scale = 1;
                         let opacity = 1;
                         let zIndex = 1;
                         let translateX = 0;
 
                         // Lógica para o efeito de escada com 7 banners visíveis
                         if (relativeIndex === 0) { // Item central
-                            scale = CAROUSEL_WIDTH / BASE_SLIDE_WIDTH; // Escala para 750px de largura
                             opacity = 1;
                             zIndex = 7;
                             translateX = 0;
                         } else if (relativeIndex === 1) { // Primeiro à direita
-                            scale = 0.4; // Largura: 100 * 0.4 = 40px
                             opacity = 0.8;
                             zIndex = 6;
-                            translateX = (CAROUSEL_WIDTH / 2) - (BASE_SLIDE_WIDTH * scale / 2) - 20; // Posiciona à direita do centro, com ajuste
+                            translateX = SLIDE_OFFSET_PX;
                         } else if (relativeIndex === -1) { // Primeiro à esquerda
-                            scale = 0.4;
                             opacity = 0.8;
                             zIndex = 6;
-                            translateX = -((CAROUSEL_WIDTH / 2) - (BASE_SLIDE_WIDTH * scale / 2) - 20); // Posiciona à esquerda do centro, com ajuste
+                            translateX = -SLIDE_OFFSET_PX;
                         } else if (relativeIndex === 2) { // Segundo à direita
-                            scale = 0.3; // Largura: 100 * 0.3 = 30px
                             opacity = 0.6;
                             zIndex = 5;
-                            translateX = (CAROUSEL_WIDTH / 2) - (BASE_SLIDE_WIDTH * scale / 2) - 50; // Mais afastado
+                            translateX = SLIDE_OFFSET_PX * 2;
                         } else if (relativeIndex === -2) { // Segundo à esquerda
-                            scale = 0.3;
                             opacity = 0.6;
                             zIndex = 5;
-                            translateX = -((CAROUSEL_WIDTH / 2) - (BASE_SLIDE_WIDTH * scale / 2) - 50); // Mais afastado
+                            translateX = -SLIDE_OFFSET_PX * 2;
                         } else if (relativeIndex === 3) { // Terceiro à direita
-                            scale = 0.2; // Largura: 100 * 0.2 = 20px
                             opacity = 0.4;
                             zIndex = 4;
-                            translateX = (CAROUSEL_WIDTH / 2) - (BASE_SLIDE_WIDTH * scale / 2) - 80; // Ainda mais afastado
+                            translateX = SLIDE_OFFSET_PX * 3;
                         } else if (relativeIndex === -3) { // Terceiro à esquerda
-                            scale = 0.2;
                             opacity = 0.4;
                             zIndex = 4;
-                            translateX = -((CAROUSEL_WIDTH / 2) - (BASE_SLIDE_WIDTH * scale / 2) - 80); // Ainda mais afastado
+                            translateX = -SLIDE_OFFSET_PX * 3;
                         } else { // Itens fora do campo de 7 visíveis (escondidos)
-                            scale = 0.1; // Escala mínima
                             opacity = 0; // Totalmente transparente
                             zIndex = 0;
-                            translateX = (relativeIndex > 0 ? 1 : -1) * (CAROUSEL_WIDTH / 2 + BASE_SLIDE_WIDTH); // Empurra para fora da tela
+                            // Empurra para fora da tela, considerando a largura total do carrossel
+                            translateX = (relativeIndex > 0 ? 1 : -1) * (CAROUSEL_WIDTH / 2 + CAROUSEL_WIDTH); 
                         }
 
-                        const transformStyle = `translateX(${translateX}px) scale(${scale})`;
+                        const transformStyle = `translateX(${translateX}px)`;
 
                         return (
                             <div 
                                 key={event.id} 
-                                className="embla__slide flex-shrink-0 relative h-full"
+                                className="embla__slide flex-shrink-0 relative"
                                 style={{ 
-                                    width: `${BASE_SLIDE_WIDTH}px`, // Largura base para todos os slides antes da escala
+                                    width: `${CAROUSEL_WIDTH}px`, // Todos os slides têm a largura total do carrossel
+                                    height: `${CAROUSEL_HEIGHT}px`, // Todos os slides têm a altura total do carrossel
                                     transform: transformStyle,
                                     opacity: opacity,
                                     zIndex: zIndex,
@@ -169,8 +163,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                                     position: 'absolute', 
                                     top: 0,
                                     left: '50%', // Centraliza o ponto de origem para o translateX
-                                    marginLeft: `-${BASE_SLIDE_WIDTH / 2}px`, // Ajusta para centralizar o slide em si
-                                    height: '100%',
+                                    marginLeft: `-${CAROUSEL_WIDTH / 2}px`, // Ajusta para centralizar o slide em si
                                 }}
                             >
                                 <Card 
