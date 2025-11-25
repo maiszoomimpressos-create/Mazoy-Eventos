@@ -17,6 +17,7 @@ const EVENTS_PER_PAGE = 12;
 // Helper function to get the minimum price display
 const getMinPriceDisplay = (price: number | null): string => {
     if (price === null || price === 0) return 'Grátis';
+    // Formata para R$ X.XX, usando vírgula como separador decimal
     return `R$ ${price.toFixed(2).replace('.', ',')}`;
 };
 
