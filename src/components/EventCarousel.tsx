@@ -16,12 +16,13 @@ const AUTOPLAY_DELAY = 6000; // 6 segundos
 const EventCarousel: React.FC<EventCarouselProps> = ({ events }) => {
     const navigate = useNavigate();
     
-    // Limita a 20 eventos, conforme solicitado
+    // Limita a 20 eventos
     const featuredEvents = events.slice(0, 20);
 
     const [emblaRef, emblaApi] = useEmblaCarousel({ 
         loop: true,
         align: 'start',
+        slidesToScroll: 1,
     });
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
@@ -52,7 +53,6 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ events }) => {
     // --- Lógica de Navegação e Indicadores ---
     const onSelect = useCallback((emblaApi: EmblaCarouselType) => {
         setSelectedIndex(emblaApi.selectedScrollSnap());
-        // Como estamos usando loop: true, os botões nunca estarão desabilitados, mas mantemos a função
         setPrevBtnDisabled(!emblaApi.canScrollPrev());
         setNextBtnDisabled(!emblaApi.canScrollNext());
     }, []);
@@ -97,49 +97,53 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ events }) => {
     return (
         <div className="relative">
             <div className="overflow-hidden" ref={emblaRef}>
-                <div className="flex touch-pan-y ml-0">
+                <div className="flex touch-pan-y ml-[-1rem]"> {/* Ajuste de margem para compensar o padding/gap */}
                     {featuredEvents.map((event, index) => (
-                        <div key={event.id} className="pl-0 basis-full flex-shrink-0 min-w-0">
-                            <div className="p-1">
-                                <Card 
-                                    className="bg-black/60 backdrop-blur-sm border border-yellow-500/30 rounded-2xl overflow-hidden h-full cursor-pointer hover:border-yellow-500/60 transition-all duration-300 group"
-                                    onClick={() => navigate(`/events/${event.id}`)}
-                                >
-                                    <CardContent className="flex flex-col aspect-[16/9] sm:aspect-[21/9] lg:aspect-[3/1] p-0">
-                                        <div className="relative h-full">
-                                            <img
-                                                src={event.image_url}
-                                                alt={event.title}
-                                                className="w-full h-full object-cover object-center"
-                                            />
-                                            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent p-6 flex flex-col justify-center">
-                                                <div className="max-w-full lg:max-w-xl">
-                                                    <span className="bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-semibold mb-2 self-start">
-                                                        {event.category}
-                                                    </span>
-                                                    <h3 className="text-2xl sm:text-4xl font-serif text-white mb-3 line-clamp-2 group-hover:text-yellow-400 transition-colors">
-                                                        {event.title}
-                                                    </h3>
-                                                    <div className="flex items-center space-x-4 text-sm sm:text-base text-gray-300">
-                                                        <div className="flex items-center">
-                                                            <i className="fas fa-calendar-alt mr-2 text-yellow-500"></i>
-                                                            {event.date}
-                                                        </div>
-                                                        <div className="flex items-center">
-                                                            <i className="fas fa-map-marker-alt mr-2 text-yellow-500"></i>
-                                                            {event.location}
-                                                        </div>
-                                                    </div>
-                                                    <Button 
-                                                        variant="default" 
-                                                        className="mt-4 bg-yellow-500 text-black hover:bg-yellow-600 px-6 py-2 text-sm sm:text-base"
-                                                    >
-                                                        Ver Detalhes <ArrowRight className="h-4 w-4 ml-2" />
-                                                    </Button>
-                                                </div>
-                                            </div>
+                        <div 
+                            key={event.id} 
+                            className="pl-4 basis-full sm:basis-1/2 lg:basis-1/3 flex-shrink-0 min-w-0"
+                        >
+                            <Card 
+                                className="bg-black/60 backdrop-blur-sm border border-yellow-500/30 rounded-2xl overflow-hidden h-full cursor-pointer hover:border-yellow-500/60 transition-all duration-300 group"
+                                onClick={() => navigate(`/events/${event.id}`)}
+                            >
+                                <CardContent className="flex flex-col p-0">
+                                    <div className="relative h-48 overflow-hidden">
+                                        <img
+                                            src={event.image_url}
+                                            alt={event.title}
+                                            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent p-4 flex flex-col justify-end">
+                                            <span className="bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-semibold mb-2 self-start">
+                                                {event.category}
+                                            </span>
+                                            <h3 className="text-xl font-serif text-white line-clamp-2 group-hover:text-yellow-400 transition-colors">
+                                                {event.title}
+                                            </h3>
                                         </div>
-                                    </CardContent>
+                                    </div>
+                                    <div className="p-4 space-y-2">
+                                        <div className="flex items-center text-sm text-gray-300">
+                                            <i className="fas fa-calendar-alt mr-2 text-yellow-500"></i>
+                                            {event.date}
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-300">
+                                            <i className="fas fa-map-marker-alt mr-2 text-yellow-500"></i>
+                                            {event.location}
+                                        </div>
+                                        <div className="flex justify-between items-center pt-2">
+                                            <span className="text-lg font-bold text-yellow-500">
+                                                {event.min_price === null ? 'Grátis' : `R$ ${event.min_price.toFixed(2).replace('.', ',')}`}
+                                            </span>
+                                            <Button 
+                                                variant="default" 
+                                                className="bg-yellow-500 text-black hover:bg-yellow-600 px-4 py-2 text-xs"
+                                            >
+                                                Detalhes <ArrowRight className="h-3 w-3 ml-1" />
+                                            </Button>
+                                        </div>
+                                    </div>
                                 </Card>
                             </div>
                         </div>
@@ -152,7 +156,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ events }) => {
                 variant="outline"
                 className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-10 h-10 p-0 rounded-full"
                 onClick={scrollPrev}
-                disabled={prevBtnDisabled && featuredEvents.length > 1} // Desabilitar se não puder rolar (apenas se não houver loop)
+                disabled={prevBtnDisabled && featuredEvents.length > 1}
             >
                 <ChevronLeft className="h-5 w-5" />
             </Button>
@@ -160,13 +164,13 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ events }) => {
                 variant="outline"
                 className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-10 h-10 p-0 rounded-full"
                 onClick={scrollNext}
-                disabled={nextBtnDisabled && featuredEvents.length > 1} // Desabilitar se não puder rolar (apenas se não houver loop)
+                disabled={nextBtnDisabled && featuredEvents.length > 1}
             >
                 <ChevronRight className="h-5 w-5" />
             </Button>
 
             {/* Indicadores (Bolinhas) */}
-            <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2 z-10">
+            <div className="absolute bottom-[-2rem] left-0 right-0 flex justify-center space-x-2 z-10">
                 {scrollSnaps.map((_, index) => (
                     <button
                         key={index}
