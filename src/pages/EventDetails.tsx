@@ -7,11 +7,13 @@ import { Input } from '@/components/ui/input';
 import { useEventDetails, EventDetailsData, TicketType } from '@/hooks/use-event-details';
 import { Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { showError } from '@/utils/toast'; // Importando showError
 
 // Helper function to get the minimum price from ticket types
 const getMinPriceDisplay = (ticketTypes: TicketType[] | undefined) => {
     if (!ticketTypes || ticketTypes.length === 0) return 'Grátis';
     const minPrice = Math.min(...ticketTypes.map(t => t.price));
+    // Se o preço for 0, exibe "R$ 0,00". Caso contrário, formata o preço.
     return `R$ ${minPrice.toFixed(2).replace('.', ',')}`;
 };
 
@@ -40,6 +42,11 @@ const EventDetails: React.FC = () => {
 
     const getTotalTickets = () => {
         return Object.values(selectedTickets).reduce((total, quantity) => total + quantity, 0);
+    };
+    
+    const handleCheckout = () => {
+        showError("A funcionalidade de compra está temporariamente indisponível.");
+        // Anteriormente, navegava para '/checkout'. Agora, apenas exibe um erro.
     };
 
     if (isLoading) {
@@ -148,7 +155,10 @@ const EventDetails: React.FC = () => {
                                     <span className="text-2xl sm:text-4xl font-bold text-yellow-500">
                                         A partir de {minPriceDisplay}
                                     </span>
-                                    <Button className="w-full sm:w-auto bg-yellow-500 text-black hover:bg-yellow-600 px-6 sm:px-8 py-3 text-base sm:text-lg font-semibold transition-all duration-300 cursor-pointer hover:scale-105">
+                                    <Button 
+                                        onClick={handleCheckout} // Usando a função de checkout
+                                        className="w-full sm:w-auto bg-yellow-500 text-black hover:bg-yellow-600 px-6 sm:px-8 py-3 text-base sm:text-lg font-semibold transition-all duration-300 cursor-pointer hover:scale-105"
+                                    >
                                         Comprar Ingressos
                                     </Button>
                                 </div>
@@ -280,8 +290,11 @@ const EventDetails: React.FC = () => {
                                                     <span className="text-yellow-500 text-xl sm:text-2xl font-bold">R$ {getTotalPrice().toFixed(2).replace('.', ',')}</span>
                                                 </div>
                                             </div>
-                                            <Button className="w-full bg-yellow-500 text-black hover:bg-yellow-600 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-all duration-300 cursor-pointer hover:scale-105">
-                                                Finalizar Compra
+                                            <Button 
+                                                onClick={handleCheckout} // Botão de checkout
+                                                className="w-full bg-yellow-500 text-black hover:bg-yellow-600 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-all duration-300 cursor-pointer hover:scale-105"
+                                            >
+                                                Comprar Ingressos
                                             </Button>
                                         </>
                                     )}
