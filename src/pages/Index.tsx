@@ -29,11 +29,17 @@ const Index: React.FC = () => {
     // Carregamento de eventos do Supabase
     const { events: allEvents, isLoading: isLoadingEvents, isError: isErrorEvents } = usePublicEvents();
     
-    // Estados para os filtros
-    const [searchTerm, setSearchTerm] = useState('');
-    const [selectedPriceRanges, setSelectedPriceRanges] = useState<string[]>([]);
-    const [selectedTimeRanges, setSelectedTimeRanges] = useState<string[]>([]);
-    const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+    // Estados para os filtros "em rascunho" (atualizados pelos inputs, mas não aplicados ainda)
+    const [stagedSearchTerm, setStagedSearchTerm] = useState('');
+    const [stagedPriceRanges, setStagedPriceRanges] = useState<string[]>([]);
+    const [stagedTimeRanges, setStagedTimeRanges] = useState<string[]>([]);
+    const [stagedStatuses, setStagedStatuses] = useState<string[]>([]);
+
+    // Estados para os filtros "aplicados" (usados para filtrar os eventos)
+    const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
+    const [appliedPriceRanges, setAppliedPriceRanges] = useState<string[]>([]);
+    const [appliedTimeRanges, setAppliedTimeRanges] = useState<string[]>([]);
+    const [appliedStatuses, setAppliedStatuses] = useState<string[]>([]);
 
     // Paginação
     const [currentPage, setCurrentPage] = useState(1);
@@ -45,36 +51,51 @@ const Index: React.FC = () => {
         });
     }, []);
 
+    // Sincroniza os filtros "em rascunho" com os "aplicados" quando a página carrega ou eventos mudam
+    useEffect(() => {
+        setStagedSearchTerm(appliedSearchTerm);
+        setStagedPriceRanges(appliedPriceRanges);
+        setStagedTimeRanges(appliedTimeRanges);
+        setStagedStatuses(appliedStatuses);
+    }, [appliedSearchTerm, appliedPriceRanges, appliedTimeRanges, appliedStatuses]);
+
+
     const handleEventClick = (event: PublicEvent) => {
         navigate(`/finalizar-compra`);
         console.log(`Navegando para Finalizar Compra para o evento: ${event.title}`);
     };
     
-    // Funções para manipular a seleção dos filtros
-    const handlePriceRangeChange = (range: string, isChecked: boolean) => {
-        setSelectedPriceRanges(prev => 
+    // Funções para manipular a seleção dos filtros "em rascunho"
+    const handleStagedPriceRangeChange = (range: string, isChecked: boolean) => {
+        setStagedPriceRanges(prev => 
             isChecked ? [...prev, range] : prev.filter(r => r !== range)
         );
     };
 
-    const handleTimeRangeChange = (range: string, isChecked: boolean) => {
-        setSelectedTimeRanges(prev => 
+    const handleStagedTimeRangeChange = (range: string, isChecked: boolean) => {
+        setStagedTimeRanges(prev => 
             isChecked ? [...prev, range] : prev.filter(r => r !== range)
         );
     };
 
-    const handleStatusChange = (status: string, isChecked: boolean) => {
-        setSelectedStatuses(prev => 
+    const handleStagedStatusChange = (status: string, isChecked: boolean) => {
+        setStagedStatuses(prev => 
             isChecked ? [...prev, status] : prev.filter(s => s !== status)
         );
     };
 
+    // Função chamada ao clicar em "Aplicar Filtros"
     const handleApplyFilters = () => {
         if (userId) {
             trackAdvancedFilterUse(userId);
         }
-        console.log("Aplicando filtros avançados...");
-        setCurrentPage(1); // Resetar para a primeira página ao aplicar filtros
+        // Copia os filtros "em rascunho" para os filtros "aplicados"
+        setAppliedSearchTerm(stagedSearchTerm);
+        setAppliedPriceRanges(stagedPriceRanges);
+        setAppliedTimeRanges(stagedTimeRanges);
+        setAppliedStatuses(stagedStatuses);
+        setCurrentPage(1); // Resetar para a primeira página ao aplicar novos filtros
+        console.log("Filtros aplicados!");
     };
     
     const handlePageChange = (page: number) => {
@@ -94,26 +115,26 @@ const Index: React.FC = () => {
         }
     };
 
-    // Lógica de Filtragem
+    // Lógica de Filtragem (agora depende dos estados 'applied')
     const filteredEvents = useMemo(() => {
         let tempEvents = allEvents;
 
         // 1. Filtro por termo de busca (título, descrição, localização, categoria)
-        if (searchTerm) {
+        if (appliedSearchTerm) {
             tempEvents = tempEvents.filter(event =>
-                event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                event.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                event.category.toLowerCase().includes(searchTerm.toLowerCase())
+                event.title.toLowerCase().includes(appliedSearchTerm.toLowerCase()) ||
+                event.description.toLowerCase().includes(appliedSearchTerm.toLowerCase()) ||
+                event.location.toLowerCase().includes(appliedSearchTerm.toLowerCase()) ||
+                event.category.toLowerCase().includes(appliedSearchTerm.toLowerCase())
             );
         }
 
         // 2. Filtro por Faixa de Preço
-        if (selectedPriceRanges.length > 0) {
+        if (appliedPriceRanges.length > 0) {
             tempEvents = tempEvents.filter(event => {
                 const price = event.min_price;
                 
-                return selectedPriceRanges.some(range => {
+                return appliedPriceRanges.some(range => {
                     switch (range) {
                         case 'free': return price === 0;
                         case 'under100': return price !== null && price > 0 && price <= 100;
@@ -126,14 +147,14 @@ const Index: React.FC = () => {
         }
 
         // 3. Filtro por Horário
-        if (selectedTimeRanges.length > 0) {
+        if (appliedTimeRanges.length > 0) {
             tempEvents = tempEvents.filter(event => {
                 const eventTime = event.time; // Ex: "20:00 - 23:00"
                 const [startTimeStr] = eventTime.split(' - ');
                 const [hours] = startTimeStr.split(':').map(Number);
                 const eventHour = hours;
 
-                return selectedTimeRanges.some(range => {
+                return appliedTimeRanges.some(range => {
                     switch (range) {
                         case 'morning': return eventHour >= 6 && eventHour < 12;
                         case 'afternoon': return eventHour >= 12 && eventHour < 18;
@@ -145,9 +166,9 @@ const Index: React.FC = () => {
         }
 
         // 4. Filtro por Status
-        if (selectedStatuses.length > 0) {
+        if (appliedStatuses.length > 0) {
             tempEvents = tempEvents.filter(event => {
-                return selectedStatuses.some(status => {
+                return appliedStatuses.some(status => {
                     switch (status) {
                         case 'open_sales': return event.total_available_tickets > 0;
                         case 'low_stock': 
@@ -161,7 +182,7 @@ const Index: React.FC = () => {
         }
 
         return tempEvents;
-    }, [allEvents, searchTerm, selectedPriceRanges, selectedTimeRanges, selectedStatuses]);
+    }, [allEvents, appliedSearchTerm, appliedPriceRanges, appliedTimeRanges, appliedStatuses]);
 
     // Lógica de Paginação
     const totalPages = Math.ceil(filteredEvents.length / EVENTS_PER_PAGE);
@@ -205,8 +226,8 @@ const Index: React.FC = () => {
                             <Input 
                                 type="search" 
                                 placeholder="Buscar eventos..." 
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                value={stagedSearchTerm}
+                                onChange={(e) => setStagedSearchTerm(e.target.value)}
                                 className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 w-48 md:w-64 pl-4 pr-10 py-2 rounded-xl"
                             />
                             <i className="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-yellow-500/60"></i>
@@ -244,8 +265,8 @@ const Index: React.FC = () => {
                                     <Input
                                         type="text"
                                         placeholder="Buscar eventos..."
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        value={stagedSearchTerm}
+                                        onChange={(e) => setStagedSearchTerm(e.target.value)}
                                         className="w-full bg-black/60 border border-yellow-500/30 rounded-xl px-4 sm:px-6 py-3 sm:py-4 text-white placeholder-gray-400 text-base sm:text-lg focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300"
                                     />
                                     <i className="fas fa-search absolute right-4 sm:right-6 top-1/2 transform -translate-y-1/2 text-yellow-500 text-lg"></i>
@@ -290,8 +311,8 @@ const Index: React.FC = () => {
                                                 <input 
                                                     type="checkbox" 
                                                     className="mr-3 accent-yellow-500" 
-                                                    checked={selectedPriceRanges.includes('free')}
-                                                    onChange={(e) => handlePriceRangeChange('free', e.target.checked)}
+                                                    checked={stagedPriceRanges.includes('free')}
+                                                    onChange={(e) => handleStagedPriceRangeChange('free', e.target.checked)}
                                                 />
                                                 <span className="text-gray-300">Gratuito</span>
                                             </label>
@@ -299,8 +320,8 @@ const Index: React.FC = () => {
                                                 <input 
                                                     type="checkbox" 
                                                     className="mr-3 accent-yellow-500" 
-                                                    checked={selectedPriceRanges.includes('under100')}
-                                                    onChange={(e) => handlePriceRangeChange('under100', e.target.checked)}
+                                                    checked={stagedPriceRanges.includes('under100')}
+                                                    onChange={(e) => handleStagedPriceRangeChange('under100', e.target.checked)}
                                                 />
                                                 <span className="text-gray-300">Até R$ 100</span>
                                             </label>
@@ -308,8 +329,8 @@ const Index: React.FC = () => {
                                                 <input 
                                                     type="checkbox" 
                                                     className="mr-3 accent-yellow-500" 
-                                                    checked={selectedPriceRanges.includes('100to300')}
-                                                    onChange={(e) => handlePriceRangeChange('100to300', e.target.checked)}
+                                                    checked={stagedPriceRanges.includes('100to300')}
+                                                    onChange={(e) => handleStagedPriceRangeChange('100to300', e.target.checked)}
                                                 />
                                                 <span className="text-gray-300">R$ 100 - R$ 300</span>
                                             </label>
@@ -317,8 +338,8 @@ const Index: React.FC = () => {
                                                 <input 
                                                     type="checkbox" 
                                                     className="mr-3 accent-yellow-500" 
-                                                    checked={selectedPriceRanges.includes('over300')}
-                                                    onChange={(e) => handlePriceRangeChange('over300', e.target.checked)}
+                                                    checked={stagedPriceRanges.includes('over300')}
+                                                    onChange={(e) => handleStagedPriceRangeChange('over300', e.target.checked)}
                                                 />
                                                 <span className="text-gray-300">Acima de R$ 300</span>
                                             </label>
@@ -331,8 +352,8 @@ const Index: React.FC = () => {
                                                 <input 
                                                     type="checkbox" 
                                                     className="mr-3 accent-yellow-500" 
-                                                    checked={selectedTimeRanges.includes('morning')}
-                                                    onChange={(e) => handleTimeRangeChange('morning', e.target.checked)}
+                                                    checked={stagedTimeRanges.includes('morning')}
+                                                    onChange={(e) => handleStagedTimeRangeChange('morning', e.target.checked)}
                                                 />
                                                 <span className="text-gray-300">Manhã (06:00 - 12:00)</span>
                                             </label>
@@ -340,8 +361,8 @@ const Index: React.FC = () => {
                                                 <input 
                                                     type="checkbox" 
                                                     className="mr-3 accent-yellow-500" 
-                                                    checked={selectedTimeRanges.includes('afternoon')}
-                                                    onChange={(e) => handleTimeRangeChange('afternoon', e.target.checked)}
+                                                    checked={stagedTimeRanges.includes('afternoon')}
+                                                    onChange={(e) => handleStagedTimeRangeChange('afternoon', e.target.checked)}
                                                 />
                                                 <span className="text-gray-300">Tarde (12:00 - 18:00)</span>
                                             </label>
@@ -349,8 +370,8 @@ const Index: React.FC = () => {
                                                 <input 
                                                     type="checkbox" 
                                                     className="mr-3 accent-yellow-500" 
-                                                    checked={selectedTimeRanges.includes('night')}
-                                                    onChange={(e) => handleTimeRangeChange('night', e.target.checked)}
+                                                    checked={stagedTimeRanges.includes('night')}
+                                                    onChange={(e) => handleStagedTimeRangeChange('night', e.target.checked)}
                                                 />
                                                 <span className="text-gray-300">Noite (18:00 - 00:00)</span>
                                             </label>
@@ -363,8 +384,8 @@ const Index: React.FC = () => {
                                                 <input 
                                                     type="checkbox" 
                                                     className="mr-3 accent-yellow-500" 
-                                                    checked={selectedStatuses.includes('open_sales')}
-                                                    onChange={(e) => handleStatusChange('open_sales', e.target.checked)}
+                                                    checked={stagedStatuses.includes('open_sales')}
+                                                    onChange={(e) => handleStagedStatusChange('open_sales', e.target.checked)}
                                                 />
                                                 <span className="text-gray-300">Vendas Abertas</span>
                                             </label>
@@ -372,8 +393,8 @@ const Index: React.FC = () => {
                                                 <input 
                                                     type="checkbox" 
                                                     className="mr-3 accent-yellow-500" 
-                                                    checked={selectedStatuses.includes('low_stock')}
-                                                    onChange={(e) => handleStatusChange('low_stock', e.target.checked)}
+                                                    checked={stagedStatuses.includes('low_stock')}
+                                                    onChange={(e) => handleStagedStatusChange('low_stock', e.target.checked)}
                                                 />
                                                 <span className="text-gray-300">Últimos Ingressos</span>
                                             </label>
