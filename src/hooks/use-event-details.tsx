@@ -14,6 +14,8 @@ export interface EventData {
     image_url: string;
     min_age: number;
     category: string;
+    capacity: number; // Adicionando capacidade
+    duration: string; // Adicionando duração
 }
 
 // Estrutura de dados do Tipo de Ingresso (baseado em pulseiras)
@@ -37,7 +39,9 @@ const fetchEventDetails = async (eventId: string): Promise<EventDetailsData | nu
     // 1. Buscar detalhes do Evento
     const { data: eventData, error: eventError } = await supabase
         .from('events')
-        .select('*')
+        .select(`
+            id, title, description, date, time, location, address, image_url, min_age, category, capacity, duration
+        `)
         .eq('id', eventId)
         .single();
 
@@ -51,11 +55,7 @@ const fetchEventDetails = async (eventId: string): Promise<EventDetailsData | nu
     
     // 2. Buscar Tipos de Pulseira (Wristbands) associados a este evento
     // Agrupamos por access_type e contamos o número de pulseiras ativas e o preço.
-    // Nota: O RLS garante que apenas pulseiras da empresa do gestor logado (se for o caso) ou pulseiras públicas sejam visíveis.
-    // Como esta é uma tela de cliente, assumimos que as pulseiras devem ser visíveis publicamente (o que não está configurado no RLS, mas faremos a query).
     
-    // Para simular a listagem de ingressos para o cliente, vamos buscar as pulseiras ativas
-    // e agrupar pelo tipo de acesso e preço.
     const { data: wristbandsData, error: wristbandsError } = await supabase
         .from('wristbands')
         .select('id, access_type, price, status')
