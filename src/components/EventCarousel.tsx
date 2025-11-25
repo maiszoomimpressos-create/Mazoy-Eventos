@@ -70,7 +70,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     useEffect(() => {
         if (!emblaApi) return;
         onInit(emblaApi);
-        onSelect(emblaApi);
         emblaApi.on('reInit', onInit);
         emblaApi.on('select', onSelect);
     }, [emblaApi, onInit, onSelect]);
@@ -150,7 +149,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                                             </Button>
                                         </div>
                                     </div>
-                                </Card>
+                                </CardContent>
                             </div>
                         </div>
                     ))}
