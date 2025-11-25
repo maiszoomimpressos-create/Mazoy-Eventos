@@ -1,44 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, ArrowLeft, ShoppingCart, CreditCard, CheckCircle } from 'lucide-react';
 import { showSuccess, showError } from '@/utils/toast';
 import { usePurchaseTicket } from '@/hooks/use-purchase-ticket'; // Importando o hook de compra
 
-// Mock de dados de pedido (Em um app real, isso viria do state do router ou de um contexto)
-// Usamos um ID de pulseira mockado (ticketTypeId) para simular o tipo de ingresso
-const mockOrder = {
-    eventName: "Concerto Sinfônico Premium",
-    totalTickets: 2,
-    totalPrice: 560.00,
-    items: [
-        { 
-            name: "Plateia Premium", 
-            quantity: 2, 
-            price: 280.00,
-            // Este ID deve ser o ID de uma pulseira base (wristband) ativa no seu DB
-            ticketTypeId: "00000000-0000-0000-0000-000000000001", 
-            eventId: "00000000-0000-0000-0000-000000000001", // ID do evento mockado
-        },
-    ],
-    paymentMethod: "Cartão de Crédito",
-};
+interface OrderItem {
+    name: string;
+    quantity: number;
+    price: number;
+    ticketTypeId: string; 
+    eventId: string;
+}
+
+interface OrderState {
+    eventName: string;
+    totalTickets: number;
+    totalPrice: number;
+    items: OrderItem[];
+}
 
 const Checkout: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const order = location.state as OrderState; // Recebe os dados do pedido via state
+    
     const { isLoading: isProcessing, purchaseTicket } = usePurchaseTicket();
     const [isConfirmed, setIsConfirmed] = useState(false);
+    const [isOrderValid, setIsOrderValid] = useState(false);
+
+    useEffect(() => {
+        // Validação básica do pedido
+        if (!order || !order.items || order.items.length === 0 || order.totalPrice <= 0) {
+            showError("Pedido inválido ou vazio. Retorne à página do evento.");
+            setIsOrderValid(false);
+        } else {
+            setIsOrderValid(true);
+        }
+    }, [order]);
 
     const handlePayment = async () => {
+        if (!isOrderValid) {
+            showError("Não é possível processar um pedido inválido.");
+            return;
+        }
+        
         // 1. Simulação de validação de pagamento (Gateway)
         // ... (Aqui ocorreria a chamada ao gateway de pagamento)
         
         // 2. Processamento da Transação no Supabase (Associação de Ingressos)
         let success = true;
         
-        // Itera sobre os itens do pedido (mockados)
-        for (const item of mockOrder.items) {
+        // Itera sobre os itens do pedido
+        for (const item of order.items) {
             const purchaseSuccess = await purchaseTicket({
                 eventId: item.eventId,
                 ticketTypeId: item.ticketTypeId,
@@ -56,6 +71,18 @@ const Checkout: React.FC = () => {
             setIsConfirmed(true);
         }
     };
+
+    if (!isOrderValid) {
+        return (
+            <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center pt-20 px-4">
+                <h1 className="text-4xl font-serif text-red-500 mb-4">Pedido Inválido</h1>
+                <p className="text-xl text-gray-400 mb-6">Não foi possível carregar os detalhes do pedido.</p>
+                <Button onClick={() => navigate('/')} className="bg-yellow-500 text-black hover:bg-yellow-600">
+                    Voltar para a Home
+                </Button>
+            </div>
+        );
+    }
 
     if (isConfirmed) {
         return (
@@ -110,10 +137,10 @@ const Checkout: React.FC = () => {
                         <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
                             <CardHeader className="p-0 mb-4 border-b border-yellow-500/20 pb-4">
                                 <CardTitle className="text-white text-xl font-semibold">Resumo do Pedido</CardTitle>
-                                <CardDescription className="text-gray-400 text-sm">{mockOrder.eventName}</CardDescription>
+                                <CardDescription className="text-gray-400 text-sm">{order.eventName}</CardDescription>
                             </CardHeader>
                             <CardContent className="p-0 space-y-4">
-                                {mockOrder.items.map((item, index) => (
+                                {order.items.map((item, index) => (
                                     <div key={index} className="flex justify-between items-center text-sm sm:text-base">
                                         <span className="text-gray-300">{item.name} ({item.quantity}x)</span>
                                         <span className="text-white font-medium">R$ {item.price.toFixed(2).replace('.', ',')}</span>
@@ -121,7 +148,7 @@ const Checkout: React.FC = () => {
                                 ))}
                                 <div className="border-t border-yellow-500/20 pt-4 flex justify-between items-center">
                                     <span className="text-white text-lg sm:text-xl font-semibold">Total a Pagar:</span>
-                                    <span className="text-yellow-500 text-xl sm:text-2xl font-bold">R$ {mockOrder.totalPrice.toFixed(2).replace('.', ',')}</span>
+                                    <span className="text-yellow-500 text-xl sm:text-2xl font-bold">R$ {order.totalPrice.toFixed(2).replace('.', ',')}</span>
                                 </div>
                             </CardContent>
                         </Card>
@@ -184,7 +211,7 @@ const Checkout: React.FC = () => {
                                         Processando Pagamento...
                                     </div>
                                 ) : (
-                                    `Pagar R$ ${mockOrder.totalPrice.toFixed(2).replace('.', ',')}`
+                                    `Pagar R$ ${order.totalPrice.toFixed(2).replace('.', ',')}`
                                 )}
                             </Button>
                             
