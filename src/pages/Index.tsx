@@ -42,22 +42,16 @@ const Index: React.FC = () => {
 
     // MODIFICADO: Agora navega diretamente para o Checkout com 1 ingresso
     const handleEventClick = (event: PublicEvent) => {
-        if (event.min_price === null || event.min_price <= 0) {
-            // Se não houver preço mínimo (sem ingressos ativos), redireciona para a página de detalhes
+        if (event.min_price === null || event.min_price_wristband_id === null) {
+            // Se não houver preço mínimo ou ID de pulseira, redireciona para a página de detalhes
             // para que o usuário veja a mensagem de indisponibilidade.
+            showError("Não há ingressos disponíveis para compra direta neste evento. Verifique os detalhes.");
             navigate(`/events/${event.id}`);
             return;
         }
         
-        // Simula a compra de 1 ingresso do tipo mais barato
         const price = event.min_price;
-        
-        // Nota: O ticketTypeId é o ID da pulseira base. Como não temos essa informação
-        // na lista pública, usamos o ID do evento como placeholder. Isso FALHARÁ na transação real
-        // se o ID do evento não for um ID de pulseira válido, mas abrirá a tela de checkout.
-        // Para evitar a falha na transação, vamos usar o ID do evento como ticketTypeId,
-        // mas o hook de compra precisa ser ajustado para lidar com isso.
-        const mockTicketTypeId = event.id; 
+        const ticketTypeId = event.min_price_wristband_id; // Usando o ID da pulseira com o preço mínimo
 
         navigate('/checkout', {
             state: {
@@ -68,7 +62,7 @@ const Index: React.FC = () => {
                     name: "Ingresso Padrão (Preço Mínimo)",
                     quantity: 1,
                     price: price,
-                    ticketTypeId: mockTicketTypeId,
+                    ticketTypeId: ticketTypeId, // Passando o ID da pulseira correto
                     eventId: event.id,
                 }],
             }

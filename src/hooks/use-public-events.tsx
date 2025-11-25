@@ -12,6 +12,7 @@ export interface PublicEvent {
     image_url: string;
     category: string;
     min_price: number | null; // Preço mínimo calculado
+    min_price_wristband_id: string | null; // NOVO: ID da pulseira com o preço mínimo
 }
 
 const fetchPublicEvents = async (): Promise<PublicEvent[]> => {
@@ -28,11 +29,10 @@ const fetchPublicEvents = async (): Promise<PublicEvent[]> => {
     
     const eventIds = eventsData.map(e => e.id);
     
-    // 2. Buscar o preço mínimo para todos os eventos em uma única query
-    // Agrupamos por event_id e encontramos o preço mínimo das pulseiras ativas.
-    const { data: minPricesData, error: pricesError } = await supabase
+    // 2. Buscar o preço mínimo e o ID da pulseira para todos os eventos em uma única query
+    const { data: wristbandsData, error: pricesError } = await supabase
         .from('wristbands')
-        .select('event_id, price')
+        .select('event_id, id, price') // Selecionando também o ID da pulseira
         .in('event_id', eventIds)
         .eq('status', 'active');
 
@@ -41,15 +41,14 @@ const fetchPublicEvents = async (): Promise<PublicEvent[]> => {
         // Não lançamos erro aqui, apenas continuamos sem preços se falhar
     }
     
-    const minPricesMap = minPricesData ? minPricesData.reduce((acc, item) => {
-        // Converte o preço para número, garantindo que seja tratado como 0 se for null/undefined
+    const minPricesMap = wristbandsData ? wristbandsData.reduce((acc, item) => {
         const price = parseFloat(item.price as unknown as string) || 0; 
         
-        if (!acc[item.event_id] || price < acc[item.event_id]) {
-            acc[item.event_id] = price;
+        if (!acc[item.event_id] || price < acc[item.event_id].price) {
+            acc[item.event_id] = { price: price, wristband_id: item.id };
         }
         return acc;
-    }, {} as { [eventId: string]: number }) : {};
+    }, {} as { [eventId: string]: { price: number; wristband_id: string } }) : {};
 
     // 3. Combinar dados e formatar
     return eventsData.map(event => ({
@@ -61,8 +60,8 @@ const fetchPublicEvents = async (): Promise<PublicEvent[]> => {
         location: event.location,
         image_url: event.image_url,
         category: event.category,
-        // Se o preço mínimo for 0, exibimos 'Grátis'. Se for null (sem pulseiras), também.
-        min_price: minPricesMap[event.id] !== undefined ? minPricesMap[event.id] : null,
+        min_price: minPricesMap[event.id] !== undefined ? minPricesMap[event.id].price : null,
+        min_price_wristband_id: minPricesMap[event.id] !== undefined ? minPricesMap[event.id].wristband_id : null, // NOVO
     }));
 };
 
