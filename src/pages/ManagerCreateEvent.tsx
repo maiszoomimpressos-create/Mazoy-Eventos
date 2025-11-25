@@ -35,7 +35,6 @@ interface EventFormData {
     category: string;
     capacity: number | string; // Capacidade
     duration: string; // NOVO: Duração
-    // REMOVIDO: price: string;
 }
 
 const ManagerCreateEvent: React.FC = () => {
@@ -52,7 +51,6 @@ const ManagerCreateEvent: React.FC = () => {
         category: '',
         capacity: '', // Inicializado como string vazia
         duration: '', // Inicializado como string vazia
-        // REMOVIDO: price: '',
     });
     const [isLoading, setIsLoading] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
@@ -105,7 +103,7 @@ const ManagerCreateEvent: React.FC = () => {
         if (!formData.location) errors.push("Localização é obrigatória.");
         if (!formData.address) errors.push("Endereço detalhado é obrigatório.");
         if (!formData.image_url) errors.push("URL da Imagem/Banner é obrigatória.");
-        if (!formData.duration) errors.push("Duração é obrigatória."); // NOVO: Validação de Duração
+        if (!formData.duration) errors.push("Duração é obrigatória.");
         
         // Validação da Data (agora é um objeto Date)
         if (!formData.date) {
@@ -126,7 +124,6 @@ const ManagerCreateEvent: React.FC = () => {
         }
 
         if (!formData.category) errors.push("Categoria é obrigatória.");
-        // REMOVIDO: if (!formData.price || Number(formData.price) <= 0) errors.push("Preço Base é obrigatório e deve ser maior que zero.");
 
         if (errors.length > 0) {
             showError(`Por favor, preencha todos os campos corretamente.`);
@@ -161,7 +158,6 @@ const ManagerCreateEvent: React.FC = () => {
                         category: formData.category,
                         capacity: Number(formData.capacity), // SALVANDO CAPACIDADE
                         duration: formData.duration, // SALVANDO DURAÇÃO
-                        // REMOVIDO: price: Number(formData.price),
                     },
                 ])
                 .select('id')

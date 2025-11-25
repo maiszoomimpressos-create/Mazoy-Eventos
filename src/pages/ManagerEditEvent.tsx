@@ -21,7 +21,6 @@ interface EventFormData {
     image_url: string; // Image URL
     min_age: number | string; // Minimum age
     category: string;
-    price: string;
     capacity: number | string; // Capacidade
     duration: string; // NOVO: Duração
 }
@@ -84,7 +83,6 @@ const ManagerEditEvent: React.FC = () => {
                 image_url: eventData.image_url || '',
                 min_age: eventData.min_age || 0,
                 category: eventData.category || '',
-                price: String(eventData.price || 0),
                 capacity: eventData.capacity || '', // Carregando capacidade
                 duration: eventData.duration || '', // Carregando duração
             });
@@ -123,7 +121,7 @@ const ManagerEditEvent: React.FC = () => {
         if (!formData.location) errors.push("Localização é obrigatória.");
         if (!formData.address) errors.push("Endereço detalhado é obrigatório.");
         if (!formData.image_url) errors.push("URL da Imagem/Banner é obrigatória.");
-        if (!formData.duration) errors.push("Duração é obrigatória."); // NOVO: Validação de Duração
+        if (!formData.duration) errors.push("Duração é obrigatória."); // Validação de Duração
         
         const minAge = Number(formData.min_age);
         if (formData.min_age === '' || formData.min_age === null || isNaN(minAge) || minAge < 0) {
@@ -136,7 +134,7 @@ const ManagerEditEvent: React.FC = () => {
         }
 
         if (!formData.category) errors.push("Categoria é obrigatória.");
-        if (!formData.price || Number(formData.price) <= 0) errors.push("Preço Base é obrigatório e deve ser maior que zero.");
+        // REMOVIDO: if (!formData.price || Number(formData.price) <= 0) errors.push("Preço Base é obrigatório e deve ser maior que zero.");
 
         if (errors.length > 0) {
             showError(`Por favor, preencha todos os campos obrigatórios.`);
@@ -165,7 +163,6 @@ const ManagerEditEvent: React.FC = () => {
                     image_url: formData.image_url,
                     min_age: Number(formData.min_age),
                     category: formData.category,
-                    price: Number(formData.price),
                     capacity: Number(formData.capacity), // SALVANDO CAPACIDADE
                     duration: formData.duration, // SALVANDO DURAÇÃO
                 })
@@ -352,22 +349,8 @@ const ManagerEditEvent: React.FC = () => {
                             </div>
                         </div>
                         
-                        {/* Linha 6: Preço Base, Capacidade, Duração e Idade Mínima (Ajustado para 3 colunas) */}
+                        {/* Linha 6: Capacidade, Duração e Idade Mínima */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label htmlFor="price" className="block text-sm font-medium text-white mb-2">Preço Base (R$) *</label>
-                                <Input 
-                                    id="price" 
-                                    type="number"
-                                    value={formData.price} 
-                                    onChange={handleChange} 
-                                    placeholder="0.00"
-                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
-                                    min="0"
-                                    step="0.01"
-                                    required
-                                />
-                            </div>
                             <div>
                                 <label htmlFor="capacity" className="block text-sm font-medium text-white mb-2">Capacidade Máxima (Pessoas) *</label>
                                 <Input 
@@ -395,10 +378,6 @@ const ManagerEditEvent: React.FC = () => {
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Duração estimada do evento.</p>
                             </div>
-                        </div>
-                        
-                        {/* Linha 7: Idade Mínima (Ajustado para ficar sozinho ou em uma nova linha se necessário) */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
                                 <label htmlFor="min_age" className="block text-sm font-medium text-white mb-2">Idade Mínima (Anos) *</label>
                                 <Input 
@@ -413,9 +392,6 @@ const ManagerEditEvent: React.FC = () => {
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Defina 0 para classificação livre.</p>
                             </div>
-                            {/* Espaços vazios para manter o layout de 3 colunas, se desejado */}
-                            <div className="hidden md:block"></div>
-                            <div className="hidden md:block"></div>
                         </div>
 
                         <div className="flex items-center space-x-4 pt-4">
