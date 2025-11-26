@@ -44,7 +44,7 @@ const fetchEventDetails = async (idUrl: string): Promise<EventDetailsData | null
     
     const numericId = parseInt(idUrl);
     if (isNaN(numericId)) {
-        console.error("ID de URL inválido:", idUrl);
+        console.error("[EventDetails] ID de URL inválido:", idUrl);
         return null;
     }
     
@@ -65,7 +65,7 @@ const fetchEventDetails = async (idUrl: string): Promise<EventDetailsData | null
             console.warn(`[EventDetails] Evento com id_url ${numericId} não encontrado (PGRST116).`);
             return null;
         }
-        console.error(`[EventDetails] Erro ao buscar evento ${numericId}:`, eventError);
+        console.error(`[EventDetails] ERRO CRÍTICO na busca do evento ${numericId}:`, eventError);
         throw new Error(eventError.message);
     }
     
@@ -84,7 +84,8 @@ const fetchEventDetails = async (idUrl: string): Promise<EventDetailsData | null
         .eq('status', 'active'); // Apenas pulseiras ativas estão 'disponíveis'
 
     if (wristbandsError) {
-        console.error("Error fetching wristbands for event:", wristbandsError);
+        // Se houver erro aqui (provavelmente RLS para clientes), logamos, mas não bloqueamos a exibição do evento
+        console.warn("[EventDetails] Aviso: Falha ao buscar pulseiras (RLS provável). Exibindo evento sem ingressos.", wristbandsError);
         return {
             event: eventData as EventData,
             ticketTypes: [],
