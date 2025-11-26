@@ -25,7 +25,7 @@ const EventDetails: React.FC = () => {
     const { isLoading: isPurchasing, purchaseTicket } = usePurchaseTicket();
 
     const [selectedTickets, setSelectedTickets] = useState<{ [key: string]: number }>({});
-    const [searchTerm, setSearchTerm] = useState(''); // Estado para o termo de busca
+    // Removendo o estado searchTerm, pois o campo de busca foi removido.
 
     if (isLoading) {
         return (
@@ -36,25 +36,11 @@ const EventDetails: React.FC = () => {
     }
 
     if (isError || !details?.event) {
-        // Lógica de erro: Exibe o campo de busca e a mensagem de erro
+        // Lógica de erro: Exibe apenas a mensagem de erro
         return (
             <div className="min-h-screen bg-black text-white pt-20 px-4">
                 <div className="max-w-4xl mx-auto py-10">
-                    <div className="relative mb-8">
-                        <Input 
-                            type="search" 
-                            placeholder="Buscar outros eventos..." 
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    navigate(`/?search=${searchTerm}`);
-                                }
-                            }}
-                            className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 w-full pl-10 py-3 rounded-xl text-lg"
-                        />
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-yellow-500/60" />
-                    </div>
+                    {/* Campo de pesquisa removido daqui */}
                     
                     <Card className="bg-black/80 backdrop-blur-sm border border-red-500/30 rounded-2xl p-8 text-center">
                         <i className="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
