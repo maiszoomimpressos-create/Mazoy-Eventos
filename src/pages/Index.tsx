@@ -99,6 +99,8 @@ const Index: React.FC = () => {
         console.log("Filtros aplicados!");
     };
     
+    const totalPages = Math.ceil(allEvents.length / EVENTS_PER_PAGE);
+
     const handlePageChange = (page: number) => {
         if (page >= 1 && page <= totalPages) {
             setCurrentPage(page);
@@ -186,7 +188,7 @@ const Index: React.FC = () => {
     }, [allEvents, appliedSearchTerm, appliedPriceRanges, appliedTimeRanges, appliedStatuses]);
 
     // Lógica de Paginação
-    const totalPages = Math.ceil(filteredEvents.length / EVENTS_PER_PAGE);
+    const totalFilteredPages = Math.ceil(filteredEvents.length / EVENTS_PER_PAGE);
     const startIndex = (currentPage - 1) * EVENTS_PER_PAGE;
     const endIndex = startIndex + EVENTS_PER_PAGE;
     const displayedEvents = filteredEvents.slice(startIndex, endIndex);
@@ -195,7 +197,7 @@ const Index: React.FC = () => {
         const maxPagesToShow = 5;
         const pages = [];
         let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
-        let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+        let endPage = Math.min(totalFilteredPages, startPage + maxPagesToShow - 1);
 
         if (endPage - startPage + 1 < maxPagesToShow) {
             startPage = Math.max(1, endPage - maxPagesToShow + 1);
@@ -528,7 +530,7 @@ const Index: React.FC = () => {
                                         
                                         <button 
                                             onClick={() => handlePageChange(currentPage + 1)}
-                                            disabled={currentPage === totalPages}
+                                            disabled={currentPage === totalFilteredPages}
                                             className="w-10 h-10 sm:w-12 sm:h-12 bg-black/60 border border-yellow-500/30 rounded-xl flex items-center justify-center text-yellow-500 hover:bg-yellow-500/20 hover:border-yellow-500 transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
                                             <i className="fas fa-chevron-right"></i>
