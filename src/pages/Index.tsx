@@ -242,10 +242,27 @@ const Index: React.FC = () => {
             </header>
             <section id="home" className="pt-20 pb-8 px-4 sm:px-6">
                 <div className="max-w-7xl mx-auto">
-                    <div className="relative w-full h-[250px] sm:h-[350px] md:h-[450px] bg-white rounded-2xl border-4 border-green-500 flex items-center justify-center">
-                        {/* Banner Centralizado */}
-                        <div className="w-[650px] h-[400px] max-w-full max-h-full bg-gray-200 rounded-xl border-4 border-yellow-500 flex items-center justify-center p-4">
-                            <p className="text-black text-lg font-semibold">Banner de 650px x 400px</p>
+                    <div className="relative w-full h-[250px] sm:h-[350px] md:h-[450px] bg-white rounded-2xl border-4 border-green-500 flex items-center justify-center overflow-hidden">
+                        
+                        {/* Contêiner Flexível para os Banners (apenas em telas maiores) */}
+                        <div className="hidden md:flex items-center justify-center w-full h-full">
+                            
+                            {/* Banner Central (Maior) - Z-index 10 para sobreposição */}
+                            <div className="relative z-10 w-[400px] h-[400px] bg-gray-200 rounded-xl border-4 border-yellow-500 flex items-center justify-center p-4 shadow-2xl">
+                                <p className="text-black text-lg font-semibold">Banner Central (400x400)</p>
+                            </div>
+
+                            {/* Banner da Direita (Menor) - Margem negativa para sobreposição */}
+                            <div className="w-[250px] h-[300px] bg-gray-300 rounded-xl border-4 border-yellow-500 flex items-center justify-center p-4 -ml-16 mt-20 shadow-lg">
+                                <p className="text-black text-sm font-semibold">Banner Lateral (250x300)</p>
+                            </div>
+                        </div>
+
+                        {/* Conteúdo para Mobile (Apenas o banner central) */}
+                        <div className="md:hidden w-full h-full flex items-center justify-center p-4">
+                            <div className="w-full h-full max-w-[300px] max-h-[300px] bg-gray-200 rounded-xl border-4 border-yellow-500 flex items-center justify-center p-4">
+                                <p className="text-black text-lg font-semibold">Banner (Mobile)</p>
+                            </div>
                         </div>
                     </div>
                 </div>
