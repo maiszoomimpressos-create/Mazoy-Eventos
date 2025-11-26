@@ -47,6 +47,8 @@ const fetchEventDetails = async (idUrl: string): Promise<EventDetailsData | null
         console.error("ID de URL inválido:", idUrl);
         return null;
     }
+    
+    console.log(`[EventDetails] Buscando evento com id_url: ${numericId}`);
 
     // 1. Buscar detalhes do Evento usando id_url
     const { data: eventData, error: eventError } = await supabase
@@ -60,13 +62,15 @@ const fetchEventDetails = async (idUrl: string): Promise<EventDetailsData | null
 
     if (eventError) {
         if (eventError.code === 'PGRST116') { // No rows found
+            console.warn(`[EventDetails] Evento com id_url ${numericId} não encontrado (PGRST116).`);
             return null;
         }
-        console.error("Error fetching event details:", eventError);
+        console.error(`[EventDetails] Erro ao buscar evento ${numericId}:`, eventError);
         throw new Error(eventError.message);
     }
     
     if (!eventData) {
+        console.warn(`[EventDetails] Evento com id_url ${numericId} não encontrado (data nula).`);
         return null;
     }
     
