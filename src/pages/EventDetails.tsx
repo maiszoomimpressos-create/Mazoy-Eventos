@@ -3,9 +3,16 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useEventDetails, TicketType } from '@/hooks/use-event-details';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Car, Road, BookOpen, MapPin, Clock, Users, UserCheck, User, Shield, ArrowRight } from 'lucide-react';
 import { showError } from '@/utils/toast';
-import EventBanner from '@/components/EventBanner'; // Importando o EventBanner
+import EventBanner from '@/components/EventBanner';
+
+// Hardcoded highlights for the requested layout structure (Expo Carros Clássicos)
+const HIGHLIGHTS = [
+    { icon: 'fas fa-car', title: 'Carros Únicos' },
+    { icon: 'fas fa-road', title: 'Test Drives' },
+    { icon: 'fas fa-chalkboard-teacher', title: 'Palestras Técnicas' },
+];
 
 // Helper function to get the minimum price from ticket types
 const getMinPriceDisplay = (ticketTypes: TicketType[] | undefined) => {
@@ -49,7 +56,6 @@ const EventDetails: React.FC = () => {
             return;
         }
         
-        // Mapeia os ingressos selecionados para um formato mais simples para o checkout
         const ticketsToPurchase = Object.entries(selectedTickets)
             .filter(([, quantity]) => quantity > 0)
             .map(([ticketId, quantity]) => {
@@ -62,7 +68,6 @@ const EventDetails: React.FC = () => {
                 };
             });
 
-        // Navega para a tela de finalização de compra, passando o ID do evento e os ingressos
         navigate('/finalizar-compra', { 
             state: { 
                 eventId: id,
@@ -95,67 +100,165 @@ const EventDetails: React.FC = () => {
     const { event, ticketTypes } = details;
     const minPriceDisplay = getMinPriceDisplay(ticketTypes);
     
-    // Extraindo dados do organizador
     const organizerName = event.companies?.corporate_name || 'N/A';
     const capacityDisplay = event.capacity > 0 ? event.capacity.toLocaleString('pt-BR') : 'N/A';
     const durationDisplay = event.duration || 'N/A';
+    const classificationDisplay = event.min_age === 0 ? 'Livre' : `${event.min_age} anos`;
 
     return (
         <div className="min-h-screen bg-black text-white overflow-x-hidden">
-            {/* 1. Banner do Evento (Usando o componente EventBanner com botão de ação) */}
-            <EventBanner event={event} minPriceDisplay={minPriceDisplay} showActionButton={false} />
+            {/* 1. Cabeçalho do Evento (Banner) */}
+            <section className="relative h-[450px] md:h-[600px] lg:h-[700px] overflow-hidden -mt-20">
+                <img
+                    src={event.image_url}
+                    alt={event.title}
+                    className="w-full h-full object-cover object-top"
+                />
+                {/* Overlay escuro com gradiente */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40"></div>
+                
+                <div className="absolute inset-0 flex items-end pb-16 pt-20">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
+                        <div className="max-w-full lg:max-w-4xl">
+                            {/* Categoria (Badge) */}
+                            <div className="inline-block bg-yellow-500 text-black px-4 py-1.5 rounded-lg text-sm sm:text-base font-semibold mb-4">
+                                {event.category}
+                            </div>
+                            
+                            {/* Título Principal (H1) */}
+                            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-serif text-white mb-4 sm:mb-6 leading-tight drop-shadow-lg">
+                                {event.title}
+                            </h1>
+                            
+                            {/* Subtítulo / Descrição Curta */}
+                            <p className="text-base sm:text-xl text-gray-200 mb-6 sm:mb-10 leading-relaxed line-clamp-3 drop-shadow-md">
+                                {event.description}
+                            </p>
+                            
+                            {/* Informações do Evento — linha de 3 colunas */}
+                            <div className="flex flex-wrap gap-x-10 gap-y-4 mb-8 sm:mb-12">
+                                {/* Data */}
+                                <div className="flex items-center">
+                                    <i className="fas fa-calendar-alt text-yellow-500 text-2xl mr-3"></i>
+                                    <div>
+                                        <div className="text-xs text-gray-400">Data</div>
+                                        <div className="text-lg font-bold text-white">{new Date(event.date).toLocaleDateString('pt-BR')}</div>
+                                    </div>
+                                </div>
+                                {/* Horário */}
+                                <div className="flex items-center">
+                                    <i className="fas fa-clock text-yellow-500 text-2xl mr-3"></i>
+                                    <div>
+                                        <div className="text-xs text-gray-400">Horário</div>
+                                        <div className="text-lg font-bold text-white">{event.time}</div>
+                                    </div>
+                                </div>
+                                {/* Local */}
+                                <div className="flex items-center">
+                                    <i className="fas fa-map-marker-alt text-yellow-500 text-2xl mr-3"></i>
+                                    <div>
+                                        <div className="text-xs text-gray-400">Local</div>
+                                        <div className="text-lg font-bold text-white">{event.location}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Preço Inicial e Botão */}
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
+                                <span className="text-3xl sm:text-4xl font-bold text-yellow-500">
+                                    A partir de {minPriceDisplay}
+                                </span>
+                                <Button 
+                                    onClick={() => {
+                                        // Rola para a seção de ingressos
+                                        document.getElementById('ingressos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    }}
+                                    className="w-full sm:w-auto bg-yellow-500 text-black hover:bg-yellow-600 px-8 py-3 text-base sm:text-lg font-semibold transition-all duration-300 cursor-pointer hover:scale-105"
+                                >
+                                    Comprar Ingressos
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
             
-            {/* Linha divisória que estava no banner embutido */}
+            {/* Linha divisória */}
             <div className="w-full h-px bg-yellow-500"></div>
             
             <section className="py-12 sm:py-20 px-4 sm:px-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+                        
+                        {/* Coluna Principal (Detalhes) */}
                         <div className="lg:col-span-2 space-y-8 sm:space-y-12 order-2 lg:order-1">
+                            
+                            {/* 2. Seção "Sobre o Evento" */}
                             <div>
                                 <h2 className="text-2xl sm:text-3xl font-serif text-yellow-500 mb-4 sm:mb-6">Sobre o Evento</h2>
                                 <div className="bg-black/60 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6 sm:p-8">
                                     <p className="text-gray-300 text-sm sm:text-lg leading-relaxed mb-6">
                                         {event.description}
                                     </p>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                                        <div className="space-y-3 sm:space-y-4">
-                                            <div className="flex items-center text-sm sm:text-base">
-                                                <i className="fas fa-users text-yellow-500 mr-3"></i>
-                                                <span className="text-white">Capacidade: {capacityDisplay}</span>
-                                            </div>
-                                            <div className="flex items-center text-sm sm:text-base">
-                                                <i className="fas fa-clock text-yellow-500 mr-3"></i>
-                                                <span className="text-white">Duração: {durationDisplay}</span>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 pt-4 border-t border-yellow-500/10">
+                                        {/* Capacidade */}
+                                        <div className="flex items-center text-sm sm:text-base">
+                                            <Users className="text-yellow-500 mr-3 h-5 w-5" />
+                                            <div>
+                                                <div className="text-xs text-gray-400">Capacidade</div>
+                                                <span className="text-white font-semibold">{capacityDisplay} pessoas</span>
                                             </div>
                                         </div>
-                                        <div className="space-y-3 sm:space-y-4">
-                                            <div className="flex items-center text-sm sm:text-base">
-                                                <i className="fas fa-user-check text-yellow-500 mr-3"></i>
-                                                <span className="text-white">Classificação: {event.min_age === 0 ? 'Livre' : `${event.min_age} anos`}</span>
+                                        {/* Duração */}
+                                        <div className="flex items-center text-sm sm:text-base">
+                                            <Clock className="text-yellow-500 mr-3 h-5 w-5" />
+                                            <div>
+                                                <div className="text-xs text-gray-400">Duração</div>
+                                                <span className="text-white font-semibold">{durationDisplay}</span>
                                             </div>
-                                            <div className="flex items-center text-sm sm:text-base">
-                                                <i className="fas fa-user-tie text-yellow-500 mr-3"></i>
-                                                <span className="text-white">Organizador: {organizerName}</span>
+                                        </div>
+                                        {/* Classificação */}
+                                        <div className="flex items-center text-sm sm:text-base">
+                                            <UserCheck className="text-yellow-500 mr-3 h-5 w-5" />
+                                            <div>
+                                                <div className="text-xs text-gray-400">Classificação</div>
+                                                <span className="text-white font-semibold">{classificationDisplay}</span>
+                                            </div>
+                                        </div>
+                                        {/* Organizador */}
+                                        <div className="flex items-center text-sm sm:text-base">
+                                            <User className="text-yellow-500 mr-3 h-5 w-5" />
+                                            <div>
+                                                <div className="text-xs text-gray-400">Organizador</div>
+                                                <span className="text-white font-semibold">{organizerName}</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                            
+                            {/* 3. Seção “Destaques do Evento” */}
                             <div>
                                 <h3 className="text-xl sm:text-2xl font-serif text-yellow-500 mb-4 sm:mb-6">Destaques do Evento</h3>
-                                <div className="bg-black/60 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6 sm:p-8">
-                                    <div className="text-gray-400">
-                                        {/* Placeholder para destaques, pois não temos este campo no DB */}
-                                        <p>Destaques não disponíveis no momento. Consulte a descrição.</p>
-                                    </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    {HIGHLIGHTS.map((highlight, index) => (
+                                        <Card 
+                                            key={index} 
+                                            className="bg-black/60 border border-yellow-500/30 rounded-2xl p-6 text-center hover:border-yellow-500/60 transition-all duration-300"
+                                        >
+                                            <i className={`${highlight.icon} text-3xl text-yellow-500 mb-3`}></i>
+                                            <p className="text-white font-semibold text-sm">{highlight.title}</p>
+                                        </Card>
+                                    ))}
                                 </div>
                             </div>
+                            
+                            {/* 4. Seção “Localização” */}
                             <div>
                                 <h3 className="text-xl sm:text-2xl font-serif text-yellow-500 mb-4 sm:mb-6">Localização</h3>
                                 <div className="bg-black/60 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6 sm:p-8">
                                     <div className="flex items-start space-x-4 mb-6">
-                                        <i className="fas fa-map-marker-alt text-yellow-500 text-xl mt-1 flex-shrink-0"></i>
+                                        <MapPin className="text-yellow-500 h-6 w-6 mt-1 flex-shrink-0" />
                                         <div>
                                             <h4 className="text-white font-semibold text-base sm:text-lg mb-2">{event.location}</h4>
                                             <p className="text-gray-300 text-sm sm:text-base">{event.address}</p>
@@ -170,7 +273,9 @@ const EventDetails: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                        <div className="lg:col-span-1 order-1 lg:order-2">
+                        
+                        {/* Coluna de Ingressos (Sidebar) */}
+                        <div id="ingressos" className="lg:col-span-1 order-1 lg:order-2">
                             <div className="lg:sticky lg:top-24">
                                 <div className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6 sm:p-8">
                                     <h3 className="text-xl sm:text-2xl font-serif text-yellow-500 mb-6">Selecionar Ingressos</h3>
@@ -181,14 +286,14 @@ const EventDetails: React.FC = () => {
                                                     <div className="flex justify-between items-start mb-4">
                                                         <div>
                                                             <h4 className="text-white font-semibold text-base sm:text-lg">{ticket.name}</h4>
-                                                            <p className="text-gray-400 text-xs sm:text-sm mt-1">{ticket.description}</p>
+                                                            <p className="text-gray-400 text-xs sm:text-sm mt-1 line-clamp-2">{ticket.description}</p>
                                                         </div>
                                                         <div className="text-right flex-shrink-0 ml-4">
                                                             <div className="text-xl sm:text-2xl font-bold text-yellow-500">R$ {ticket.price.toFixed(2).replace('.', ',')}</div>
                                                             <div className="text-xs sm:text-sm text-gray-400">{ticket.available} disponíveis</div>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center justify-between">
+                                                    <div className="flex items-center justify-between pt-3 border-t border-yellow-500/10">
                                                         <span className="text-white text-sm sm:text-base">Quantidade:</span>
                                                         <div className="flex items-center space-x-3">
                                                             <button
@@ -231,21 +336,22 @@ const EventDetails: React.FC = () => {
                                                 </div>
                                             </div>
                                             <Button 
-                                                onClick={handleCheckout} // Botão de checkout
+                                                onClick={handleCheckout}
                                                 className="w-full bg-yellow-500 text-black hover:bg-yellow-600 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-all duration-300 cursor-pointer hover:scale-105"
                                             >
                                                 Comprar Ingressos
                                             </Button>
                                         </>
                                     )}
-                                    <div className="mt-6 p-4 bg-black/40 rounded-xl">
-                                        <div className="flex items-center text-yellow-500 mb-2">
-                                            <i className="fas fa-shield-alt mr-2"></i>
-                                            <span className="text-sm font-semibold">Compra Segura</span>
+                                    {/* Aviso de Compra Segura */}
+                                    <div className="mt-6 p-4 bg-black/40 rounded-xl border border-yellow-500/20 flex items-start space-x-3">
+                                        <Shield className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                                        <div>
+                                            <h4 className="text-white font-semibold text-sm mb-1">Compra Segura</h4>
+                                            <p className="text-gray-400 text-xs">
+                                                Seus dados estão protegidos e a compra é 100% segura.
+                                            </p>
                                         </div>
-                                        <p className="text-gray-400 text-xs">
-                                            Seus dados estão protegidos e a compra é 100% segura.
-                                        </p>
                                     </div>
                                 </div>
                             </div>
