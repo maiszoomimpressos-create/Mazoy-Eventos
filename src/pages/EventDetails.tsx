@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, MapPin, Clock, Users, UserCheck, User, Shield, ArrowLeft } from 'lucide-react';
+import { Loader2, MapPin, Clock, Users, UserCheck, User, Shield, ArrowLeft, Search } from 'lucide-react';
 import { showError, showSuccess } from '@/utils/toast';
 import { useEventDetails, EventDetailsData, TicketType } from '@/hooks/use-event-details';
 import EventBanner from '@/components/EventBanner';
 import { usePurchaseTicket } from '@/hooks/use-purchase-ticket';
+import { Input } from '@/components/ui/input';
+import { useAuthRedirect } from '@/hooks/use-auth-redirect'; // Importando o novo hook
 
 // Helper function to get the minimum price display
 const getMinPriceDisplay = (ticketTypes: TicketType[]): string => {
@@ -18,12 +20,25 @@ const getMinPriceDisplay = (ticketTypes: TicketType[]): string => {
 
 const EventDetails: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { id } = useParams<{ id: string }>(); 
     
     const { details, isLoading, isError } = useEventDetails(id);
     const { isLoading: isPurchasing, purchaseTicket } = usePurchaseTicket();
+    const { isAuthenticated, redirectToLogin } = useAuthRedirect();
 
-    const [selectedTickets, setSelectedTickets] = useState<{ [key: string]: number }>({});
+    // Inicializa o estado dos ingressos a partir do estado de navegação (se houver)
+    const initialSelectedTickets = location.state?.selectedTickets || {};
+    const [selectedTickets, setSelectedTickets] = useState<{ [key: string]: number }>(initialSelectedTickets);
+
+    // Limpa o estado de navegação após a montagem para evitar loops de re-renderização
+    useEffect(() => {
+        if (location.state?.selectedTickets) {
+            // Remove o estado de navegação após usá-lo
+            navigate(location.pathname, { replace: true });
+        }
+    }, [location.state, location.pathname, navigate]);
+
 
     if (isLoading) {
         return (
@@ -35,17 +50,21 @@ const EventDetails: React.FC = () => {
 
     if (isError || !details?.event) {
         return (
-            <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center pt-20 px-4">
-                <i className="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
-                <h1 className="text-2xl font-serif text-white mb-2">Evento Não Encontrado</h1>
-                <p className="text-gray-400 mb-6">O evento que você está procurando não existe ou foi removido.</p>
-                <Button 
-                    onClick={() => navigate('/')}
-                    className="bg-yellow-500 text-black hover:bg-yellow-600"
-                >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Voltar para a Home
-                </Button>
+            <div className="min-h-screen bg-black text-white pt-20 px-4">
+                <div className="max-w-4xl mx-auto py-10">
+                    <Card className="bg-black/80 backdrop-blur-sm border border-red-500/30 rounded-2xl p-8 text-center">
+                        <i className="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
+                        <h1 className="text-2xl font-serif text-white mb-2">Evento Não Encontrado</h1>
+                        <p className="text-gray-400 mb-6">O evento que você está procurando não existe, foi removido ou o ID é inválido.</p>
+                        <Button 
+                            onClick={() => navigate('/')}
+                            className="bg-yellow-500 text-black hover:bg-yellow-600"
+                        >
+                            <ArrowLeft className="h-4 w-4 mr-2" />
+                            Voltar para a Home
+                        </Button>
+                    </Card>
+                </div>
             </div>
         );
     }
@@ -77,30 +96,49 @@ const EventDetails: React.FC = () => {
             return;
         }
         
-        // Para simplificar, vamos simular a compra do primeiro tipo de ingresso selecionado
-        const firstSelectedTicket = Object.entries(selectedTickets).find(([, quantity]) => quantity > 0);
-        
-        if (!firstSelectedTicket) return;
-
-        const [ticketId, quantity] = firstSelectedTicket;
-        const ticketDetails = ticketTypes.find(t => t.id === ticketId);
-        
-        if (!ticketDetails) {
-            showError("Detalhes do ingresso não encontrados.");
+        // 1. VERIFICAÇÃO DE AUTENTICAÇÃO
+        if (!isAuthenticated) {
+            // Salva o estado atual dos ingressos selecionados antes de redirecionar
+            redirectToLogin({ selectedTickets });
             return;
         }
+        
+        // 2. LÓGICA DE COMPRA (Se autenticado)
+        
+        // Para simplificar, vamos processar TODOS os ingressos selecionados.
+        // Criamos uma lista de promessas de compra.
+        const purchasePromises = Object.entries(selectedTickets)
+            .filter(([, quantity]) => quantity > 0)
+            .map(async ([ticketId, quantity]) => {
+                const ticketDetails = ticketTypes.find(t => t.id === ticketId);
+                
+                if (!ticketDetails) {
+                    throw new Error(`Detalhes do ingresso ${ticketId} não encontrados.`);
+                }
 
-        const success = await purchaseTicket({
-            eventId: event.id,
-            ticketTypeId: ticketId,
-            quantity: quantity,
-            price: ticketDetails.price,
-        });
+                return purchaseTicket({
+                    eventId: event.id,
+                    ticketTypeId: ticketId,
+                    quantity: quantity,
+                    price: ticketDetails.price,
+                });
+            });
 
-        if (success) {
-            // Após a compra bem-sucedida, limpa a seleção e navega para a página de ingressos
-            setSelectedTickets({});
-            navigate('/tickets');
+        try {
+            const results = await Promise.all(purchasePromises);
+            
+            // Se todas as compras foram bem-sucedidas (o hook purchaseTicket retorna true em caso de sucesso)
+            if (results.every(result => result === true)) {
+                // Após a compra bem-sucedida, limpa a seleção e navega para a página de ingressos
+                setSelectedTickets({});
+                navigate('/tickets');
+            } else {
+                // Se alguma falhou, o purchaseTicket já deve ter exibido um erro.
+                showError("Algumas compras falharam. Verifique a disponibilidade.");
+            }
+        } catch (e: any) {
+            console.error("Erro durante o processamento de múltiplas compras:", e);
+            showError(e.message || "Ocorreu um erro ao processar a compra.");
         }
     };
 
@@ -255,6 +293,9 @@ const EventDetails: React.FC = () => {
                                                                 <button
                                                                     onClick={() => handleTicketChange(ticket.id, currentQuantity + 1)}
                                                                     className="w-7 h-7 sm:w-8 sm:h-8 bg-yellow-500/20 border border-yellow-500/40 rounded-full flex items-center justify-center text-yellow-500 hover:bg-yellow-500/30 transition-all duration-300 cursor-pointer disabled:opacity-30"
+                                                                    // CORREÇÃO: Se a quantidade atual é igual à disponibilidade, o botão deve ser desabilitado.
+                                                                    // Se o problema é que ele está desabilitando cedo demais, a única causa é que a disponibilidade é 1.
+                                                                    // Mantendo a lógica correta de limite de estoque:
                                                                     disabled={!isAvailable || currentQuantity >= ticket.available || isPurchasing}
                                                                 >
                                                                     <i className="fas fa-plus text-xs"></i>
@@ -357,7 +398,8 @@ const EventDetails: React.FC = () => {
                                 </a>
                                 <a href="#" className="text-yellow-500 hover:text-yellow-600 transition-colors cursor-pointer">
                                     <i className="fab fa-linkedin text-xl sm:text-2xl"></i>
-                                </a>
+                                </a
+                            >
                             </div>
                         </div>
                     </div>
