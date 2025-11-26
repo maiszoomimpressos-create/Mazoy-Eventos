@@ -22,44 +22,12 @@ const getMinPriceDisplay = (price: number | null): string => {
     return `R$ ${price.toFixed(2).replace('.', ',')}`;
 };
 
-// Define a structure for each carousel slide in the new layout
-interface CarouselSlideData {
-    mainEvent: PublicEvent;
-    leftSideEvents: PublicEvent[];
-    rightSideEvents: PublicEvent[];
-}
-
 const EventCarousel = ({ events }: EventCarouselProps) => {
     const navigate = useNavigate();
     const isMobile = useIsMobile(); // Determine if on mobile
     
     // Limit to 20 events for the carousel
     const featuredEvents = events.slice(0, 20);
-
-    // Helper to get events with wrap-around for side banners
-    const getWrappedEvents = useCallback((allEvents: PublicEvent[], currentIndex: number, offset: number, count: number): PublicEvent[] => {
-        const total = allEvents.length;
-        const result: PublicEvent[] = [];
-        if (total === 0) return [];
-
-        for (let i = 1; i <= count; i++) {
-            let index = (currentIndex + offset * i) % total;
-            if (index < 0) index += total; // Handle negative indices for left side wrap-around
-            result.push(allEvents[index]);
-        }
-        return result;
-    }, []);
-
-    // Generate carousel slides with main and side events
-    const carouselSlides: CarouselSlideData[] = useMemo(() => {
-        if (featuredEvents.length === 0) return [];
-
-        return featuredEvents.map((mainEvent, index) => {
-            const leftSideEvents = getWrappedEvents(featuredEvents, index, -1, 3);
-            const rightSideEvents = getWrappedEvents(featuredEvents, index, 1, 3);
-            return { mainEvent, leftSideEvents, rightSideEvents };
-        });
-    }, [featuredEvents, getWrappedEvents]);
 
     const [emblaRef, emblaApi] = useEmblaCarousel({ 
         loop: true,
@@ -132,6 +100,18 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             </div>
         );
     }
+
+    // Helper to get the event for the side cards with wrap-around
+    const getSideEvent = useCallback((offset: number): PublicEvent | undefined => {
+        if (featuredEvents.length === 0) return undefined;
+        const total = featuredEvents.length;
+        let index = (selectedIndex + offset) % total;
+        if (index < 0) index += total; // Handle negative indices for left side wrap-around
+        return featuredEvents[index];
+    }, [featuredEvents, selectedIndex]);
+
+    const leftSideEvent = getSideEvent(-1);
+    const rightSideEvent = getSideEvent(1);
 
     // Mobile Layout
     if (isMobile) {
@@ -229,28 +209,55 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     }
 
     // Desktop Layout
-    const currentSlideData = carouselSlides[selectedIndex];
-
     return (
         <div className="relative w-full max-w-[1200px] h-[450px] mx-auto">
-            {/* Left side stack */}
-            <div className="absolute left-1/2 -translate-x-[calc(375px+100px+20px)] top-1/2 -translate-y-1/2 w-[200px] h-[400px] flex flex-col justify-center space-y-2 z-0">
-                {currentSlideData?.leftSideEvents.map((event, idx) => (
+            {/* Left "peeking" event card */}
+            {leftSideEvent && (
+                <div 
+                    className="absolute left-1/2 -translate-x-[calc(375px + 200px)] top-1/2 -translate-y-1/2 w-[400px] h-[400px] opacity-50 rounded-2xl overflow-hidden border border-yellow-500/20 z-0 cursor-pointer"
+                    onClick={() => navigate(`/finalizar-compra`)}
+                >
                     <img 
-                        key={event.id + '-left-' + idx} 
-                        src={event.image_url} 
-                        alt={event.title} 
-                        className="w-full h-[120px] object-cover rounded-lg opacity-50 hover:opacity-75 transition-opacity cursor-pointer border border-yellow-500/20" 
-                        onClick={() => navigate(`/finalizar-compra`)}
+                        src={leftSideEvent.image_url} 
+                        alt={leftSideEvent.title} 
+                        className="w-full h-full object-cover object-center blur-[1px]" 
                     />
-                ))}
-            </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent p-4 flex flex-col justify-end">
+                        <span className="bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-semibold mb-2 self-start">
+                            {leftSideEvent.category}
+                        </span>
+                        <h3 className="text-xl font-serif text-white line-clamp-2">
+                            {leftSideEvent.title}
+                        </h3>
+                        <div className="flex items-center text-sm text-gray-300 mt-2">
+                            <i className="fas fa-calendar-alt mr-2 text-yellow-500"></i>
+                            {leftSideEvent.date}
+                        </div>
+                        <div className="flex items-center text-sm text-gray-300">
+                            <i className="fas fa-map-marker-alt mr-2 text-yellow-500"></i>
+                            {leftSideEvent.location}
+                        </div>
+                        <div className="flex justify-between items-center pt-2">
+                            <span className="text-lg font-bold text-yellow-500">
+                                {getMinPriceDisplay(leftSideEvent.min_price)}
+                            </span>
+                            <Button 
+                                variant="default" 
+                                className="bg-yellow-500 text-black hover:bg-yellow-600 px-4 py-2 text-xs"
+                                onClick={(e) => { e.stopPropagation(); navigate(`/finalizar-compra`); }}
+                            >
+                                Detalhes <ArrowRight className="h-3 w-3 ml-1" />
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Embla Carousel for the central banner */}
-            <div className="overflow-hidden absolute left-1/2 -translate-x-1/2 w-[750px] h-[450px]" ref={emblaRef}>
+            <div className="overflow-hidden absolute left-1/2 -translate-x-1/2 w-[750px] h-[450px] z-10" ref={emblaRef}>
                 <div className="flex touch-pan-y">
                     {featuredEvents.map((event) => ( // Each featured event is a central slide
-                        <div key={event.id} className="flex-shrink-0 basis-full min-w-0 w-[750px] h-[450px] relative z-10 rounded-2xl overflow-hidden shadow-lg border border-yellow-500/50">
+                        <div key={event.id} className="flex-shrink-0 basis-full min-w-0 w-[750px] h-[450px] relative rounded-2xl overflow-hidden shadow-lg border border-yellow-500/50">
                             <img 
                                 src={event.image_url} 
                                 alt={event.title} 
@@ -291,23 +298,52 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 </div>
             </div>
 
-            {/* Right side stack */}
-            <div className="absolute right-1/2 translate-x-[calc(375px+100px+20px)] top-1/2 -translate-y-1/2 w-[200px] h-[400px] flex flex-col justify-center space-y-2 z-0">
-                {currentSlideData?.rightSideEvents.map((event, idx) => (
+            {/* Right "peeking" event card */}
+            {rightSideEvent && (
+                <div 
+                    className="absolute right-1/2 translate-x-[calc(375px + 200px)] top-1/2 -translate-y-1/2 w-[400px] h-[400px] opacity-50 rounded-2xl overflow-hidden border border-yellow-500/20 z-0 cursor-pointer"
+                    onClick={() => navigate(`/finalizar-compra`)}
+                >
                     <img 
-                        key={event.id + '-right-' + idx} 
-                        src={event.image_url} 
-                        alt={event.title} 
-                        className="w-full h-[120px] object-cover rounded-lg opacity-50 hover:opacity-75 transition-opacity cursor-pointer border border-yellow-500/20" 
-                        onClick={() => navigate(`/finalizar-compra`)}
+                        src={rightSideEvent.image_url} 
+                        alt={rightSideEvent.title} 
+                        className="w-full h-full object-cover object-center blur-[1px]" 
                     />
-                ))}
-            </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/60 to-transparent p-4 flex flex-col justify-end">
+                        <span className="bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-semibold mb-2 self-start">
+                            {rightSideEvent.category}
+                        </span>
+                        <h3 className="text-xl font-serif text-white line-clamp-2">
+                            {rightSideEvent.title}
+                        </h3>
+                        <div className="flex items-center text-sm text-gray-300 mt-2">
+                            <i className="fas fa-calendar-alt mr-2 text-yellow-500"></i>
+                            {rightSideEvent.date}
+                        </div>
+                        <div className="flex items-center text-sm text-gray-300">
+                            <i className="fas fa-map-marker-alt mr-2 text-yellow-500"></i>
+                            {rightSideEvent.location}
+                        </div>
+                        <div className="flex justify-between items-center pt-2">
+                            <span className="text-lg font-bold text-yellow-500">
+                                {getMinPriceDisplay(rightSideEvent.min_price)}
+                            </span>
+                            <Button 
+                                variant="default" 
+                                className="bg-yellow-500 text-black hover:bg-yellow-600 px-4 py-2 text-xs"
+                                onClick={(e) => { e.stopPropagation(); navigate(`/finalizar-compra`); }}
+                            >
+                                Detalhes <ArrowRight className="h-3 w-3 ml-1" />
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
             
             {/* Navigation Arrows for Desktop */}
             <Button
                 variant="outline"
-                className="absolute left-1/2 -translate-x-[calc(375px+100px+20px+50px)] top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-10 h-10 p-0 rounded-full hidden lg:flex"
+                className="absolute left-1/2 -translate-x-[calc(375px - 20px)] top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-10 h-10 p-0 rounded-full hidden lg:flex"
                 onClick={scrollPrev}
                 disabled={prevBtnDisabled && featuredEvents.length > 1}
             >
@@ -315,7 +351,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             </Button>
             <Button
                 variant="outline"
-                className="absolute right-1/2 translate-x-[calc(375px+100px+20px+50px)] top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-10 h-10 p-0 rounded-full hidden lg:flex"
+                className="absolute right-1/2 translate-x-[calc(375px - 20px)] top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-10 h-10 p-0 rounded-full hidden lg:flex"
                 onClick={scrollNext}
                 disabled={nextBtnDisabled && featuredEvents.length > 1}
             >
