@@ -105,30 +105,40 @@ const EventDetails: React.FC = () => {
         
         // 2. LÓGICA DE COMPRA (Se autenticado)
         
-        // Para simplificar, vamos simular a compra do primeiro tipo de ingresso selecionado
-        const firstSelectedTicket = Object.entries(selectedTickets).find(([, quantity]) => quantity > 0);
-        
-        if (!firstSelectedTicket) return;
+        // Para simplificar, vamos processar TODOS os ingressos selecionados.
+        // Criamos uma lista de promessas de compra.
+        const purchasePromises = Object.entries(selectedTickets)
+            .filter(([, quantity]) => quantity > 0)
+            .map(async ([ticketId, quantity]) => {
+                const ticketDetails = ticketTypes.find(t => t.id === ticketId);
+                
+                if (!ticketDetails) {
+                    throw new Error(`Detalhes do ingresso ${ticketId} não encontrados.`);
+                }
 
-        const [ticketId, quantity] = firstSelectedTicket;
-        const ticketDetails = ticketTypes.find(t => t.id === ticketId);
-        
-        if (!ticketDetails) {
-            showError("Detalhes do ingresso não encontrados.");
-            return;
-        }
+                return purchaseTicket({
+                    eventId: event.id,
+                    ticketTypeId: ticketId,
+                    quantity: quantity,
+                    price: ticketDetails.price,
+                });
+            });
 
-        const success = await purchaseTicket({
-            eventId: event.id,
-            ticketTypeId: ticketId,
-            quantity: quantity,
-            price: ticketDetails.price,
-        });
-
-        if (success) {
-            // Após a compra bem-sucedida, limpa a seleção e navega para a página de ingressos
-            setSelectedTickets({});
-            navigate('/tickets');
+        try {
+            const results = await Promise.all(purchasePromises);
+            
+            // Se todas as compras foram bem-sucedidas (o hook purchaseTicket retorna true em caso de sucesso)
+            if (results.every(result => result === true)) {
+                // Após a compra bem-sucedida, limpa a seleção e navega para a página de ingressos
+                setSelectedTickets({});
+                navigate('/tickets');
+            } else {
+                // Se alguma falhou, o purchaseTicket já deve ter exibido um erro.
+                showError("Algumas compras falharam. Verifique a disponibilidade.");
+            }
+        } catch (e: any) {
+            console.error("Erro durante o processamento de múltiplas compras:", e);
+            showError(e.message || "Ocorreu um erro ao processar a compra.");
         }
     };
 
@@ -283,6 +293,7 @@ const EventDetails: React.FC = () => {
                                                                 <button
                                                                     onClick={() => handleTicketChange(ticket.id, currentQuantity + 1)}
                                                                     className="w-7 h-7 sm:w-8 sm:h-8 bg-yellow-500/20 border border-yellow-500/40 rounded-full flex items-center justify-center text-yellow-500 hover:bg-yellow-500/30 transition-all duration-300 cursor-pointer disabled:opacity-30"
+                                                                    // CORRIGIDO: Apenas desabilita se a quantidade selecionada for igual ou maior que a disponibilidade
                                                                     disabled={!isAvailable || currentQuantity >= ticket.available || isPurchasing}
                                                                 >
                                                                     <i className="fas fa-plus text-xs"></i>
