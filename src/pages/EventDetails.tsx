@@ -2,12 +2,33 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useEventDetails, TicketType } from '@/hooks/use-event-details';
-import { Loader2, Car, Road, BookOpen, MapPin, Clock, Users, UserCheck, User, Shield, ArrowRight } from 'lucide-react';
+import { Loader2, MapPin, Clock, Users, UserCheck, User, Shield } from 'lucide-react';
 import { showError } from '@/utils/toast';
-import EventBanner from '@/components/EventBanner';
 
-// Hardcoded highlights for the requested layout structure (Expo Carros Clássicos)
+// --- DADOS ESTÁTICOS MOCKADOS ---
+const MOCK_EVENT_DATA = {
+    id: 'mock-id-1',
+    title: 'Expo Carros Clássicos',
+    description: 'Exposição de veículos raros e colecionáveis premium com demonstrações exclusivas e encontro de colecionadores.',
+    date: '2026-02-23', // Data ISO para formatação
+    time: '10:00 - 19:00',
+    location: 'Pavilhão Auto',
+    address: 'Rod. dos Imigrantes, 15 km – Vila Água Funda, São Paulo – SP, 04329-000',
+    image_url: 'https://readdy.ai/api/search-image?query=luxury%20car%20show%20exhibition%20with%20black%20and%20gold%20automotive%20display%2C%20premium%20vehicle%20event%20space%20with%20sophisticated%20lighting%20and%20elegant%20atmosphere&width=750&height=450&seq=banner12&orientation=landscape',
+    min_age: 0,
+    category: 'Automóveis',
+    capacity: 800,
+    duration: '9 horas',
+    organizer: 'Classic Cars Brasil',
+};
+
+const MOCK_TICKET_TYPES = [
+    { id: 'vip', name: 'Collector VIP', price: 350, available: 50, description: 'Acesso VIP + test drive + almoço exclusivo' },
+    { id: 'enthusiast', name: 'Enthusiast', price: 250, available: 200, description: 'Acesso premium + palestras exclusivas' },
+    { id: 'standard', name: 'Standard', price: 180, available: 400, description: 'Visitação completa da exposição' },
+    { id: 'familia', name: 'Família', price: 450, available: 300, description: 'Entrada para até 4 pessoas (2 adultos + 2 crianças)' },
+];
+
 const HIGHLIGHTS = [
     { icon: 'fas fa-car', title: 'Carros Únicos' },
     { icon: 'fas fa-road', title: 'Test Drives' },
@@ -15,18 +36,16 @@ const HIGHLIGHTS = [
 ];
 
 // Helper function to get the minimum price from ticket types
-const getMinPriceDisplay = (ticketTypes: TicketType[] | undefined) => {
+const getMinPriceDisplay = (ticketTypes: typeof MOCK_TICKET_TYPES) => {
     if (!ticketTypes || ticketTypes.length === 0) return 'Sem ingressos ativos';
     const minPrice = Math.min(...ticketTypes.map(t => t.price));
-    // Se o preço for 0, exibe "R$ 0,00". Caso contrário, formata o preço.
-    return `R$ ${minPrice.toFixed(2).replace('.', ',')}`;
+    return `R$ ${minPrice.toFixed(0)}`; // Apenas R$ 180, sem centavos
 };
 
 const EventDetails: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    
-    const { details, isLoading, isError } = useEventDetails(id);
+    // Usamos useParams apenas para simular a URL, mas não carregamos dados
+    const { id } = useParams<{ id: string }>(); 
     
     const [selectedTickets, setSelectedTickets] = useState<{ [key: string]: number }>({});
 
@@ -38,9 +57,8 @@ const EventDetails: React.FC = () => {
     };
 
     const getTotalPrice = () => {
-        if (!details) return 0;
         return Object.entries(selectedTickets).reduce((total, [ticketId, quantity]) => {
-            const ticket = details.ticketTypes.find((t: TicketType) => t.id === ticketId);
+            const ticket = MOCK_TICKET_TYPES.find(t => t.id === ticketId);
             return total + (ticket ? ticket.price * quantity : 0);
         }, 0);
     };
@@ -59,7 +77,7 @@ const EventDetails: React.FC = () => {
         const ticketsToPurchase = Object.entries(selectedTickets)
             .filter(([, quantity]) => quantity > 0)
             .map(([ticketId, quantity]) => {
-                const ticketDetails = details?.ticketTypes.find(t => t.id === ticketId);
+                const ticketDetails = MOCK_TICKET_TYPES.find(t => t.id === ticketId);
                 return {
                     ticketId,
                     quantity,
@@ -68,6 +86,7 @@ const EventDetails: React.FC = () => {
                 };
             });
 
+        // Simulação de navegação para checkout
         navigate('/finalizar-compra', { 
             state: { 
                 eventId: id,
@@ -77,43 +96,16 @@ const EventDetails: React.FC = () => {
         });
     };
 
-    if (isLoading) {
-        return (
-            <div className="min-h-screen bg-black text-white flex items-center justify-center pt-20">
-                <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
-            </div>
-        );
-    }
-
-    if (isError || !details) {
-        return (
-            <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center pt-20 px-4">
-                <h1 className="text-4xl font-serif text-red-500 mb-4">Erro 404</h1>
-                <p className="text-xl text-gray-400 mb-6">Evento não encontrado ou indisponível.</p>
-                <Button onClick={() => navigate('/')} className="bg-yellow-500 text-black hover:bg-yellow-600">
-                    Voltar para a Home
-                </Button>
-            </div>
-        );
-    }
+    const event = MOCK_EVENT_DATA;
+    const ticketTypes = MOCK_TICKET_TYPES;
     
-    const { event, ticketTypes } = details;
     const minPriceDisplay = getMinPriceDisplay(ticketTypes);
-    
-    const organizerName = event.companies?.corporate_name || 'N/A';
-    const capacityDisplay = event.capacity > 0 ? event.capacity.toLocaleString('pt-BR') : 'N/A';
-    const durationDisplay = event.duration || 'N/A';
     const classificationDisplay = event.min_age === 0 ? 'Livre' : `${event.min_age} anos`;
 
     return (
         <div className="min-h-screen bg-black text-white overflow-x-hidden">
-            {/* 1. Cabeçalho do Evento (Banner) */}
-            <section className="relative h-[450px] md:h-[600px] lg:h-[700px] overflow-hidden -mt-20">
-                <img
-                    src={event.image_url}
-                    alt={event.title}
-                    className="w-full h-full object-cover object-top"
-                />
+            {/* 1. Cabeçalho do Evento (Banner) - Usando uma cor sólida para simular o banner sem imagem */}
+            <section className="relative h-[450px] md:h-[600px] lg:h-[700px] overflow-hidden -mt-20 bg-gray-900">
                 {/* Overlay escuro com gradiente */}
                 <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40"></div>
                 
@@ -142,7 +134,7 @@ const EventDetails: React.FC = () => {
                                     <i className="fas fa-calendar-alt text-yellow-500 text-2xl mr-3"></i>
                                     <div>
                                         <div className="text-xs text-gray-400">Data</div>
-                                        <div className="text-lg font-bold text-white">{new Date(event.date).toLocaleDateString('pt-BR')}</div>
+                                        <div className="text-lg font-bold text-white">23 Fevereiro 2026</div>
                                     </div>
                                 </div>
                                 {/* Horário */}
@@ -166,11 +158,10 @@ const EventDetails: React.FC = () => {
                             {/* Preço Inicial e Botão */}
                             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
                                 <span className="text-3xl sm:text-4xl font-bold text-yellow-500">
-                                    A partir de {minPriceDisplay}
+                                    A partir de R$ 180
                                 </span>
                                 <Button 
                                     onClick={() => {
-                                        // Rola para a seção de ingressos
                                         document.getElementById('ingressos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                                     }}
                                     className="w-full sm:w-auto bg-yellow-500 text-black hover:bg-yellow-600 px-8 py-3 text-base sm:text-lg font-semibold transition-all duration-300 cursor-pointer hover:scale-105"
@@ -206,7 +197,7 @@ const EventDetails: React.FC = () => {
                                             <Users className="text-yellow-500 mr-3 h-5 w-5" />
                                             <div>
                                                 <div className="text-xs text-gray-400">Capacidade</div>
-                                                <span className="text-white font-semibold">{capacityDisplay} pessoas</span>
+                                                <span className="text-white font-semibold">{event.capacity} pessoas</span>
                                             </div>
                                         </div>
                                         {/* Duração */}
@@ -214,7 +205,7 @@ const EventDetails: React.FC = () => {
                                             <Clock className="text-yellow-500 mr-3 h-5 w-5" />
                                             <div>
                                                 <div className="text-xs text-gray-400">Duração</div>
-                                                <span className="text-white font-semibold">{durationDisplay}</span>
+                                                <span className="text-white font-semibold">{event.duration}</span>
                                             </div>
                                         </div>
                                         {/* Classificação */}
@@ -230,7 +221,7 @@ const EventDetails: React.FC = () => {
                                             <User className="text-yellow-500 mr-3 h-5 w-5" />
                                             <div>
                                                 <div className="text-xs text-gray-400">Organizador</div>
-                                                <span className="text-white font-semibold">{organizerName}</span>
+                                                <span className="text-white font-semibold">{event.organizer}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -281,7 +272,7 @@ const EventDetails: React.FC = () => {
                                     <h3 className="text-xl sm:text-2xl font-serif text-yellow-500 mb-6">Selecionar Ingressos</h3>
                                     <div className="space-y-6">
                                         {ticketTypes.length > 0 ? (
-                                            ticketTypes.map((ticket: TicketType) => (
+                                            ticketTypes.map((ticket) => (
                                                 <div key={ticket.id} className="bg-black/60 border border-yellow-500/20 rounded-xl p-4 sm:p-6">
                                                     <div className="flex justify-between items-start mb-4">
                                                         <div>
@@ -289,7 +280,7 @@ const EventDetails: React.FC = () => {
                                                             <p className="text-gray-400 text-xs sm:text-sm mt-1 line-clamp-2">{ticket.description}</p>
                                                         </div>
                                                         <div className="text-right flex-shrink-0 ml-4">
-                                                            <div className="text-xl sm:text-2xl font-bold text-yellow-500">R$ {ticket.price.toFixed(2).replace('.', ',')}</div>
+                                                            <div className="text-xl sm:text-2xl font-bold text-yellow-500">R$ {ticket.price.toFixed(0)}</div>
                                                             <div className="text-xs sm:text-sm text-gray-400">{ticket.available} disponíveis</div>
                                                         </div>
                                                     </div>
