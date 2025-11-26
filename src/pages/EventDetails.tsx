@@ -1,32 +1,54 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useEventDetails, TicketType } from '@/hooks/use-event-details';
-import { Loader2, Car, Road, BookOpen, MapPin, Clock, Users, UserCheck, User, Shield, ArrowRight } from 'lucide-react';
+import { Loader2, MapPin, Clock, Users, UserCheck, User, Shield, ArrowRight } from 'lucide-react';
 import { showError } from '@/utils/toast';
-import EventBanner from '@/components/EventBanner';
 
-// Hardcoded highlights for the requested layout structure (Expo Carros Clássicos)
+// --- DADOS MOCKADOS ESTÁTICOS ---
+const MOCK_EVENT = {
+    id: "mock-123",
+    title: "Expo Carros Clássicos",
+    description: "Exposição de veículos raros e colecionáveis premium com demonstrações exclusivas e encontro de colecionadores.",
+    category: "Automóveis",
+    date: "23 Fevereiro 2026",
+    time: "10:00 - 19:00",
+    location: "Pavilhão Auto",
+    address: "Rod. dos Imigrantes, 15 km – Vila Água Funda, São Paulo – SP, 04329-000",
+    image_url: "https://readdy.ai/api/search-image?query=luxury%20car%20show%20exhibition%20with%20black%20and%20gold%20automotive%20display%2C%20premium%20vehicle%20event%20space%20with%20sophisticated%20lighting%20and%20elegant%20atmosphere&width=1200&height=700&seq=banner12&orientation=landscape",
+    min_age: 0,
+    capacity: 800,
+    duration: "9 horas",
+    organizer: "Classic Cars Brasil",
+};
+
+const MOCK_TICKET_TYPES = [
+    { id: 'vip', name: 'Collector VIP', price: 350, available: 50, description: 'Acesso VIP + test drive + almoço exclusivo' },
+    { id: 'enthusiast', name: 'Enthusiast', price: 250, available: 200, description: 'Acesso premium + palestras exclusivas' },
+    { id: 'standard', name: 'Standard', price: 180, available: 400, description: 'Visitação completa da exposição' },
+    { id: 'familia', name: 'Família', price: 450, available: 300, description: 'Entrada para até 4 pessoas (2 adultos + 2 crianças)' },
+];
+
 const HIGHLIGHTS = [
     { icon: 'fas fa-car', title: 'Carros Únicos' },
     { icon: 'fas fa-road', title: 'Test Drives' },
     { icon: 'fas fa-chalkboard-teacher', title: 'Palestras Técnicas' },
 ];
 
-// Helper function to get the minimum price from ticket types
-const getMinPriceDisplay = (ticketTypes: TicketType[] | undefined) => {
-    if (!ticketTypes || ticketTypes.length === 0) return 'Sem ingressos ativos';
+// Helper function to get the minimum price display
+const getMinPriceDisplay = (ticketTypes: typeof MOCK_TICKET_TYPES) => {
+    if (ticketTypes.length === 0) return 'Sem ingressos ativos';
     const minPrice = Math.min(...ticketTypes.map(t => t.price));
-    // Se o preço for 0, exibe "R$ 0,00". Caso contrário, formata o preço.
-    return `R$ ${minPrice.toFixed(2).replace('.', ',')}`;
+    return `R$ ${minPrice.toFixed(0)}`; // A partir de R$ 180
 };
 
 const EventDetails: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     
-    const { details, isLoading, isError } = useEventDetails(id);
+    // Usando dados mockados diretamente
+    const event = MOCK_EVENT;
+    const ticketTypes = MOCK_TICKET_TYPES;
+    const minPriceDisplay = getMinPriceDisplay(ticketTypes);
     
     const [selectedTickets, setSelectedTickets] = useState<{ [key: string]: number }>({});
 
@@ -38,9 +60,8 @@ const EventDetails: React.FC = () => {
     };
 
     const getTotalPrice = () => {
-        if (!details) return 0;
         return Object.entries(selectedTickets).reduce((total, [ticketId, quantity]) => {
-            const ticket = details.ticketTypes.find((t: TicketType) => t.id === ticketId);
+            const ticket = ticketTypes.find(t => t.id === ticketId);
             return total + (ticket ? ticket.price * quantity : 0);
         }, 0);
     };
@@ -56,65 +77,21 @@ const EventDetails: React.FC = () => {
             return;
         }
         
-        const ticketsToPurchase = Object.entries(selectedTickets)
-            .filter(([, quantity]) => quantity > 0)
-            .map(([ticketId, quantity]) => {
-                const ticketDetails = details?.ticketTypes.find(t => t.id === ticketId);
-                return {
-                    ticketId,
-                    quantity,
-                    price: ticketDetails?.price || 0,
-                    name: ticketDetails?.name || 'Ingresso',
-                };
-            });
-
-        navigate('/finalizar-compra', { 
-            state: { 
-                eventId: id,
-                tickets: ticketsToPurchase,
-                totalPrice: getTotalPrice(),
-            } 
-        });
+        // Simulação de navegação para checkout
+        console.log("Iniciando checkout com:", selectedTickets);
+        alert(`Iniciando compra de ${totalTickets} ingressos. Total: R$ ${getTotalPrice().toFixed(2).replace('.', ',')}`);
+        // navigate('/finalizar-compra', { state: { ... } }); // Desabilitado para focar no layout
     };
 
-    if (isLoading) {
-        return (
-            <div className="min-h-screen bg-black text-white flex items-center justify-center pt-20">
-                <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
-            </div>
-        );
-    }
-
-    if (isError || !details) {
-        return (
-            <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center pt-20 px-4">
-                <h1 className="text-4xl font-serif text-red-500 mb-4">Erro 404</h1>
-                <p className="text-xl text-gray-400 mb-6">Evento não encontrado ou indisponível.</p>
-                <Button onClick={() => navigate('/')} className="bg-yellow-500 text-black hover:bg-yellow-600">
-                    Voltar para a Home
-                </Button>
-            </div>
-        );
-    }
-    
-    const { event, ticketTypes } = details;
-    const minPriceDisplay = getMinPriceDisplay(ticketTypes);
-    
-    const organizerName = event.companies?.corporate_name || 'N/A';
     const capacityDisplay = event.capacity > 0 ? event.capacity.toLocaleString('pt-BR') : 'N/A';
     const durationDisplay = event.duration || 'N/A';
     const classificationDisplay = event.min_age === 0 ? 'Livre' : `${event.min_age} anos`;
 
     return (
         <div className="min-h-screen bg-black text-white overflow-x-hidden">
-            {/* 1. Cabeçalho do Evento (Banner) */}
-            <section className="relative h-[450px] md:h-[600px] lg:h-[700px] overflow-hidden -mt-20">
-                <img
-                    src={event.image_url}
-                    alt={event.title}
-                    className="w-full h-full object-cover object-top"
-                />
-                {/* Overlay escuro com gradiente */}
+            {/* 1. Cabeçalho do Evento (Banner) - Usando apenas a estrutura de texto */}
+            <section className="relative h-[450px] md:h-[600px] lg:h-[700px] overflow-hidden -mt-20 bg-gray-900/50">
+                {/* Imagem de fundo removida, mantendo o espaço e o overlay */}
                 <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40"></div>
                 
                 <div className="absolute inset-0 flex items-end pb-16 pt-20">
@@ -142,7 +119,7 @@ const EventDetails: React.FC = () => {
                                     <i className="fas fa-calendar-alt text-yellow-500 text-2xl mr-3"></i>
                                     <div>
                                         <div className="text-xs text-gray-400">Data</div>
-                                        <div className="text-lg font-bold text-white">{new Date(event.date).toLocaleDateString('pt-BR')}</div>
+                                        <div className="text-lg font-bold text-white">{event.date}</div>
                                     </div>
                                 </div>
                                 {/* Horário */}
@@ -170,7 +147,6 @@ const EventDetails: React.FC = () => {
                                 </span>
                                 <Button 
                                     onClick={() => {
-                                        // Rola para a seção de ingressos
                                         document.getElementById('ingressos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
                                     }}
                                     className="w-full sm:w-auto bg-yellow-500 text-black hover:bg-yellow-600 px-8 py-3 text-base sm:text-lg font-semibold transition-all duration-300 cursor-pointer hover:scale-105"
@@ -230,7 +206,7 @@ const EventDetails: React.FC = () => {
                                             <User className="text-yellow-500 mr-3 h-5 w-5" />
                                             <div>
                                                 <div className="text-xs text-gray-400">Organizador</div>
-                                                <span className="text-white font-semibold">{organizerName}</span>
+                                                <span className="text-white font-semibold">{event.organizer}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -280,48 +256,42 @@ const EventDetails: React.FC = () => {
                                 <div className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6 sm:p-8">
                                     <h3 className="text-xl sm:text-2xl font-serif text-yellow-500 mb-6">Selecionar Ingressos</h3>
                                     <div className="space-y-6">
-                                        {ticketTypes.length > 0 ? (
-                                            ticketTypes.map((ticket: TicketType) => (
-                                                <div key={ticket.id} className="bg-black/60 border border-yellow-500/20 rounded-xl p-4 sm:p-6">
-                                                    <div className="flex justify-between items-start mb-4">
-                                                        <div>
-                                                            <h4 className="text-white font-semibold text-base sm:text-lg">{ticket.name}</h4>
-                                                            <p className="text-gray-400 text-xs sm:text-sm mt-1 line-clamp-2">{ticket.description}</p>
-                                                        </div>
-                                                        <div className="text-right flex-shrink-0 ml-4">
-                                                            <div className="text-xl sm:text-2xl font-bold text-yellow-500">R$ {ticket.price.toFixed(2).replace('.', ',')}</div>
-                                                            <div className="text-xs sm:text-sm text-gray-400">{ticket.available} disponíveis</div>
-                                                        </div>
+                                        {ticketTypes.map((ticket) => (
+                                            <div key={ticket.id} className="bg-black/60 border border-yellow-500/20 rounded-xl p-4 sm:p-6">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div>
+                                                        <h4 className="text-white font-semibold text-base sm:text-lg">{ticket.name}</h4>
+                                                        <p className="text-gray-400 text-xs sm:text-sm mt-1 line-clamp-2">{ticket.description}</p>
                                                     </div>
-                                                    <div className="flex items-center justify-between pt-3 border-t border-yellow-500/10">
-                                                        <span className="text-white text-sm sm:text-base">Quantidade:</span>
-                                                        <div className="flex items-center space-x-3">
-                                                            <button
-                                                                onClick={() => handleTicketChange(ticket.id, (selectedTickets[ticket.id] || 0) - 1)}
-                                                                className="w-7 h-7 sm:w-8 sm:h-8 bg-yellow-500/20 border border-yellow-500/40 rounded-full flex items-center justify-center text-yellow-500 hover:bg-yellow-500/30 transition-all duration-300 cursor-pointer"
-                                                                disabled={ticket.available === 0 || (selectedTickets[ticket.id] || 0) === 0}
-                                                            >
-                                                                <i className="fas fa-minus text-xs"></i>
-                                                            </button>
-                                                            <span className="text-white font-semibold w-6 sm:w-8 text-center text-sm sm:text-base">
-                                                                {selectedTickets[ticket.id] || 0}
-                                                            </span>
-                                                            <button
-                                                                onClick={() => handleTicketChange(ticket.id, (selectedTickets[ticket.id] || 0) + 1)}
-                                                                className="w-7 h-7 sm:w-8 sm:h-8 bg-yellow-500/20 border border-yellow-500/40 rounded-full flex items-center justify-center text-yellow-500 hover:bg-yellow-500/30 transition-all duration-300 cursor-pointer"
-                                                                disabled={(selectedTickets[ticket.id] || 0) >= ticket.available}
-                                                            >
-                                                                <i className="fas fa-plus text-xs"></i>
-                                                            </button>
-                                                        </div>
+                                                    <div className="text-right flex-shrink-0 ml-4">
+                                                        <div className="text-xl sm:text-2xl font-bold text-yellow-500">R$ {ticket.price.toFixed(2).replace('.', ',')}</div>
+                                                        <div className="text-xs sm:text-sm text-gray-400">{ticket.available} disponíveis</div>
                                                     </div>
                                                 </div>
-                                            ))
-                                        ) : (
-                                            <div className="text-center p-4 bg-black/60 rounded-xl border border-red-500/30">
-                                                <p className="text-red-400 text-sm">Nenhum tipo de ingresso ativo encontrado para este evento.</p>
+                                                <div className="flex items-center justify-between pt-3 border-t border-yellow-500/10">
+                                                    <span className="text-white text-sm sm:text-base">Quantidade:</span>
+                                                    <div className="flex items-center space-x-3">
+                                                        <button
+                                                            onClick={() => handleTicketChange(ticket.id, (selectedTickets[ticket.id] || 0) - 1)}
+                                                            className="w-7 h-7 sm:w-8 sm:h-8 bg-yellow-500/20 border border-yellow-500/40 rounded-full flex items-center justify-center text-yellow-500 hover:bg-yellow-500/30 transition-all duration-300 cursor-pointer"
+                                                            disabled={ticket.available === 0 || (selectedTickets[ticket.id] || 0) === 0}
+                                                        >
+                                                            <i className="fas fa-minus text-xs"></i>
+                                                        </button>
+                                                        <span className="text-white font-semibold w-6 sm:w-8 text-center text-sm sm:text-base">
+                                                            {selectedTickets[ticket.id] || 0}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => handleTicketChange(ticket.id, (selectedTickets[ticket.id] || 0) + 1)}
+                                                            className="w-7 h-7 sm:w-8 sm:h-8 bg-yellow-500/20 border border-yellow-500/40 rounded-full flex items-center justify-center text-yellow-500 hover:bg-yellow-500/30 transition-all duration-300 cursor-pointer"
+                                                            disabled={(selectedTickets[ticket.id] || 0) >= ticket.available}
+                                                        >
+                                                            <i className="fas fa-plus text-xs"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        )}
+                                        ))}
                                     </div>
                                     {getTotalTickets() > 0 && (
                                         <>
@@ -361,51 +331,6 @@ const EventDetails: React.FC = () => {
             </section>
             <footer className="bg-black border-t border-yellow-500/20 py-12 sm:py-16 px-4 sm:px-6">
                 <div className="max-w-7xl mx-auto">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10 sm:mb-12">
-                        <div className="col-span-2 md:col-span-1">
-                            <div className="text-xl sm:text-2xl font-serif text-yellow-500 font-bold mb-4">
-                                Mazoy
-                            </div>
-                            <p className="text-gray-400 text-sm leading-relaxed">
-                                A plataforma premium para eventos exclusivos e experiências inesquecíveis.
-                            </p>
-                        </div>
-                        <div>
-                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg">Links Úteis</h4>
-                            <ul className="space-y-2 text-sm">
-                                <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Sobre Nós</a></li>
-                                <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Como Funciona</a></li>
-                                <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Termos de Uso</a></li>
-                                <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Privacidade</a></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg">Suporte</h4>
-                            <ul className="space-y-2 text-sm">
-                                <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Central de Ajuda</a></li>
-                                <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Contato</a></li>
-                                <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">FAQ</a></li>
-                                <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Feedback</a></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg">Redes Sociais</h4>
-                            <div className="flex space-x-4">
-                                <a href="#" className="text-yellow-500 hover:text-yellow-600 transition-colors cursor-pointer">
-                                    <i className="fab fa-instagram text-xl sm:text-2xl"></i>
-                                </a>
-                                <a href="#" className="text-yellow-500 hover:text-yellow-600 transition-colors cursor-pointer">
-                                    <i className="fab fa-facebook text-xl sm:text-2xl"></i>
-                                </a>
-                                <a href="#" className="text-yellow-500 hover:text-yellow-600 transition-colors cursor-pointer">
-                                    <i className="fab fa-twitter text-xl sm:text-2xl"></i>
-                                </a>
-                                <a href="#" className="text-yellow-500 hover:text-yellow-600 transition-colors cursor-pointer">
-                                    <i className="fab fa-linkedin text-xl sm:text-2xl"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
                     <div className="border-t border-yellow-500/20 pt-6 text-center">
                         <p className="text-gray-400 text-sm">
                             © 2025 Mazoy. Todos os direitos reservados.
