@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { categories } from '@/data/events';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, ImageOff, Star } from 'lucide-react'; // Importando Star para o ícone
+import { Loader2, ImageOff } from 'lucide-react';
 
 // Define the structure for the form data
 interface EventFormData {
@@ -23,7 +23,6 @@ interface EventFormData {
     category: string;
     capacity: number | string; // Capacidade
     duration: string; // NOVO: Duração
-    highlights: string; // NOVO: Destaques do evento
 }
 
 const ManagerEditEvent: React.FC = () => {
@@ -86,7 +85,6 @@ const ManagerEditEvent: React.FC = () => {
                 category: eventData.category || '',
                 capacity: eventData.capacity || '', // Carregando capacidade
                 duration: eventData.duration || '', // Carregando duração
-                highlights: eventData.highlights || '', // Carregando destaques
             });
             setIsFetching(false);
         };
@@ -136,7 +134,7 @@ const ManagerEditEvent: React.FC = () => {
         }
 
         if (!formData.category) errors.push("Categoria é obrigatória.");
-        // Highlights é opcional, então não precisa de validação de preenchimento
+        // REMOVIDO: if (!formData.price || Number(formData.price) <= 0) errors.push("Preço Base é obrigatório e deve ser maior que zero.");
 
         if (errors.length > 0) {
             showError(`Por favor, preencha todos os campos obrigatórios.`);
@@ -167,7 +165,6 @@ const ManagerEditEvent: React.FC = () => {
                     category: formData.category,
                     capacity: Number(formData.capacity), // SALVANDO CAPACIDADE
                     duration: formData.duration, // SALVANDO DURAÇÃO
-                    highlights: formData.highlights || null, // SALVANDO DESTAQUES (pode ser null)
                 })
                 .eq('id', id)
                 .eq('user_id', userId); // Ensure only the owner can update
@@ -270,22 +267,6 @@ const ManagerEditEvent: React.FC = () => {
                             />
                         </div>
                         
-                        {/* NOVO CAMPO: Destaques do Evento */}
-                        <div>
-                            <label htmlFor="highlights" className="block text-sm font-medium text-white mb-2 flex items-center">
-                                <Star className="h-4 w-4 mr-2 text-yellow-500" />
-                                Destaques do Evento (Opcional)
-                            </label>
-                            <Textarea 
-                                id="highlights" 
-                                value={formData.highlights} 
-                                onChange={handleChange} 
-                                placeholder="Ex: Regência de Maestro Internacional, Programa Especial de Natal, Dress Code: Traje Social"
-                                className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 min-h-[80px]"
-                            />
-                            <p className="text-xs text-gray-500 mt-1">Liste os pontos altos ou informações adicionais importantes, separados por vírgula.</p>
-                        </div>
-
                         {/* Linha 4: Imagem/Banner Preview */}
                         <div className="space-y-4 pt-4 border-t border-yellow-500/20">
                             <h3 className="text-xl font-semibold text-white">Banner do Evento</h3>

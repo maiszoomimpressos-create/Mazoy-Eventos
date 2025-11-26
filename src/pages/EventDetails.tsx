@@ -11,8 +11,9 @@ import { showError } from '@/utils/toast'; // Importando showError
 
 // Helper function to get the minimum price from ticket types
 const getMinPriceDisplay = (ticketTypes: TicketType[] | undefined) => {
-    if (!ticketTypes || ticketTypes.length === 0) return 'Grátis';
+    if (!ticketTypes || ticketTypes.length === 0) return 'Sem ingressos ativos';
     const minPrice = Math.min(...ticketTypes.map(t => t.price));
+    // Se o preço for 0, exibe "R$ 0,00". Caso contrário, formata o preço.
     return `R$ ${minPrice.toFixed(2).replace('.', ',')}`;
 };
 
@@ -44,8 +45,8 @@ const EventDetails: React.FC = () => {
     };
     
     const handleCheckout = () => {
-        showError("A funcionalidade de compra está temporariamente indisponível.");
-        // Anteriormente, navegava para '/checkout'. Agora, apenas exibe um erro.
+        // Navega para a tela de finalização de compra
+        navigate('/finalizar-compra');
     };
 
     if (isLoading) {
@@ -75,8 +76,6 @@ const EventDetails: React.FC = () => {
     const organizerName = event.companies?.corporate_name || 'N/A';
     const capacityDisplay = event.capacity > 0 ? event.capacity.toLocaleString('pt-BR') : 'N/A';
     const durationDisplay = event.duration || 'N/A';
-    const highlightsList = event.highlights ? event.highlights.split(',').map(h => h.trim()) : [];
-
 
     return (
         <div className="min-h-screen bg-black text-white overflow-x-hidden">
@@ -203,21 +202,15 @@ const EventDetails: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-                            {highlightsList.length > 0 && (
-                                <div>
-                                    <h3 className="text-xl sm:text-2xl font-serif text-yellow-500 mb-4 sm:mb-6">Destaques do Evento</h3>
-                                    <div className="bg-black/60 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6 sm:p-8">
-                                        <ul className="list-disc list-inside text-gray-300 text-sm sm:text-base space-y-2">
-                                            {highlightsList.map((highlight, index) => (
-                                                <li key={index} className="flex items-start">
-                                                    <span className="text-yellow-500 mr-2">•</span>
-                                                    <span>{highlight}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
+                            <div>
+                                <h3 className="text-xl sm:text-2xl font-serif text-yellow-500 mb-4 sm:mb-6">Destaques do Evento</h3>
+                                <div className="bg-black/60 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6 sm:p-8">
+                                    <div className="text-gray-400">
+                                        {/* Placeholder para destaques, pois não temos este campo no DB */}
+                                        <p>Destaques não disponíveis no momento. Consulte a descrição.</p>
                                     </div>
                                 </div>
-                            )}
+                            </div>
                             <div>
                                 <h3 className="text-xl sm:text-2xl font-serif text-yellow-500 mb-4 sm:mb-6">Localização</h3>
                                 <div className="bg-black/60 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6 sm:p-8">

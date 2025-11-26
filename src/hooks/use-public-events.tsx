@@ -16,14 +16,13 @@ export interface PublicEvent {
     min_price_wristband_id: string | null;
     total_available_tickets: number; // New: total count of active wristbands for the event
     capacity: number; // New: event capacity from the 'events' table
-    highlights: string | null; // NOVO: Destaques do evento
 }
 
 const fetchPublicEvents = async (): Promise<PublicEvent[]> => {
-    // 1. Buscar todos os eventos com capacidade e destaques
+    // 1. Buscar todos os eventos com capacidade
     const { data: eventsData, error: eventsError } = await supabase
         .from('events')
-        .select('id, title, description, date, time, location, image_url, category, capacity, highlights') // Include capacity and highlights
+        .select('id, title, description, date, time, location, image_url, category, capacity') // Include capacity
         .order('date', { ascending: true });
 
     if (eventsError) {
@@ -67,7 +66,7 @@ const fetchPublicEvents = async (): Promise<PublicEvent[]> => {
         const aggregates = eventAggregates[event.id] || { min_price: Infinity, min_price_wristband_id: null, total_available_tickets: 0 };
         const minPrice = aggregates.min_price === Infinity ? null : aggregates.min_price;
 
-        const eventData = {
+        return {
             id: event.id,
             title: event.title,
             description: event.description,
@@ -81,10 +80,7 @@ const fetchPublicEvents = async (): Promise<PublicEvent[]> => {
             min_price_wristband_id: aggregates.min_price_wristband_id,
             total_available_tickets: aggregates.total_available_tickets,
             capacity: event.capacity,
-            highlights: event.highlights || null, // Include highlights
         };
-        console.log(`Event: ${event.title}, Min Price: ${minPrice}, Total Available: ${aggregates.total_available_tickets}`);
-        return eventData;
     });
 };
 
