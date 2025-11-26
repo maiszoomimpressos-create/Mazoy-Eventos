@@ -77,7 +77,7 @@ const FinalizarCompra: React.FC = () => {
                 <div className="flex items-center justify-between mb-8">
                     <h2 className="text-3xl font-serif text-yellow-500">Finalizar Compra</h2>
                     <Button 
-                        onClick={() => navigate(`/events/${eventId}`)}
+                        // Ação de navegação removida
                         variant="outline"
                         className="bg-black/60 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 text-sm"
                     >
