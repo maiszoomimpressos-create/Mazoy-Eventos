@@ -50,33 +50,24 @@ const fetchEventDetails = async (idUrl: string): Promise<EventDetailsData | null
     
     console.log(`[EventDetails] Buscando evento com id_url: ${numericId}`);
 
-    // 1. Buscar detalhes do Evento usando id_url
+    // 1. Buscar detalhes do Evento usando id_url (REMOVENDO JOIN COM COMPANIES)
     const { data: eventData, error: eventError } = await supabase
         .from('events')
         .select(`
-            id, id_url, title, description, date, time, location, address, image_url, min_age, category, capacity, duration,
-            companies (corporate_name)
+            id, id_url, title, description, date, time, location, address, image_url, min_age, category, capacity, duration
         `)
         .eq('id_url', numericId) // BUSCANDO PELO NOVO CAMPO id_url
         .single();
 
-    // Tratamento de erro: PGRST116 (No rows found) ou PGRST200 (Foreign key violation/No related data)
+    // Tratamento de erro: PGRST116 (No rows found)
     if (eventError) {
         if (eventError.code === 'PGRST116') { 
             console.warn(`[EventDetails] Evento com id_url ${numericId} não encontrado (PGRST116).`);
             return null;
         }
         
-        // Se o erro for PGRST200, significa que o evento existe, mas o JOIN com 'companies' falhou.
-        // Neste caso, tratamos como sucesso, mas com dados de empresa nulos.
-        if (eventError.code === 'PGRST200' && eventData) {
-             console.warn(`[EventDetails] Aviso: Falha no JOIN com 'companies' (PGRST200). O evento será exibido sem o nome do organizador.`);
-             // Continuamos com o eventData, mas forçamos companies a ser null para evitar problemas
-             (eventData as any).companies = null; 
-        } else {
-            console.error(`[EventDetails] ERRO CRÍTICO na busca do evento ${numericId}:`, eventError);
-            throw new Error(eventError.message);
-        }
+        console.error(`[EventDetails] ERRO CRÍTICO na busca do evento ${numericId}:`, eventError);
+        throw new Error(eventError.message);
     }
     
     if (!eventData) {
@@ -86,6 +77,12 @@ const fetchEventDetails = async (idUrl: string): Promise<EventDetailsData | null
     
     const eventUUID = eventData.id; // Usamos o UUID para buscar pulseiras
     
+    // Adicionamos o campo 'companies' manualmente como null, já que não o buscamos
+    const eventDetailsWithNullCompany = {
+        ...eventData,
+        companies: null,
+    } as EventData;
+    
     // 2. Buscar Tipos de Pulseira (Wristbands) associados a este evento
     const { data: wristbandsData, error: wristbandsError } = await supabase
         .from('wristbands')
@@ -94,19 +91,15 @@ const fetchEventDetails = async (idUrl: string): Promise<EventDetailsData | null
         .eq('status', 'active'); // Apenas pulseiras ativas estão 'disponíveis'
 
     if (wristbandsError) {
-        // Se houver erro aqui (provavelmente RLS para clientes), logamos, mas não bloqueamos a exibição do evento
         console.warn("[EventDetails] Aviso: Falha ao buscar pulseiras (RLS provável). Exibindo evento sem ingressos.", wristbandsError);
         return {
-            event: eventData as EventData,
+            event: eventDetailsWithNullCompany,
             ticketTypes: [],
         };
     }
     
     // 3. Agrupar e formatar os tipos de ingresso
     const groupedTickets = wristbandsData.reduce((acc, wristband) => {
-        // Usamos o ID da pulseira como chave para garantir que cada pulseira seja um "tipo" de ingresso único para compra
-        // Nota: Isso é uma simplificação. Em um sistema real, agruparíamos por access_type e price.
-        // Para o propósito de compra (usePurchaseTicket), precisamos do ID da pulseira (wristband_id)
         const key = `${wristband.access_type}-${wristband.price}-${wristband.id}`; 
         
         if (!acc[key]) {
@@ -125,7 +118,7 @@ const fetchEventDetails = async (idUrl: string): Promise<EventDetailsData | null
     const ticketTypes = Object.values(groupedTickets).sort((a, b) => a.price - b.price);
 
     return {
-        event: eventData as EventData,
+        event: eventDetailsWithNullCompany,
         ticketTypes: ticketTypes,
     };
 };
