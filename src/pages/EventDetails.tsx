@@ -43,8 +43,33 @@ const EventDetails: React.FC = () => {
     };
     
     const handleCheckout = () => {
-        // Navega para a tela de finalização de compra, passando o ID do evento
-        navigate('/finalizar-compra', { state: { eventId: id } });
+        const totalTickets = getTotalTickets();
+        if (totalTickets === 0) {
+            showError("Selecione pelo menos um ingresso para continuar.");
+            return;
+        }
+        
+        // Mapeia os ingressos selecionados para um formato mais simples para o checkout
+        const ticketsToPurchase = Object.entries(selectedTickets)
+            .filter(([, quantity]) => quantity > 0)
+            .map(([ticketId, quantity]) => {
+                const ticketDetails = details?.ticketTypes.find(t => t.id === ticketId);
+                return {
+                    ticketId,
+                    quantity,
+                    price: ticketDetails?.price || 0,
+                    name: ticketDetails?.name || 'Ingresso',
+                };
+            });
+
+        // Navega para a tela de finalização de compra, passando o ID do evento e os ingressos
+        navigate('/finalizar-compra', { 
+            state: { 
+                eventId: id,
+                tickets: ticketsToPurchase,
+                totalPrice: getTotalPrice(),
+            } 
+        });
     };
 
     if (isLoading) {
@@ -78,7 +103,7 @@ const EventDetails: React.FC = () => {
     return (
         <div className="min-h-screen bg-black text-white overflow-x-hidden">
             {/* 1. Banner do Evento (Usando o componente EventBanner com botão de ação) */}
-            <EventBanner event={event} minPriceDisplay={minPriceDisplay} showActionButton={true} />
+            <EventBanner event={event} minPriceDisplay={minPriceDisplay} showActionButton={false} />
             
             {/* Linha divisória que estava no banner embutido */}
             <div className="w-full h-px bg-yellow-500"></div>
