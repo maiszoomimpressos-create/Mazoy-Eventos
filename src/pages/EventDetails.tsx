@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, MapPin, Clock, Users, UserCheck, User, Shield, ArrowLeft } from 'lucide-react';
+import { Loader2, MapPin, Clock, Users, UserCheck, User, Shield, ArrowLeft, Search } from 'lucide-react';
 import { showError, showSuccess } from '@/utils/toast';
 import { useEventDetails, EventDetailsData, TicketType } from '@/hooks/use-event-details';
 import EventBanner from '@/components/EventBanner';
 import { usePurchaseTicket } from '@/hooks/use-purchase-ticket';
+import { Input } from '@/components/ui/input'; // Importando Input
 
 // Helper function to get the minimum price display
 const getMinPriceDisplay = (ticketTypes: TicketType[]): string => {
@@ -24,6 +25,7 @@ const EventDetails: React.FC = () => {
     const { isLoading: isPurchasing, purchaseTicket } = usePurchaseTicket();
 
     const [selectedTickets, setSelectedTickets] = useState<{ [key: string]: number }>({});
+    const [searchTerm, setSearchTerm] = useState(''); // Estado para o termo de busca
 
     if (isLoading) {
         return (
@@ -34,18 +36,39 @@ const EventDetails: React.FC = () => {
     }
 
     if (isError || !details?.event) {
+        // Lógica de erro: Exibe o campo de busca e a mensagem de erro
         return (
-            <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center pt-20 px-4">
-                <i className="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
-                <h1 className="text-2xl font-serif text-white mb-2">Evento Não Encontrado</h1>
-                <p className="text-gray-400 mb-6">O evento que você está procurando não existe ou foi removido.</p>
-                <Button 
-                    onClick={() => navigate('/')}
-                    className="bg-yellow-500 text-black hover:bg-yellow-600"
-                >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Voltar para a Home
-                </Button>
+            <div className="min-h-screen bg-black text-white pt-20 px-4">
+                <div className="max-w-4xl mx-auto py-10">
+                    <div className="relative mb-8">
+                        <Input 
+                            type="search" 
+                            placeholder="Buscar outros eventos..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    navigate(`/?search=${searchTerm}`);
+                                }
+                            }}
+                            className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 w-full pl-10 py-3 rounded-xl text-lg"
+                        />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-yellow-500/60" />
+                    </div>
+                    
+                    <Card className="bg-black/80 backdrop-blur-sm border border-red-500/30 rounded-2xl p-8 text-center">
+                        <i className="fas fa-exclamation-triangle text-5xl text-red-500 mb-4"></i>
+                        <h1 className="text-2xl font-serif text-white mb-2">Evento Não Encontrado</h1>
+                        <p className="text-gray-400 mb-6">O evento que você está procurando não existe, foi removido ou o ID é inválido.</p>
+                        <Button 
+                            onClick={() => navigate('/')}
+                            className="bg-yellow-500 text-black hover:bg-yellow-600"
+                        >
+                            <ArrowLeft className="h-4 w-4 mr-2" />
+                            Voltar para a Home
+                        </Button>
+                    </Card>
+                </div>
             </div>
         );
     }
@@ -357,7 +380,8 @@ const EventDetails: React.FC = () => {
                                 </a>
                                 <a href="#" className="text-yellow-500 hover:text-yellow-600 transition-colors cursor-pointer">
                                     <i className="fab fa-linkedin text-xl sm:text-2xl"></i>
-                                </a>
+                                </a
+                            >
                             </div>
                         </div>
                     </div>
