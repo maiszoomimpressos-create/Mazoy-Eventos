@@ -4,7 +4,8 @@ import { useEventDetails } from '@/hooks/use-event-details';
 import { Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { showError } from '@/utils/toast';
-import EventBanner from '@/components/EventBanner'; // Importando o novo componente
+import EventBanner from '@/components/EventBanner';
+import CheckoutImageBanner from '@/components/CheckoutImageBanner'; // Importando o novo componente
 
 // Helper function to get the minimum price display
 const getMinPriceDisplay = (price: number | null): string => {
@@ -67,6 +68,10 @@ const FinalizarCompra: React.FC = () => {
             {/* Conteúdo principal da finalização de compra */}
             <main className="py-12 sm:py-20 px-4 sm:px-6 max-w-7xl mx-auto">
                 <h2 className="text-3xl font-serif text-white mb-8">Finalizar Compra</h2>
+                
+                {/* NOVO COMPONENTE DE IMAGEM */}
+                <CheckoutImageBanner />
+                
                 <p className="text-gray-400">Conteúdo do checkout será implementado aqui.</p>
             </main>
         </div>
