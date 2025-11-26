@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
-import { Settings, ArrowLeft, Loader2, Zap, Key, ShoppingCart } from 'lucide-react';
+import { Settings, ArrowLeft, Loader2, Zap, Key } from 'lucide-react';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/use-profile';
@@ -85,11 +85,7 @@ const ManagerAdvancedSettings: React.FC = () => {
         }
     };
     
-    const handleNavigateToEventDetails = () => {
-        // ID do evento fornecido pelo usuário
-        const eventId = 'a92467be-bf8b-42dc-8f02-87de024d60c4';
-        navigate(`/events/${eventId}`);
-    };
+    // A função handleNavigateToEventDetails foi removida.
 
     if (isLoading || isLoadingProfile) {
         return (
@@ -159,23 +155,7 @@ const ManagerAdvancedSettings: React.FC = () => {
                             />
                         </div>
                         
-                        {/* NOVO BOTÃO PARA ADMIN MASTER */}
-                        {isAdminMaster && (
-                            <div className="pt-4 border-t border-yellow-500/10">
-                                <h3 className="text-lg font-semibold text-white flex items-center mb-4">
-                                    <ShoppingCart className="mr-2 h-5 w-5 text-yellow-500" />
-                                    Ferramentas de Teste (Admin)
-                                </h3>
-                                <Button
-                                    onClick={handleNavigateToEventDetails}
-                                    className="w-full bg-yellow-500/20 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/30 py-3 text-base font-semibold transition-all duration-300 cursor-pointer"
-                                    disabled={isSaving}
-                                >
-                                    <i className="fas fa-ticket-alt mr-2"></i>
-                                    Ver Detalhes do Evento (Teste)
-                                </Button>
-                            </div>
-                        )}
+                        {/* O bloco de Ferramentas de Teste (Admin) foi removido */}
                     </div>
 
                     {/* Integrações e API */}
