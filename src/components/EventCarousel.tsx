@@ -29,6 +29,16 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     // Limit to 20 events for the carousel
     const featuredEvents = events.slice(0, 20);
 
+    // Helper to get events with wrap-around for side banners
+    const getWrappedEvent = useCallback((allEvents: PublicEvent[], currentIndex: number, offset: number): PublicEvent | undefined => {
+        const total = allEvents.length;
+        if (total === 0) return undefined;
+
+        let index = (currentIndex + offset) % total;
+        if (index < 0) index += total; // Handle negative indices for left side wrap-around
+        return allEvents[index];
+    }, []);
+
     const [emblaRef, emblaApi] = useEmblaCarousel({ 
         loop: true,
         align: 'center', // Align center for the main banner
@@ -102,16 +112,8 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     }
 
     // Helper to get the event for the side cards with wrap-around
-    const getSideEvent = useCallback((offset: number): PublicEvent | undefined => {
-        if (featuredEvents.length === 0) return undefined;
-        const total = featuredEvents.length;
-        let index = (selectedIndex + offset) % total;
-        if (index < 0) index += total; // Handle negative indices for left side wrap-around
-        return featuredEvents[index];
-    }, [featuredEvents, selectedIndex]);
-
-    const leftSideEvent = getSideEvent(-1);
-    const rightSideEvent = getSideEvent(1);
+    const leftSideEvent = getWrappedEvent(featuredEvents, selectedIndex, -1);
+    const rightSideEvent = getWrappedEvent(featuredEvents, selectedIndex, 1);
 
     // Mobile Layout
     if (isMobile) {
@@ -214,7 +216,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             {/* Left "peeking" event card */}
             {leftSideEvent && (
                 <div 
-                    className="absolute left-1/2 -translate-x-[calc(375px + 200px)] top-1/2 -translate-y-1/2 w-[400px] h-[400px] opacity-50 rounded-2xl overflow-hidden border border-yellow-500/20 z-0 cursor-pointer"
+                    className="absolute left-[-25px] top-1/2 -translate-y-1/2 w-[300px] h-[300px] opacity-50 rounded-2xl overflow-hidden border border-yellow-500/20 z-0 cursor-pointer"
                     onClick={() => navigate(`/finalizar-compra`)}
                 >
                     <img 
@@ -301,7 +303,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             {/* Right "peeking" event card */}
             {rightSideEvent && (
                 <div 
-                    className="absolute right-1/2 translate-x-[calc(375px + 200px)] top-1/2 -translate-y-1/2 w-[400px] h-[400px] opacity-50 rounded-2xl overflow-hidden border border-yellow-500/20 z-0 cursor-pointer"
+                    className="absolute right-[-25px] top-1/2 -translate-y-1/2 w-[300px] h-[300px] opacity-50 rounded-2xl overflow-hidden border border-yellow-500/20 z-0 cursor-pointer"
                     onClick={() => navigate(`/finalizar-compra`)}
                 >
                     <img 
@@ -343,7 +345,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             {/* Navigation Arrows for Desktop */}
             <Button
                 variant="outline"
-                className="absolute left-1/2 -translate-x-[calc(375px - 20px)] top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-10 h-10 p-0 rounded-full hidden lg:flex"
+                className="absolute left-[245px] top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-10 h-10 p-0 rounded-full hidden lg:flex"
                 onClick={scrollPrev}
                 disabled={prevBtnDisabled && featuredEvents.length > 1}
             >
@@ -351,7 +353,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             </Button>
             <Button
                 variant="outline"
-                className="absolute right-1/2 translate-x-[calc(375px - 20px)] top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-10 h-10 p-0 rounded-full hidden lg:flex"
+                className="absolute right-[245px] top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-10 h-10 p-0 rounded-full hidden lg:flex"
                 onClick={scrollNext}
                 disabled={nextBtnDisabled && featuredEvents.length > 1}
             >
