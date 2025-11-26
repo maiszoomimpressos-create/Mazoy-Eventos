@@ -28,9 +28,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminRouteGuard from "./components/AdminRouteGuard";
 import AdminMasterRouteGuard from "./components/AdminMasterRouteGuard";
 import ManagerLayout from "./components/layouts/ManagerLayout";
-import ClientLayout from "./components/layouts/ClientLayout"; // Nova importação
+import ClientLayout from "./components/layouts/ClientLayout";
 import ForgotPassword from "./pages/ForgotPassword";
-import FinalizarCompra from "./pages/FinalizarCompra"; 
 
 const queryClient = new QueryClient();
 
@@ -47,7 +46,6 @@ const App = () => (
             <Route path="/events/:id" element={<EventDetails />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/tickets" element={<MyTickets />} />
-            <Route path="/finalizar-compra" element={<FinalizarCompra />} />
           </Route>
           
           {/* Auth Routes (No layout/Full screen) */}
