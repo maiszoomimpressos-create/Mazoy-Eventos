@@ -28,8 +28,9 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminRouteGuard from "./components/AdminRouteGuard";
 import AdminMasterRouteGuard from "./components/AdminMasterRouteGuard";
 import ManagerLayout from "./components/layouts/ManagerLayout";
+import ClientLayout from "./components/layouts/ClientLayout"; // Nova importação
 import ForgotPassword from "./pages/ForgotPassword";
-import FinalizarCompra from "./pages/FinalizarCompra"; // Nova importação
+import FinalizarCompra from "./pages/FinalizarCompra"; 
 
 const queryClient = new QueryClient();
 
@@ -40,15 +41,19 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* Public/Client Routes */}
-          <Route path="/" element={<Index />} />
-          <Route path="/events/:id" element={<EventDetails />} />
+          {/* Public/Client Routes wrapped in ClientLayout */}
+          <Route element={<ClientLayout />}>
+            <Route path="/" element={<Index />} />
+            <Route path="/events/:id" element={<EventDetails />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/tickets" element={<MyTickets />} />
+            <Route path="/finalizar-compra" element={<FinalizarCompra />} />
+          </Route>
+          
+          {/* Auth Routes (No layout/Full screen) */}
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/tickets" element={<MyTickets />} />
-          <Route path="/finalizar-compra" element={<FinalizarCompra />} /> {/* Nova rota */}
           <Route path="/manager/login" element={<ManagerLogin />} />
           
           {/* Manager Routes (Protected by ManagerLayout, which handles auth/redirect) */}

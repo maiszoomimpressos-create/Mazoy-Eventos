@@ -55,13 +55,13 @@ const FinalizarCompra: React.FC = () => {
         );
     }
     
-    const { event, ticketTypes } = details;
+    const { event } = details;
     const minPriceDisplay = getMinPriceDisplay(event.min_price);
 
     return (
-        <div className="min-h-screen bg-black text-white">
-            {/* Banner do Evento (Replicando o estilo da imagem) */}
-            <section className="relative h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden">
+        <div className="bg-black text-white">
+            {/* Banner do Evento (Ajustado para começar no topo da área de conteúdo do layout) */}
+            <section className="relative h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden -mt-20">
                 <img
                     src={event.image_url}
                     alt={event.title}
@@ -70,7 +70,7 @@ const FinalizarCompra: React.FC = () => {
                 {/* Overlay escuro com gradiente */}
                 <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40"></div>
                 
-                <div className="absolute inset-0 flex items-center">
+                <div className="absolute inset-0 flex items-center pt-20"> {/* Adiciona pt-20 para compensar o header fixo */}
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
                         <div className="max-w-full lg:max-w-3xl">
                             <div className="inline-block bg-yellow-500 text-black px-3 py-1 rounded-full text-xs sm:text-sm font-semibold mb-2 sm:mb-4">
@@ -109,12 +109,7 @@ const FinalizarCompra: React.FC = () => {
                                 <span className="text-2xl sm:text-4xl font-bold text-yellow-500">
                                     A partir de {minPriceDisplay}
                                 </span>
-                                <Button 
-                                    onClick={() => navigate('/')}
-                                    className="w-full sm:w-auto bg-yellow-500 text-black hover:bg-yellow-600 px-6 sm:px-8 py-3 text-base sm:text-lg font-semibold transition-all duration-300 cursor-pointer hover:scale-105"
-                                >
-                                    Voltar para Eventos
-                                </Button>
+                                {/* Removendo o botão "Voltar para Eventos" do banner, pois a navegação está no header do layout */}
                             </div>
                         </div>
                     </div>
