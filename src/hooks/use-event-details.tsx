@@ -42,6 +42,8 @@ const fetchEventDetails = async (eventId: string): Promise<EventDetailsData | nu
     if (!eventId) return null;
 
     // 1. Buscar detalhes do Evento, incluindo capacidade, duração e o nome da empresa organizadora
+    // Usamos 'left join' implícito (padrão do Supabase/PostgREST) para que o evento seja retornado
+    // mesmo que 'companies' seja nulo.
     const { data: eventData, error: eventError } = await supabase
         .from('events')
         .select(`
@@ -59,6 +61,11 @@ const fetchEventDetails = async (eventId: string): Promise<EventDetailsData | nu
         throw new Error(eventError.message);
     }
     
+    // Se o evento foi encontrado, mas o JOIN falhou (companies é null), isso é aceitável.
+    if (!eventData) {
+        return null;
+    }
+    
     // 2. Buscar Tipos de Pulseira (Wristbands) associados a este evento
     // Agrupamos por access_type e contamos o número de pulseiras ativas e o preço.
     
@@ -70,18 +77,24 @@ const fetchEventDetails = async (eventId: string): Promise<EventDetailsData | nu
 
     if (wristbandsError) {
         console.error("Error fetching wristbands for event:", wristbandsError);
-        throw new Error(wristbandsError.message);
+        // Se houver erro nas pulseiras, retornamos o evento com ticketTypes vazio, mas não falhamos o evento inteiro.
+        return {
+            event: eventData as EventData,
+            ticketTypes: [],
+        };
     }
     
     // 3. Agrupar e formatar os tipos de ingresso
     const groupedTickets = wristbandsData.reduce((acc, wristband) => {
-        const key = `${wristband.access_type}-${wristband.price}`;
+        // Usamos o ID da pulseira como chave para garantir que cada tipo de ingresso/preço tenha um ID único
+        // que pode ser usado na compra (usePurchaseTicket).
+        const key = `${wristband.access_type}-${wristband.price}-${wristband.id}`; 
         
         if (!acc[key]) {
             acc[key] = {
-                id: wristband.id, // Usamos o ID da primeira pulseira como ID do tipo (simplificação)
+                id: wristband.id, // ID da pulseira (wristband_id)
                 name: wristband.access_type,
-                price: wristband.price,
+                price: parseFloat(wristband.price as unknown as string) || 0,
                 available: 0,
                 description: `Acesso ${wristband.access_type} para o evento.`,
             };
