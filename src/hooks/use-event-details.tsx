@@ -60,6 +60,9 @@ const fetchEventDetails = async (idUrl: string): Promise<EventDetailsData | null
         .eq('id_url', numericId) // BUSCANDO PELO NOVO CAMPO id_url
         .single();
 
+    // PAUSA AQUI PARA DEBUGAR
+    debugger;
+
     if (eventError) {
         if (eventError.code === 'PGRST116') { // No rows found
             console.warn(`[EventDetails] Evento com id_url ${numericId} não encontrado (PGRST116).`);
