@@ -60,16 +60,23 @@ const fetchEventDetails = async (idUrl: string): Promise<EventDetailsData | null
         .eq('id_url', numericId) // BUSCANDO PELO NOVO CAMPO id_url
         .single();
 
-    // PAUSA AQUI PARA DEBUGAR
-    debugger;
-
+    // Tratamento de erro: PGRST116 (No rows found) ou PGRST200 (Foreign key violation/No related data)
     if (eventError) {
-        if (eventError.code === 'PGRST116') { // No rows found
+        if (eventError.code === 'PGRST116') { 
             console.warn(`[EventDetails] Evento com id_url ${numericId} não encontrado (PGRST116).`);
             return null;
         }
-        console.error(`[EventDetails] ERRO CRÍTICO na busca do evento ${numericId}:`, eventError);
-        throw new Error(eventError.message);
+        
+        // Se o erro for PGRST200, significa que o evento existe, mas o JOIN com 'companies' falhou.
+        // Neste caso, tratamos como sucesso, mas com dados de empresa nulos.
+        if (eventError.code === 'PGRST200' && eventData) {
+             console.warn(`[EventDetails] Aviso: Falha no JOIN com 'companies' (PGRST200). O evento será exibido sem o nome do organizador.`);
+             // Continuamos com o eventData, mas forçamos companies a ser null para evitar problemas
+             (eventData as any).companies = null; 
+        } else {
+            console.error(`[EventDetails] ERRO CRÍTICO na busca do evento ${numericId}:`, eventError);
+            throw new Error(eventError.message);
+        }
     }
     
     if (!eventData) {
@@ -97,6 +104,9 @@ const fetchEventDetails = async (idUrl: string): Promise<EventDetailsData | null
     
     // 3. Agrupar e formatar os tipos de ingresso
     const groupedTickets = wristbandsData.reduce((acc, wristband) => {
+        // Usamos o ID da pulseira como chave para garantir que cada pulseira seja um "tipo" de ingresso único para compra
+        // Nota: Isso é uma simplificação. Em um sistema real, agruparíamos por access_type e price.
+        // Para o propósito de compra (usePurchaseTicket), precisamos do ID da pulseira (wristband_id)
         const key = `${wristband.access_type}-${wristband.price}-${wristband.id}`; 
         
         if (!acc[key]) {
