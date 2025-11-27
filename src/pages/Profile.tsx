@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useForm } from 'react-hook-form'; // CORRIGIDO: Importado de 'react-hook-form'
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import AvatarUpload from '@/components/AvatarUpload';
 import { useProfileStatus } from '@/hooks/use-profile-status';
 import { useProfile, ProfileData } from '@/hooks/use-profile';
 import { useQueryClient } from '@tanstack/react-query';
-import TermsAndConditionsDialog from '@/components/TermsAndConditionsDialog'; // Importando o novo componente
+import TermsAndConditionsDialog from '@/components/TermsAndConditionsDialog';
 
 const GENDER_OPTIONS = [
     "Masculino",
@@ -32,6 +32,12 @@ const validateCPF = (cpf: string) => {
     return cleanCPF.length === 11;
 };
 
+// Função de validação de RG (apenas formato)
+const validateRG = (rg: string) => {
+    const cleanRG = rg.replace(/\D/g, '');
+    return cleanRG.length >= 7 && cleanRG.length <= 9; // RG geralmente tem 7 a 9 dígitos
+};
+
 // Função de validação de CEP (apenas formato)
 const validateCEP = (cep: string) => {
     const cleanCEP = cep.replace(/\D/g, '');
@@ -40,20 +46,21 @@ const validateCEP = (cep: string) => {
 
 const profileSchema = z.object({
     first_name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
+    last_name: z.string().min(1, { message: "Sobrenome é obrigatório." }), // Tornando last_name obrigatório
     birth_date: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de nascimento é obrigatória." }),
-    gender: z.string().optional().nullable(),
+    gender: z.string().min(1, { message: "Gênero é obrigatório." }).refine((val) => GENDER_OPTIONS.includes(val), { message: "Selecione um gênero válido." }), // Tornando obrigatório e validando contra opções
     
     cpf: z.string().refine(validateCPF, { message: "CPF inválido." }),
-    rg: z.string().optional().nullable(), 
+    rg: z.string().min(1, { message: "RG é obrigatório." }).refine(validateRG, { message: "RG inválido." }), // Tornando RG obrigatório
 
-    // Campos de Endereço
-    cep: z.string().optional().nullable().refine((val) => !val || validateCEP(val), { message: "CEP inválido (8 dígitos)." }),
-    rua: z.string().optional().nullable(),
-    bairro: z.string().optional().nullable(),
-    cidade: z.string().optional().nullable(),
-    estado: z.string().optional().nullable(),
-    numero: z.string().optional().nullable(),
-    complemento: z.string().optional().nullable(),
+    // Campos de Endereço - Tornando todos obrigatórios, exceto complemento
+    cep: z.string().min(1, { message: "CEP é obrigatório." }).refine((val) => validateCEP(val), { message: "CEP inválido (8 dígitos)." }),
+    rua: z.string().min(1, { message: "Rua é obrigatória." }),
+    bairro: z.string().min(1, { message: "Bairro é obrigatório." }),
+    cidade: z.string().min(1, { message: "Cidade é obrigatória." }),
+    estado: z.string().min(1, { message: "Estado é obrigatório." }),
+    numero: z.string().min(1, { message: "Número é obrigatório." }),
+    complemento: z.string().optional().nullable(), // Complemento pode ser opcional
 });
 
 const Profile: React.FC = () => {
@@ -117,6 +124,7 @@ const Profile: React.FC = () => {
         resolver: zodResolver(profileSchema),
         defaultValues: {
             first_name: '',
+            last_name: '', // Adicionado last_name
             birth_date: '',
             gender: '',
             cpf: '',
@@ -131,6 +139,7 @@ const Profile: React.FC = () => {
         },
         values: {
             first_name: profile?.first_name || '',
+            last_name: profile?.last_name || '', // Usando last_name do perfil
             birth_date: profile?.birth_date || '',
             gender: profile?.gender || '',
             cpf: profile?.cpf ? formatCPF(profile.cpf) : '',
@@ -150,6 +159,7 @@ const Profile: React.FC = () => {
             // Resetar o formulário com os dados do perfil sempre que o perfil for carregado/atualizado
             form.reset({
                 first_name: profile.first_name || '',
+                last_name: profile.last_name || '',
                 birth_date: profile.birth_date || '',
                 gender: profile.gender || '',
                 cpf: profile.cpf ? formatCPF(profile.cpf) : '',
@@ -232,7 +242,7 @@ const Profile: React.FC = () => {
         const cleanRG = values.rg ? values.rg.replace(/\D/g, '') : null;
         const cleanCEP = values.cep ? values.cep.replace(/\D/g, '') : null;
         
-        const genderToSave = (values.gender === "not_specified" || !values.gender) ? null : values.gender;
+        const genderToSave = values.gender; // Agora é sempre uma string válida
 
         // Certifique-se de que campos de endereço vazios sejam salvos como null, não como strings vazias
         const ruaToSave = values.rua || null;
@@ -247,6 +257,7 @@ const Profile: React.FC = () => {
                 .from('profiles')
                 .update({ 
                     first_name: values.first_name,
+                    last_name: values.last_name, // Salvando last_name
                     birth_date: values.birth_date,
                     gender: genderToSave,
                     cpf: cleanCPF, 
@@ -410,19 +421,34 @@ const Profile: React.FC = () => {
                                     )}
                                     <Form {...form}>
                                         <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
-                                            <FormField
-                                                control={form.control}
-                                                name="first_name"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="text-white">Nome</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="Seu nome" {...field} disabled={!isEditing} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="first_name"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-white">Nome *</FormLabel>
+                                                            <FormControl>
+                                                                <Input placeholder="Seu nome" {...field} disabled={!isEditing} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="last_name"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-white">Sobrenome *</FormLabel>
+                                                            <FormControl>
+                                                                <Input placeholder="Seu sobrenome" {...field} disabled={!isEditing} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
                                             <FormItem>
                                                 <FormLabel className="text-white">E-mail</FormLabel>
                                                 <FormControl>
@@ -440,7 +466,7 @@ const Profile: React.FC = () => {
                                                     name="cpf"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel className="text-white">CPF</FormLabel>
+                                                            <FormLabel className="text-white">CPF *</FormLabel>
                                                             <FormControl>
                                                                 <Input 
                                                                     placeholder="000.000.000-00"
@@ -460,7 +486,7 @@ const Profile: React.FC = () => {
                                                     name="rg"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel className="text-white">RG (Opcional)</FormLabel>
+                                                            <FormLabel className="text-white">RG *</FormLabel>
                                                             <FormControl>
                                                                 <Input 
                                                                     placeholder="00.000.000-0"
@@ -483,7 +509,7 @@ const Profile: React.FC = () => {
                                                     name="birth_date"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel className="text-white">Data de Nascimento</FormLabel>
+                                                            <FormLabel className="text-white">Data de Nascimento *</FormLabel>
                                                             <FormControl>
                                                                 <Input 
                                                                     type="date" 
@@ -501,10 +527,10 @@ const Profile: React.FC = () => {
                                                     name="gender"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel className="text-white">Gênero (Opcional)</FormLabel>
+                                                            <FormLabel className="text-white">Gênero *</FormLabel>
                                                             <Select 
-                                                                onValueChange={(value) => field.onChange(value === "not_specified" ? null : value)} 
-                                                                defaultValue={field.value || "not_specified"} 
+                                                                onValueChange={field.onChange} 
+                                                                defaultValue={field.value || ""} // Default para string vazia para Zod
                                                                 disabled={!isEditing}
                                                             >
                                                                 <FormControl>
@@ -515,9 +541,6 @@ const Profile: React.FC = () => {
                                                                     </SelectTrigger>
                                                                 </FormControl>
                                                                 <SelectContent className="bg-black border-yellow-500/30 text-white">
-                                                                    <SelectItem value="not_specified" className="text-gray-500">
-                                                                        Não especificado
-                                                                    </SelectItem>
                                                                     {GENDER_OPTIONS.map(option => (
                                                                         <SelectItem key={option} value={option} className="hover:bg-yellow-500/10 cursor-pointer">
                                                                             {option}
@@ -539,7 +562,7 @@ const Profile: React.FC = () => {
                                                     name="cep"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel className="text-white">CEP (Opcional)</FormLabel>
+                                                            <FormLabel className="text-white">CEP *</FormLabel>
                                                             <FormControl>
                                                                 <div className="relative">
                                                                     <Input 
@@ -570,7 +593,7 @@ const Profile: React.FC = () => {
                                                         name="rua"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <FormLabel className="text-white">Rua (Opcional)</FormLabel>
+                                                                <FormLabel className="text-white">Rua *</FormLabel>
                                                                 <FormControl>
                                                                     <Input id="rua" placeholder="Ex: Av. Paulista" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
                                                                 </FormControl>
@@ -584,7 +607,7 @@ const Profile: React.FC = () => {
                                                     name="numero"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel className="text-white">Número (Opcional)</FormLabel>
+                                                            <FormLabel className="text-white">Número *</FormLabel>
                                                             <FormControl>
                                                                 <Input id="numero" placeholder="123" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
                                                             </FormControl>
@@ -615,7 +638,7 @@ const Profile: React.FC = () => {
                                                         name="bairro"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <FormLabel className="text-white">Bairro (Opcional)</FormLabel>
+                                                                <FormLabel className="text-white">Bairro *</FormLabel>
                                                                 <FormControl>
                                                                     <Input placeholder="Jardim Paulista" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
                                                                 </FormControl>
@@ -629,7 +652,7 @@ const Profile: React.FC = () => {
                                                     name="cidade"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel className="text-white">Cidade (Opcional)</FormLabel>
+                                                            <FormLabel className="text-white">Cidade *</FormLabel>
                                                             <FormControl>
                                                                 <Input placeholder="São Paulo" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
                                                             </FormControl>
@@ -642,7 +665,7 @@ const Profile: React.FC = () => {
                                                     name="estado"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel className="text-white">Estado (Opcional)</FormLabel>
+                                                            <FormLabel className="text-white">Estado *</FormLabel>
                                                             <FormControl>
                                                                 <Input placeholder="SP" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
                                                             </FormControl>
