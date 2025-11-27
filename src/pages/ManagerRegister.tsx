@@ -16,13 +16,7 @@ const ManagerRegister: React.FC = () => {
                 }}></div>
             </div>
             <div className="relative z-10 w-full max-w-sm sm:max-w-md">
-                <div className="text-center mb-6 sm:mb-8">
-                    <div className="text-3xl font-serif text-yellow-500 font-bold mb-2">
-                        Mazoy PRO
-                    </div>
-                    <h1 className="text-xl sm:text-2xl font-semibold text-white mb-2">Cadastro de Gestor</h1>
-                    <p className="text-gray-400 text-sm sm:text-base">Torne-se um promotor de eventos Mazoy!</p>
-                </div>
+                {/* Removido: Título "Mazoy PRO" e "Cadastro de Gestor" */}
                 <div className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-yellow-500/10 text-center">
                     <p className="text-gray-300 mb-6">
                         Clique abaixo para iniciar seu cadastro como gestor e começar a criar eventos incríveis.
