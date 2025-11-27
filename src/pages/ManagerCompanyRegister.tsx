@@ -105,11 +105,12 @@ type CompanyRegisterData = z.infer<typeof companyRegisterSchema>;
 const ManagerCompanyRegister: React.FC = () => {
     const navigate = useNavigate();
     const [userId, setUserId] = useState<string | null>(null);
+    const [userEmail, setUserEmail] = useState<string | null>(null); // Novo estado para o e-mail do usuário
     const [isFetchingUser, setIsFetchingUser] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isCepLoading, setIsCepLoading] = useState(false);
 
-    // Fetch current user ID
+    // Fetch current user ID and Email
     useEffect(() => {
         const fetchUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
@@ -119,6 +120,7 @@ const ManagerCompanyRegister: React.FC = () => {
                 return;
             }
             setUserId(user.id);
+            setUserEmail(user.email); // Define o e-mail do usuário
             setIsFetchingUser(false);
         };
         fetchUser();
@@ -538,7 +540,7 @@ const ManagerCompanyRegister: React.FC = () => {
                                         <div>
                                             <p><span className="font-medium text-white">Nascimento:</span> {profile.birth_date ? new Date(profile.birth_date).toLocaleDateString('pt-BR') : 'N/A'}</p>
                                             <p><span className="font-medium text-white">Gênero:</span> {profile.gender || 'N/A'}</p>
-                                            <p><span className="font-medium text-white">E-mail:</span> {supabase.auth.getUser().then(({ data: { user } }) => user?.email)}</p>
+                                            <p><span className="font-medium text-white">E-mail:</span> {userEmail || 'N/A'}</p> {/* Usando o estado userEmail */}
                                         </div>
                                         <div className="md:col-span-2 text-xs text-gray-500 pt-2 border-t border-yellow-500/10">
                                             <p>Estes dados são do seu perfil de usuário e serão associados à empresa como sócio principal.</p>
