@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, MapPin, Clock, Users, UserCheck, User, Shield, ArrowLeft, Search } from 'lucide-react';
+import { Loader2, MapPin, Clock, Users, UserCheck, User, Shield, ArrowLeft } from 'lucide-react';
 import { showError, showSuccess } from '@/utils/toast';
-import { useEventDetails, EventDetailsData, TicketType } from '@/hooks/use-event-details';
+import { useEventDetails, TicketType } from '@/hooks/use-event-details';
 import EventBanner from '@/components/EventBanner';
 import { usePurchaseTicket } from '@/hooks/use-purchase-ticket';
-import { Input } from '@/components/ui/input';
 import { useAuthRedirect } from '@/hooks/use-auth-redirect';
 
 // Helper function to get the minimum price display
@@ -27,7 +26,6 @@ const EventDetails: React.FC = () => {
     const { isLoading: isPurchasing, purchaseTicket } = usePurchaseTicket();
     const { isAuthenticated, redirectToLogin } = useAuthRedirect();
 
-    // Inicializa o estado dos ingressos a partir do estado de navegação (se houver)
     const initialSelectedTickets = location.state?.selectedTickets || {};
     const [selectedTickets, setSelectedTickets] = useState<{ [key: string]: number }>(initialSelectedTickets);
 
@@ -39,7 +37,6 @@ const EventDetails: React.FC = () => {
     // Limpa o estado de navegação após a montagem para evitar loops de re-renderização
     useEffect(() => {
         if (location.state?.selectedTickets) {
-            // Remove o estado de navegação após usá-lo
             navigate(location.pathname, { replace: true });
         }
     }, [location.state, location.pathname, navigate]);
@@ -110,8 +107,6 @@ const EventDetails: React.FC = () => {
         
         // 2. LÓGICA DE COMPRA (Se autenticado)
         
-        // Para simplificar, vamos processar TODOS os ingressos selecionados.
-        // Criamos uma lista de promessas de compra.
         const purchasePromises = Object.entries(selectedTickets)
             .filter(([, quantity]) => quantity > 0)
             .map(async ([ticketId, quantity]) => {
@@ -132,13 +127,10 @@ const EventDetails: React.FC = () => {
         try {
             const results = await Promise.all(purchasePromises);
             
-            // Se todas as compras foram bem-sucedidas (o hook purchaseTicket retorna true em caso de sucesso)
             if (results.every(result => result === true)) {
-                // Após a compra bem-sucedida, limpa a seleção e navega para a página de ingressos
                 setSelectedTickets({});
                 navigate('/tickets');
             } else {
-                // Se alguma falhou, o purchaseTicket já deve ter exibido um erro.
                 showError("Algumas compras falharam. Verifique a disponibilidade.");
             }
         } catch (e: any) {
@@ -216,7 +208,6 @@ const EventDetails: React.FC = () => {
                             </div>
                             
                             {/* 3. Seção “Destaques do Evento” */}
-                            {/* Usando destaques mockados, pois não temos a coluna 'highlights' no hook */}
                             <div>
                                 <h3 className="text-xl sm:text-2xl font-serif text-yellow-500 mb-4 sm:mb-6">Destaques do Evento</h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -298,7 +289,6 @@ const EventDetails: React.FC = () => {
                                                                 <button
                                                                     onClick={() => handleTicketChange(ticket.id, currentQuantity + 1)}
                                                                     className="w-7 h-7 sm:w-8 sm:h-8 bg-yellow-500/20 border border-yellow-500/40 rounded-full flex items-center justify-center text-yellow-500 hover:bg-yellow-500/30 transition-all duration-300 cursor-pointer disabled:opacity-30"
-                                                                    // Lógica de limite de estoque
                                                                     disabled={!isAvailable || currentQuantity >= ticket.available || isPurchasing}
                                                                 >
                                                                     <i className="fas fa-plus text-xs"></i>
