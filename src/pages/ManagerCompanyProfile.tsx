@@ -8,16 +8,57 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
-import { Loader2, Building, ArrowLeft } from 'lucide-react';
-import CompanyForm, { companySchema, CompanyFormData } from '@/components/CompanyForm'; // Importando o novo componente e schema
+import { Loader2, Building, ArrowLeft, User, AlertTriangle } from 'lucide-react';
+import CompanyForm, { companySchema, CompanyFormData } from '@/components/CompanyForm';
+import { useProfile } from '@/hooks/use-profile'; // Importando useProfile
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Importando componentes de Tabs
+
+// Campos essenciais do perfil do usuário que devem estar preenchidos
+const ESSENTIAL_PROFILE_FIELDS = [
+    'first_name', 'last_name', 'cpf', 'rg', 'birth_date', 'gender',
+    'cep', 'rua', 'bairro', 'cidade', 'estado', 'numero'
+];
+
+const isProfileComplete = (profileData: typeof useProfile extends (...args: any[]) => { profile: infer T } ? T : never): boolean => {
+    if (!profileData) return false;
+
+    for (const field of ESSENTIAL_PROFILE_FIELDS) {
+        const value = profileData[field as keyof typeof profileData];
+        if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) {
+            return false;
+        }
+    }
+    return true;
+};
 
 const ManagerCompanyProfile: React.FC = () => {
     const navigate = useNavigate();
     const [userId, setUserId] = useState<string | null>(null);
+    const [userEmail, setUserEmail] = useState<string | null>(null); // Para exibir o e-mail do usuário
     const [isFetching, setIsFetching] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [companyId, setCompanyId] = useState<string | null>(null);
     const [isCepLoading, setIsCepLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState("company-info"); // Estado para controlar a aba ativa
+
+    // Fetch current user ID and Email
+    useEffect(() => {
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                showError("Sessão expirada. Faça login novamente.");
+                navigate('/manager/login');
+                return;
+            }
+            setUserId(user.id);
+            setUserEmail(user.email); // Define o e-mail do usuário
+            setIsFetching(false);
+        };
+        fetchUser();
+    }, [navigate]);
+
+    // Fetch user profile for 'Sócios' tab
+    const { profile, isLoading: isLoadingProfile } = useProfile(userId || undefined);
 
     const form = useForm<CompanyFormData>({
         resolver: zodResolver(companySchema),
@@ -37,51 +78,46 @@ const ManagerCompanyProfile: React.FC = () => {
         },
     });
 
-    // Fetch Data
+    // Fetch Company Data
     useEffect(() => {
-        const fetchProfile = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                showError("Sessão expirada. Faça login novamente.");
-                navigate('/manager/login');
-                return;
-            }
-            setUserId(user.id);
+        const fetchCompanyData = async () => {
+            if (!userId) return;
 
-            // Modificado para buscar o primeiro registro de empresa, se houver múltiplos
             const { data: companiesData, error } = await supabase
                 .from('companies')
                 .select('*')
-                .eq('user_id', user.id)
-                .limit(1); // Busca apenas um registro
+                .eq('user_id', userId)
+                .limit(1);
 
             if (error) {
                 console.error("Error fetching company profile:", error);
                 showError("Erro ao carregar perfil da empresa.");
             }
 
-            const data = companiesData?.[0]; // Pega o primeiro item do array
+            const data = companiesData?.[0];
             if (data) {
                 setCompanyId(data.id);
                 form.reset({
-                    cnpj: data.cnpj ? data.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : '', // Formata CNPJ para exibição
+                    cnpj: data.cnpj ? data.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : '',
                     corporate_name: data.corporate_name || '',
                     trade_name: data.trade_name || '',
-                    phone: data.phone ? data.phone.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3') : '', // Formata telefone para exibição
+                    phone: data.phone ? data.phone.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3') : '',
                     email: data.email || '',
-                    cep: data.cep ? data.cep.replace(/^(\d{5})(\d{3})$/, '$1-$2') : '', // Formata CEP para exibição
+                    cep: data.cep ? data.cep.replace(/^(\d{5})(\d{3})$/, '$1-$2') : '',
                     street: data.street || '',
                     neighborhood: data.neighborhood || '',
-                    city: data.city || '',
-                    state: data.state || '',
+                    city: data.localidade || '', // Corrigido para 'localidade' do ViaCEP
+                    state: data.uf || '', // Corrigido para 'uf' do ViaCEP
                     number: data.number || '',
                     complement: data.complement || '',
                 });
             }
             setIsFetching(false);
         };
-        fetchProfile();
-    }, [navigate, form]);
+        if (userId) {
+            fetchCompanyData();
+        }
+    }, [userId, form]);
 
     // Function to fetch address via ViaCEP
     const fetchAddressByCep = async (cep: string) => {
@@ -180,7 +216,7 @@ const ManagerCompanyProfile: React.FC = () => {
         }
     };
 
-    if (isFetching) {
+    if (isFetching || isLoadingProfile) {
         return (
             <div className="max-w-4xl mx-auto px-4 sm:px-0 text-center py-20">
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
@@ -216,45 +252,111 @@ const ManagerCompanyProfile: React.FC = () => {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <FormProvider {...form}> {/* Usando FormProvider */}
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                            <CompanyForm 
-                                isSaving={isSaving} 
-                                isCepLoading={isCepLoading} 
-                                fetchAddressByCep={fetchAddressByCep} 
-                            />
+                    <Tabs defaultValue="company-info" className="w-full" onValueChange={setActiveTab}>
+                        <TabsList className="grid w-full grid-cols-2 bg-black/60 border border-yellow-500/30 text-white">
+                            <TabsTrigger 
+                                value="company-info" 
+                                className="data-[state=active]:bg-yellow-500 data-[state=active]:text-black data-[state=inactive]:text-white hover:bg-yellow-500/10"
+                            >
+                                <Building className="h-4 w-4 mr-2" /> Informações da Empresa
+                            </TabsTrigger>
+                            <TabsTrigger 
+                                value="partners" 
+                                className="data-[state=active]:bg-yellow-500 data-[state=active]:text-black data-[state=inactive]:text-white hover:bg-yellow-500/10"
+                            >
+                                <User className="h-4 w-4 mr-2" /> Sócios
+                            </TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="company-info" className="mt-6">
+                            <FormProvider {...form}>
+                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                                    <CompanyForm 
+                                        isSaving={isSaving} 
+                                        isCepLoading={isCepLoading} 
+                                        fetchAddressByCep={fetchAddressByCep} 
+                                    />
 
-                            <div className="pt-4 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                                <Button
-                                    type="submit"
-                                    disabled={isSaving}
-                                    className="flex-1 bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
-                                >
-                                    {isSaving ? (
-                                        <div className="flex items-center justify-center">
-                                            <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                                            Salvando...
+                                    <div className="pt-4 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                                        <Button
+                                            type="submit"
+                                            disabled={isSaving}
+                                            className="flex-1 bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
+                                        >
+                                            {isSaving ? (
+                                                <div className="flex items-center justify-center">
+                                                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                                                    Salvando...
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <i className="fas fa-save mr-2"></i>
+                                                    Salvar Perfil da Empresa
+                                                </>
+                                            )}
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            onClick={() => navigate('/manager/settings')}
+                                            variant="outline"
+                                            className="flex-1 bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer"
+                                            disabled={isSaving}
+                                        >
+                                            <ArrowLeft className="mr-2 h-5 w-5" />
+                                            Voltar para Configurações
+                                        </Button>
+                                    </div>
+                                </form>
+                            </FormProvider>
+                        </TabsContent>
+                        <TabsContent value="partners" className="mt-6">
+                            <div className="space-y-6">
+                                <h3 className="text-xl font-semibold text-white border-b border-yellow-500/10 pb-2 flex items-center">
+                                    <User className="h-5 w-5 mr-2 text-yellow-500" />
+                                    Dados do Sócio Principal (Você)
+                                </h3>
+                                {!isProfileComplete(profile) && (
+                                    <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-xl flex items-start space-x-3 mb-4">
+                                        <AlertTriangle className="h-5 w-5 mt-1 flex-shrink-0" />
+                                        <div>
+                                            <h4 className="font-semibold text-white mb-1">Perfil Pessoal Incompleto</h4>
+                                            <p className="text-sm text-gray-300">
+                                                Seu perfil pessoal está incompleto. Por favor, preencha todos os campos essenciais do seu perfil para garantir a correta associação como sócio.
+                                            </p>
+                                            <Button 
+                                                variant="link" 
+                                                className="h-auto p-0 mt-2 text-xs text-yellow-500 hover:text-yellow-400"
+                                                onClick={() => navigate('/profile')}
+                                            >
+                                                Ir para o Perfil Pessoal
+                                            </Button>
                                         </div>
-                                    ) : (
-                                        <>
-                                            <i className="fas fa-save mr-2"></i>
-                                            Salvar Perfil da Empresa
-                                        </>
-                                    )}
-                                </Button>
-                                <Button
-                                    type="button"
-                                    onClick={() => navigate('/manager/settings')}
-                                    variant="outline"
-                                    className="flex-1 bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer"
-                                    disabled={isSaving}
-                                >
-                                    <ArrowLeft className="mr-2 h-5 w-5" />
-                                    Voltar para Configurações
-                                </Button>
+                                    </div>
+                                )}
+                                {profile ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
+                                        <div>
+                                            <p><span className="font-medium text-white">Nome:</span> {profile.first_name} {profile.last_name}</p>
+                                            <p><span className="font-medium text-white">CPF:</span> {profile.cpf ? profile.cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4') : 'N/A'}</p>
+                                            <p><span className="font-medium text-white">RG:</span> {profile.rg || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <p><span className="font-medium text-white">Nascimento:</span> {profile.birth_date ? new Date(profile.birth_date).toLocaleDateString('pt-BR') : 'N/A'}</p>
+                                            <p><span className="font-medium text-white">Gênero:</span> {profile.gender || 'N/A'}</p>
+                                            <p><span className="font-medium text-white">E-mail:</span> {userEmail || 'N/A'}</p>
+                                        </div>
+                                        <div className="md:col-span-2 text-xs text-gray-500 pt-2 border-t border-yellow-500/10">
+                                            <p>Estes dados são do seu perfil de usuário e estão associados à empresa como sócio principal.</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-4 text-gray-400">
+                                        <Loader2 className="h-6 w-6 animate-spin text-yellow-500 mx-auto mb-2" />
+                                        Carregando dados do seu perfil...
+                                    </div>
+                                )}
                             </div>
-                        </form>
-                    </FormProvider>
+                        </TabsContent>
+                    </Tabs>
                 </CardContent>
             </Card>
         </div>
