@@ -8,7 +8,7 @@ import { useEventDetails, EventDetailsData, TicketType } from '@/hooks/use-event
 import EventBanner from '@/components/EventBanner';
 import { usePurchaseTicket } from '@/hooks/use-purchase-ticket';
 import { Input } from '@/components/ui/input';
-import { useAuthRedirect } from '@/hooks/use-auth-redirect'; // Importando o novo hook
+import { useAuthRedirect } from '@/hooks/use-auth-redirect';
 
 // Helper function to get the minimum price display
 const getMinPriceDisplay = (ticketTypes: TicketType[]): string => {
@@ -31,10 +31,10 @@ const EventDetails: React.FC = () => {
     const initialSelectedTickets = location.state?.selectedTickets || {};
     const [selectedTickets, setSelectedTickets] = useState<{ [key: string]: number }>(initialSelectedTickets);
 
-    // 1. Força o scroll para o topo ao carregar a página
+    // Força o scroll para o topo ao carregar a página
     useEffect(() => {
         window.scrollTo(0, 0);
-    }, [id]); // Dependência [id] garante que ele role para o topo se o ID mudar na mesma rota
+    }, [id]);
 
     // Limpa o estado de navegação após a montagem para evitar loops de re-renderização
     useEffect(() => {
@@ -298,7 +298,7 @@ const EventDetails: React.FC = () => {
                                                                 <button
                                                                     onClick={() => handleTicketChange(ticket.id, currentQuantity + 1)}
                                                                     className="w-7 h-7 sm:w-8 sm:h-8 bg-yellow-500/20 border border-yellow-500/40 rounded-full flex items-center justify-center text-yellow-500 hover:bg-yellow-500/30 transition-all duration-300 cursor-pointer disabled:opacity-30"
-                                                                    // Lógica de limite de estoque: desabilita se a quantidade selecionada for igual ou maior que a disponibilidade
+                                                                    // Lógica de limite de estoque
                                                                     disabled={!isAvailable || currentQuantity >= ticket.available || isPurchasing}
                                                                 >
                                                                     <i className="fas fa-plus text-xs"></i>
@@ -370,7 +370,7 @@ const EventDetails: React.FC = () => {
                             </p>
                         </div>
                         <div>
-                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg}>Links Úteis</h4>
+                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg">Links Úteis</h4>
                             <ul className="space-y-2 text-sm">
                                 <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Sobre Nós</a></li>
                                 <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Como Funciona</a></li>
