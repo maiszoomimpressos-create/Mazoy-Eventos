@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import MultiLineEditor from '@/components/MultiLineEditor'; // Importando o novo componente
+import TermsAndConditionsDialog from '@/components/TermsAndConditionsDialog'; // Importando o novo componente
 import { Loader2 } from 'lucide-react';
+import { showSuccess } from '@/utils/toast'; // Importando showSuccess
 
 const ManagerRegister: React.FC = () => {
     const navigate = useNavigate();
@@ -20,7 +21,7 @@ const ManagerRegister: React.FC = () => {
         // Simular um processo de registro ou navegação
         setTimeout(() => {
             setIsSubmitting(false);
-            alert("Termos aceitos! Prossiga com o cadastro detalhado.");
+            showSuccess("Termos aceitos! Prossiga com o cadastro detalhado.");
             // Aqui você navegaria para a próxima etapa do cadastro de gestor
             // Por exemplo: navigate('/manager/register/details');
             navigate('/'); // Por enquanto, volta para a home
@@ -41,7 +42,8 @@ const ManagerRegister: React.FC = () => {
                     <p className="text-gray-400 text-sm sm:text-base">Leia e aceite os termos para continuar</p>
                 </div>
                 
-                <MultiLineEditor onAgree={handleAgreeToTerms} />
+                {/* Renderiza o novo componente TermsAndConditionsDialog */}
+                <TermsAndConditionsDialog onAgree={handleAgreeToTerms} initialAgreedState={agreedToTerms} />
 
                 <div className="space-y-4">
                     <Button
@@ -51,7 +53,7 @@ const ManagerRegister: React.FC = () => {
                     >
                         {isSubmitting ? (
                             <div className="flex items-center justify-center">
-                                <Loader2 className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin mr-2" />
+                                <Loader2 className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin mr-2"></div>
                                 Carregando...
                             </div>
                         ) : (

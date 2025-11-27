@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useForm } from 'react-hook-form';
+import { useForm } from '@hookform/resolvers/zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import AvatarUpload from '@/components/AvatarUpload';
 import { useProfileStatus } from '@/hooks/use-profile-status';
 import { useProfile, ProfileData } from '@/hooks/use-profile';
 import { useQueryClient } from '@tanstack/react-query';
-import MultiLineEditor from '@/components/MultiLineEditor'; // Importando o novo componente
+import TermsAndConditionsDialog from '@/components/TermsAndConditionsDialog'; // Importando o novo componente
 
 const GENDER_OPTIONS = [
     "Masculino",
@@ -300,6 +300,14 @@ const Profile: React.FC = () => {
         // O reset agora usa os valores do 'profile' carregado pelo useQuery
         form.reset();
         setIsEditing(false);
+    };
+    
+    // Função dummy para o onAgree do TermsAndConditionsDialog no Profile
+    const handleTermsAgree = (agreed: boolean) => {
+        console.log("Termos concordados no perfil:", agreed);
+        // No perfil, não precisamos de uma lógica complexa para isso,
+        // pois o usuário já concordou no registro.
+        // O MultiLineEditor dentro do dialog não terá o checkbox visível.
     };
 
     if (loading) {
@@ -688,7 +696,8 @@ const Profile: React.FC = () => {
                             </Card>
                             {/* MultiLineEditor component added here */}
                             <div className="mt-8">
-                                <MultiLineEditor onAgree={(agreed) => console.log('User agreed to terms:', agreed)} />
+                                {/* Renderiza o novo componente TermsAndConditionsDialog */}
+                                <TermsAndConditionsDialog onAgree={handleTermsAgree} showAgreementCheckbox={false} />
                             </div>
                         </div>
                     </div>

@@ -7,13 +7,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, Edit, Save, CheckSquare, XSquare, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useProfile } from '@/hooks/use-profile'; // Linha corrigida aqui
+import { useProfile } from '@/hooks/use-profile';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface MultiLineEditorProps {
     onAgree: (agreed: boolean) => void;
     initialAgreedState?: boolean;
+    showAgreementCheckbox?: boolean; // Nova prop
 }
 
 const ADMIN_MASTER_USER_TYPE_ID = 1;
@@ -33,7 +34,7 @@ const fetchTermsAndConditions = async () => {
     return data;
 };
 
-const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgreedState = false }) => {
+const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgreedState = false, showAgreementCheckbox = true }) => {
     const queryClient = useQueryClient();
     const { data: termsData, isLoading: isLoadingTerms, isError: isErrorTerms, refetch } = useQuery({
         queryKey: ['termsAndConditions'],
@@ -134,34 +135,33 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
 
     if (isLoadingTerms || isLoadingProfile) {
         return (
-            <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
-                <div className="text-center py-10">
-                    <Loader2 className="h-8 w-8 animate-spin text-yellow-500 mx-auto mb-4" />
-                    <p className="text-gray-400">Carregando termos e condições...</p>
-                </div>
-            </Card>
+            <div className="text-center py-10">
+                <Loader2 className="h-8 w-8 animate-spin text-yellow-500 mx-auto mb-4" />
+                <p className="text-gray-400">Carregando termos e condições...</p>
+            </div>
         );
     }
 
     if (isErrorTerms || !termsData) {
         return (
-            <Card className="bg-black/80 backdrop-blur-sm border border-red-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
-                <CardHeader>
-                    <CardTitle className="text-red-400 text-xl">Erro ao Carregar Termos</CardTitle>
-                    <CardDescription className="text-gray-400">Não foi possível carregar os termos e condições. Por favor, tente novamente mais tarde.</CardDescription>
-                </CardHeader>
-            </Card>
+            <div className="bg-red-500/20 border border-red-500/30 text-red-400 p-6 rounded-xl">
+                <h3 className="text-red-400 text-xl">Erro ao Carregar Termos</h3>
+                <p className="text-gray-400 text-sm">Não foi possível carregar os termos e condições. Por favor, tente novamente mais tarde.</p>
+            </div>
         );
     }
 
     return (
-        <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                <CardTitle className="text-white text-xl sm:text-2xl font-semibold flex items-center">
-                    <CheckSquare className="h-6 w-6 mr-3 text-yellow-500" />
-                    Termos e Condições
-                </CardTitle>
-                {isAdminMaster && (
+        <div className="space-y-6">
+            <div className="flex flex-row items-center justify-between space-y-0 pb-4">
+                {/* Título e botão de edição só aparecem se não for um pop-up */}
+                {!showAgreementCheckbox && ( // Se não for para mostrar o checkbox, significa que é o editor principal
+                    <h2 className="text-white text-xl sm:text-2xl font-semibold flex items-center">
+                        <CheckSquare className="h-6 w-6 mr-3 text-yellow-500" />
+                        Termos e Condições
+                    </h2>
+                )}
+                {isAdminMaster && !showAgreementCheckbox && ( // Botão de edição só para Admin Master e se não for pop-up
                     <Button 
                         onClick={() => setIsEditing(!isEditing)}
                         variant="outline"
@@ -181,50 +181,50 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
                         )}
                     </Button>
                 )}
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div 
-                    ref={contentRef}
-                    onScroll={isClient ? handleScroll : undefined} // Apenas clientes precisam rolar até o final
-                    className="max-h-96 overflow-y-auto bg-black/60 border border-yellow-500/20 rounded-xl text-gray-300 text-sm leading-relaxed whitespace-pre-wrap"
-                >
-                    {isEditing ? (
-                        <Textarea
-                            value={editedContent}
-                            onChange={(e) => setEditedContent(e.target.value)}
-                            className="w-full h-full bg-transparent border-none focus:ring-0 text-white resize-none p-4"
-                            rows={15}
-                            disabled={isSaving}
-                        />
-                    ) : (
-                        <div className="p-4"> {/* Adiciona p-4 aqui para o modo de visualização */}
-                            {termsData.content}
-                        </div>
-                    )}
-                </div>
-
-                {isAdminMaster && isEditing && (
-                    <div className="flex justify-end">
-                        <Button
-                            onClick={handleSave}
-                            disabled={isSaving || !editedContent.trim()}
-                            className="bg-yellow-500 text-black hover:bg-yellow-600 py-2 text-base font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50 h-10"
-                        >
-                            {isSaving ? (
-                                <div className="flex items-center justify-center">
-                                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                                    Salvando...
-                                </div>
-                            ) : (
-                                <>
-                                    <Save className="w-4 h-4 mr-2" />
-                                    Salvar Alterações
-                                </>
-                            )}
-                        </Button>
+            </div>
+            <div 
+                ref={contentRef}
+                onScroll={isClient && showAgreementCheckbox ? handleScroll : undefined} // Apenas clientes precisam rolar até o final se o checkbox for visível
+                className="max-h-96 overflow-y-auto bg-black/60 border border-yellow-500/20 rounded-xl text-gray-300 text-sm leading-relaxed whitespace-pre-wrap"
+            >
+                {isEditing ? (
+                    <Textarea
+                        value={editedContent}
+                        onChange={(e) => setEditedContent(e.target.value)}
+                        className="w-full h-full bg-transparent border-none focus:ring-0 text-white resize-none p-4"
+                        rows={15}
+                        disabled={isSaving}
+                    />
+                ) : (
+                    <div className="p-4">
+                        {termsData.content}
                     </div>
                 )}
+            </div>
 
+            {isAdminMaster && isEditing && (
+                <div className="flex justify-end">
+                    <Button
+                        onClick={handleSave}
+                        disabled={isSaving || !editedContent.trim()}
+                        className="bg-yellow-500 text-black hover:bg-yellow-600 py-2 text-base font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50 h-10"
+                    >
+                        {isSaving ? (
+                            <div className="flex items-center justify-center">
+                                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                                Salvando...
+                            </div>
+                        ) : (
+                            <>
+                                <Save className="w-4 h-4 mr-2" />
+                                Salvar Alterações
+                            </>
+                        )}
+                    </Button>
+                </div>
+            )}
+
+            {showAgreementCheckbox && ( // Renderiza o checkbox apenas se a prop for true
                 <div className="flex items-center space-x-3 pt-4 border-t border-yellow-500/10">
                     <Checkbox 
                         id="agreeTerms" 
@@ -237,14 +237,14 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
                         Eu li e concordo com os Termos e Condições.
                     </label>
                 </div>
-                {isClient && !hasScrolledToEnd && (
-                    <p className="text-xs text-red-400 mt-2 flex items-center">
-                        <AlertTriangle className="h-3 w-3 mr-1" />
-                        Role até o final para habilitar a opção de concordar.
-                    </p>
-                )}
-            </CardContent>
-        </Card>
+            )}
+            {isClient && showAgreementCheckbox && !hasScrolledToEnd && ( // Mensagem de rolar só para clientes e se o checkbox for visível
+                <p className="text-xs text-red-400 mt-2 flex items-center">
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    Role até o final para habilitar a opção de concordar.
+                </p>
+            )}
+        </div>
     );
 };
 
