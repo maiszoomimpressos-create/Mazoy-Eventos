@@ -37,24 +37,27 @@ export const ALL_PROFILE_FIELDS_TO_CHECK = [
 ];
 
 // Simulação de verificação de notificações de sistema para Gestores
-const checkManagerSystemNotifications = async (userId: string, profileId: string): Promise<boolean> => {
+const checkManagerSystemNotifications = async (userId: string): Promise<boolean> => {
     // Fetch manager settings for system notifications
-    const { data: settingsData, error: settingsError } = await supabase
+    // Usando .limit(1) para evitar o erro 406 quando não há configurações
+    const { data: settingsArray, error: settingsError } = await supabase
         .from('manager_settings')
         .select('low_stock_system')
-        .eq('user_id', profileId) 
-        .single();
+        .eq('user_id', userId) 
+        .limit(1); // Usar limit(1) em vez de single()
 
     let settings = {};
     if (settingsError) {
-        console.error(`[ProfileStatus] Error fetching manager settings for user ${profileId}:`, settingsError);
-        // Se não houver linhas (PGRST116) ou um 406 (que pode indicar que a linha não é acessível ou não existe),
-        // tratamos como se não houvesse configurações.
+        console.error(`[ProfileStatus] Error fetching manager settings for user ${userId}:`, settingsError);
+        // Se não houver linhas (PGRST116) ou um 406, tratamos como se não houvesse configurações.
         if (settingsError.code !== 'PGRST116' && settingsError.code !== '406') { 
             console.warn(`[ProfileStatus] Unexpected error code ${settingsError.code} for manager settings. Treating as no settings configured.`);
         }
-    } else if (settingsData) {
-        settings = settingsData;
+    } else if (settingsArray && settingsArray.length > 0) {
+        settings = settingsArray[0]; // Pega o primeiro (e único) item do array
+        console.log(`[ProfileStatus] Manager settings fetched for user ${userId}:`, settings);
+    } else {
+        console.log(`[ProfileStatus] No manager settings found for user ${userId}.`);
     }
 
     // Exemplo 1: Alerta de Baixo Estoque (se a configuração estiver ativa)
@@ -143,7 +146,7 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
                 hasPendingNotifications = !isComplete;
             }
             else if (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2) {
-                hasPendingNotifications = await checkManagerSystemNotifications(profile.id, profile.id);
+                hasPendingNotifications = await checkManagerSystemNotifications(profile.id);
             }
 
             console.log(`[ProfileStatus] Final State - Profile Complete: ${isComplete}. Notifications Active: ${hasPendingNotifications}`);
