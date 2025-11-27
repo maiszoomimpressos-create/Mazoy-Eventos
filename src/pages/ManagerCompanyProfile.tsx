@@ -138,17 +138,19 @@ const ManagerCompanyProfile: React.FC = () => {
             }
             setUserId(user.id);
 
-            const { data, error } = await supabase
+            // Modificado para buscar o primeiro registro de empresa, se houver múltiplos
+            const { data: companiesData, error } = await supabase
                 .from('companies')
                 .select('*')
                 .eq('user_id', user.id)
-                .single();
+                .limit(1); // Busca apenas um registro
 
-            if (error && error.code !== 'PGRST116') { // PGRST116 = No rows found
+            if (error) {
                 console.error("Error fetching company profile:", error);
                 showError("Erro ao carregar perfil da empresa.");
             }
 
+            const data = companiesData?.[0]; // Pega o primeiro item do array
             if (data) {
                 setCompanyId(data.id);
                 form.reset({
