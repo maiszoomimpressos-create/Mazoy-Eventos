@@ -64,7 +64,7 @@ const ManagerRegister: React.FC = () => {
                     backgroundSize: '400px 400px'
                 }}></div>
             </div>
-            <div className="relative z-10 w-full max-w-sm sm:max-w-md space-y-6">
+            <div className="relative z-10 w-full max-w-sm sm:max-w-[800px] space-y-6">
                 <div className="text-center mb-6 sm:mb-8">
                     <h1 className="text-xl sm:text-2xl font-semibold text-white mb-2">
                         {isAdminRegisterRoute && isAdminMaster ? "Editar Termos de Registro de Gestor" : "Cadastro de Gestor"}
