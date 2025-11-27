@@ -328,9 +328,7 @@ const Register: React.FC = () => {
                                             <SelectValue placeholder="Selecione seu gênero" />
                                         </SelectTrigger>
                                         <SelectContent className="bg-black border-yellow-500/30 text-white">
-                                            <SelectItem value="" className="text-gray-500">
-                                                Não especificado
-                                            </SelectItem>
+                                            {/* Removido SelectItem com value="" */}
                                             {GENDER_OPTIONS.map(option => (
                                                 <SelectItem key={option} value={option} className="hover:bg-yellow-500/10 cursor-pointer">
                                                     {option}
