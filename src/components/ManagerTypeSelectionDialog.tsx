@@ -37,7 +37,7 @@ const ManagerTypeSelectionDialog: React.FC<ManagerTypeSelectionDialogProps> = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[650px] bg-black/90 border border-yellow-500/30 text-white p-6">
+            <DialogContent className="sm:max-w-[800px] bg-black/90 border border-yellow-500/30 text-white p-6">
                 <DialogHeader>
                     <DialogTitle className="text-yellow-500 text-2xl flex items-center">
                         <User className="h-6 w-6 mr-2" />
