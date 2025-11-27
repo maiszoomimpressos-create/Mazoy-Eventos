@@ -1,0 +1,355 @@
+"use client";
+
+import React from 'react';
+import { useFormContext } from 'react-hook-form';
+import * as z from 'zod';
+import { Input } from '@/components/ui/input';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Loader2 } from 'lucide-react';
+
+// --- Utility Functions (Moved from ManagerCompanyProfile.tsx and ManagerCompanyRegister.tsx) ---
+
+const validateCNPJ = (cnpj: string) => {
+    const cleanCNPJ = cnpj.replace(/\D/g, '');
+
+    if (cleanCNPJ.length !== 14) return false;
+
+    // Evita CNPJs com todos os dígitos iguais
+    if (/^(\d)\1{13}$/.test(cleanCNPJ)) return false;
+
+    let size = cleanCNPJ.length - 2;
+    let numbers = cleanCNPJ.substring(0, size);
+    const digits = cleanCNPJ.substring(size);
+    let sum = 0;
+    let pos = size - 7;
+
+    // Validação do primeiro dígito
+    for (let i = size; i >= 1; i--) {
+        sum += parseInt(numbers.charAt(size - i)) * pos--;
+        if (pos < 2) pos = 9;
+    }
+    let result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+    if (result !== parseInt(digits.charAt(0))) return false;
+
+    // Validação do segundo dígito
+    size = size + 1;
+    numbers = cleanCNPJ.substring(0, size);
+    sum = 0;
+    pos = size - 7;
+    for (let i = size; i >= 1; i--) {
+        sum += parseInt(numbers.charAt(size - i)) * pos--;
+        if (pos < 2) pos = 9;
+    }
+    result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+    if (result !== parseInt(digits.charAt(1))) return false;
+
+    return true;
+};
+
+const formatCNPJ = (value: string) => {
+    if (!value) return '';
+    const cleanValue = value.replace(/\D/g, '');
+    return cleanValue
+        .replace(/^(\d{2})(\d)/, '$1.$2')
+        .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+        .replace(/\.(\d{3})(\d)/, '.$1/$2')
+        .replace(/(\d{4})(\d)/, '$1-$2')
+        .replace(/(-\d{2})\d+?$/, '$1');
+};
+
+const formatPhone = (value: string) => {
+    if (!value) return '';
+    const cleanValue = value.replace(/\D/g, '');
+    if (cleanValue.length <= 10) {
+        return cleanValue.replace(/^(\d{2})(\d{4})(\d{4})$/, '($1) $2-$3');
+    }
+    return cleanValue.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+};
+
+const formatCEP = (value: string) => {
+    if (!value) return '';
+    const cleanValue = value.replace(/\D/g, '');
+    return cleanValue
+        .replace(/(\d{5})(\d)/, '$1-$2')
+        .replace(/(-\d{3})\d+?$/, '$1');
+};
+
+// Zod Schema para os dados da empresa (compartilhado)
+export const companySchema = z.object({
+    corporate_name: z.string().min(3, { message: "Razão Social é obrigatória." }),
+    cnpj: z.string().refine(validateCNPJ, { message: "CNPJ inválido. Verifique os dígitos." }),
+    trade_name: z.string().min(1, { message: "Nome Fantasia é obrigatório." }),
+    phone: z.string().min(1, { message: "Telefone é obrigatório." }),
+    email: z.string().email({ message: "E-mail inválido." }).min(1, { message: "E-mail da Empresa é obrigatório." }),
+    
+    cep: z.string().min(1, { message: "CEP é obrigatório." }).refine((val) => val.replace(/\D/g, '').length === 8, { message: "CEP inválido (8 dígitos)." }),
+    street: z.string().min(1, { message: "Rua é obrigatória." }),
+    neighborhood: z.string().min(1, { message: "Bairro é obrigatório." }),
+    city: z.string().min(1, { message: "Cidade é obrigatória." }),
+    state: z.string().min(1, { message: "Estado é obrigatório." }),
+    number: z.string().min(1, { message: "Número é obrigatório." }),
+    complement: z.string().optional().nullable(),
+});
+
+export type CompanyFormData = z.infer<typeof companySchema>;
+
+interface CompanyFormProps {
+    isSaving: boolean;
+    isCepLoading: boolean;
+    fetchAddressByCep: (cep: string) => void;
+}
+
+const CompanyForm: React.FC<CompanyFormProps> = ({ isSaving, isCepLoading, fetchAddressByCep }) => {
+    const form = useFormContext<CompanyFormData>();
+
+    const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const formattedCnpj = formatCNPJ(e.target.value);
+        form.setValue('cnpj', formattedCnpj, { shouldValidate: true });
+    };
+
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const formattedPhone = formatPhone(e.target.value);
+        form.setValue('phone', formattedPhone, { shouldValidate: true });
+    };
+
+    const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const rawValue = e.target.value;
+        const formattedCep = formatCEP(rawValue);
+        form.setValue('cep', formattedCep, { shouldValidate: true });
+
+        if (formattedCep.replace(/\D/g, '').length === 8) {
+            fetchAddressByCep(formattedCep);
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            {/* Seção de Dados Corporativos */}
+            <div className="space-y-6 pt-4">
+                <h3 className="text-lg font-semibold text-white border-b border-yellow-500/10 pb-2">Informações da Empresa</h3>
+                
+                <FormField
+                    control={form.control}
+                    name="corporate_name"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-white">Razão Social *</FormLabel>
+                            <FormControl>
+                                <Input 
+                                    placeholder="Nome da Empresa S.A."
+                                    {...field} 
+                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
+                                    disabled={isSaving}
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                <FormField
+                    control={form.control}
+                    name="cnpj"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-white">CNPJ *</FormLabel>
+                            <FormControl>
+                                <Input 
+                                    placeholder="00.000.000/0000-00"
+                                    {...field} 
+                                    onChange={handleCnpjChange}
+                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
+                                    maxLength={18}
+                                    disabled={isSaving}
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                        control={form.control}
+                        name="trade_name"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-white">Nome Fantasia *</FormLabel>
+                                <FormControl>
+                                    <Input 
+                                        placeholder="Nome Comercial"
+                                        {...field} 
+                                        className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
+                                        disabled={isSaving}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-white">Telefone *</FormLabel>
+                                <FormControl>
+                                    <Input 
+                                        placeholder="(00) 00000-0000"
+                                        {...field} 
+                                        onChange={handlePhoneChange}
+                                        className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
+                                        maxLength={15}
+                                        disabled={isSaving}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+                
+                <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-white">E-mail da Empresa (Para Notificações) *</FormLabel>
+                            <FormControl>
+                                <Input 
+                                    placeholder="contato@empresa.com"
+                                    {...field} 
+                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
+                                    disabled={isSaving}
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
+
+            {/* Seção de Endereço */}
+            <div className="space-y-6 pt-4 border-t border-yellow-500/10">
+                <h3 className="text-lg font-semibold text-white border-b border-yellow-500/10 pb-2">Endereço</h3>
+                
+                <FormField
+                    control={form.control}
+                    name="cep"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-white">CEP *</FormLabel>
+                            <FormControl>
+                                <div className="relative">
+                                    <Input 
+                                        placeholder="00000-000"
+                                        {...field} 
+                                        onChange={handleCepChange}
+                                        disabled={isSaving || isCepLoading} 
+                                        className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 pr-10" 
+                                        maxLength={9}
+                                    />
+                                    {isCepLoading && (
+                                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                            <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
+                                        </div>
+                                    )}
+                                </div>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2">
+                        <FormField
+                            control={form.control}
+                            name="street"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-white">Rua *</FormLabel>
+                                    <FormControl>
+                                        <Input id="street" placeholder="Ex: Av. Paulista" {...field} disabled={isSaving || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                    <FormField
+                        control={form.control}
+                        name="number"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-white">Número *</FormLabel>
+                                <FormControl>
+                                    <Input id="number" placeholder="123" {...field} disabled={isSaving || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
+                <FormField
+                    control={form.control}
+                    name="complement"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-white">Complemento (Opcional)</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Apto 101, Bloco B" {...field} disabled={isSaving || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <FormField
+                        control={form.control}
+                        name="neighborhood"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-white">Bairro *</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Jardim Paulista" {...field} disabled={isSaving || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="city"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-white">Cidade *</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="São Paulo" {...field} disabled={isSaving || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="state"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="text-white">Estado *</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="SP" {...field} disabled={isSaving || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default CompanyForm;

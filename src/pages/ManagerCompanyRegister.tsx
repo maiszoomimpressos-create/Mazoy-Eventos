@@ -1,106 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form } from '@/components/ui/form';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
-import { Loader2, Building, ArrowLeft, User, Mail, Phone, MapPin, AlertTriangle } from 'lucide-react';
-import { useProfile } from '@/hooks/use-profile'; // Para puxar dados do sócio
+import { Loader2, Building, ArrowLeft, User, AlertTriangle } from 'lucide-react';
+import { useProfile } from '@/hooks/use-profile';
+import CompanyForm, { companySchema, CompanyFormData } from '@/components/CompanyForm'; // Importando o novo componente e schema
 
-// --- Utility Functions (Copied from ManagerCompanyProfile.tsx) ---
+// Campos essenciais do perfil do usuário que devem estar preenchidos
+const ESSENTIAL_PROFILE_FIELDS = [
+    'first_name', 'last_name', 'cpf', 'rg', 'birth_date', 'gender',
+    'cep', 'rua', 'bairro', 'cidade', 'estado', 'numero'
+];
 
-const validateCNPJ = (cnpj: string) => {
-    const cleanCNPJ = cnpj.replace(/\D/g, '');
+const isProfileComplete = (profileData: typeof useProfile extends (...args: any[]) => { profile: infer T } ? T : never): boolean => {
+    if (!profileData) return false;
 
-    if (cleanCNPJ.length !== 14) return false;
-
-    // Evita CNPJs com todos os dígitos iguais
-    if (/^(\d)\1{13}$/.test(cleanCNPJ)) return false;
-
-    let size = cleanCNPJ.length - 2;
-    let numbers = cleanCNPJ.substring(0, size);
-    const digits = cleanCNPJ.substring(size);
-    let sum = 0;
-    let pos = size - 7;
-
-    // Validação do primeiro dígito
-    for (let i = size; i >= 1; i--) {
-        sum += parseInt(numbers.charAt(size - i)) * pos--;
-        if (pos < 2) pos = 9;
+    for (const field of ESSENTIAL_PROFILE_FIELDS) {
+        const value = profileData[field as keyof typeof profileData];
+        if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) {
+            return false;
+        }
     }
-    let result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
-    if (result !== parseInt(digits.charAt(0))) return false;
-
-    // Validação do segundo dígito
-    size = size + 1;
-    numbers = cleanCNPJ.substring(0, size);
-    sum = 0;
-    pos = size - 7;
-    for (let i = size; i >= 1; i--) {
-        sum += parseInt(numbers.charAt(size - i)) * pos--;
-        if (pos < 2) pos = 9;
-    }
-    result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
-    if (result !== parseInt(digits.charAt(1))) return false;
-
     return true;
 };
-
-const formatCNPJ = (value: string) => {
-    if (!value) return '';
-    const cleanValue = value.replace(/\D/g, '');
-    return cleanValue
-        .replace(/^(\d{2})(\d)/, '$1.$2')
-        .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
-        .replace(/\.(\d{3})(\d)/, '.$1/$2')
-        .replace(/(\d{4})(\d)/, '$1-$2')
-        .replace(/(-\d{2})\d+?$/, '$1');
-};
-
-const formatPhone = (value: string) => {
-    if (!value) return '';
-    const cleanValue = value.replace(/\D/g, '');
-    if (cleanValue.length <= 10) {
-        return cleanValue.replace(/^(\d{2})(\d{4})(\d{4})$/, '($1) $2-$3');
-    }
-    return cleanValue.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
-};
-
-const formatCEP = (value: string) => {
-    if (!value) return '';
-    const cleanValue = value.replace(/\D/g, '');
-    return cleanValue
-        .replace(/(\d{5})(\d)/, '$1-$2')
-        .replace(/(-\d{3})\d+?$/, '$1');
-};
-
-// --- Zod Schema ---
-
-const companyRegisterSchema = z.object({
-    corporate_name: z.string().min(3, { message: "Razão Social é obrigatória." }),
-    cnpj: z.string().refine(validateCNPJ, { message: "CNPJ inválido. Verifique os dígitos." }),
-    trade_name: z.string().min(1, { message: "Nome Fantasia é obrigatório." }), // Tornando obrigatório
-    phone: z.string().min(1, { message: "Telefone é obrigatório." }), // Tornando obrigatório
-    email: z.string().email({ message: "E-mail inválido." }).min(1, { message: "E-mail da Empresa é obrigatório." }), // Tornando obrigatório
-    
-    // Address Fields - Tornando todos obrigatórios, exceto complemento
-    cep: z.string().min(1, { message: "CEP é obrigatório." }).refine((val) => val.replace(/\D/g, '').length === 8, { message: "CEP inválido (8 dígitos)." }),
-    street: z.string().min(1, { message: "Rua é obrigatória." }),
-    neighborhood: z.string().min(1, { message: "Bairro é obrigatório." }),
-    city: z.string().min(1, { message: "Cidade é obrigatória." }),
-    state: z.string().min(1, { message: "Estado é obrigatório." }),
-    number: z.string().min(1, { message: "Número é obrigatório." }),
-    complement: z.string().optional().nullable(), // Complemento pode ser opcional
-});
-
-type CompanyRegisterData = z.infer<typeof companyRegisterSchema>;
-
-// --- Component ---
 
 const ManagerCompanyRegister: React.FC = () => {
     const navigate = useNavigate();
@@ -129,8 +56,8 @@ const ManagerCompanyRegister: React.FC = () => {
     // Fetch user profile for 'Sócios' tab
     const { profile, isLoading: isLoadingProfile } = useProfile(userId || undefined);
 
-    const form = useForm<CompanyRegisterData>({
-        resolver: zodResolver(companyRegisterSchema),
+    const form = useForm<CompanyFormData>({
+        resolver: zodResolver(companySchema),
         defaultValues: {
             corporate_name: '',
             cnpj: '',
@@ -180,47 +107,7 @@ const ManagerCompanyRegister: React.FC = () => {
         }
     };
 
-    // --- Handlers ---
-
-    const handleCnpjChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const formattedCnpj = formatCNPJ(e.target.value);
-        form.setValue('cnpj', formattedCnpj, { shouldValidate: true });
-    };
-
-    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const formattedPhone = formatPhone(e.target.value);
-        form.setValue('phone', formattedPhone, { shouldValidate: true });
-    };
-
-    const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const rawValue = e.target.value;
-        const formattedCep = formatCEP(rawValue);
-        form.setValue('cep', formattedCep, { shouldValidate: true });
-
-        if (formattedCep.replace(/\D/g, '').length === 8) {
-            fetchAddressByCep(formattedCep);
-        }
-    };
-    
-    // Campos essenciais do perfil do usuário que devem estar preenchidos
-    const ESSENTIAL_PROFILE_FIELDS = [
-        'first_name', 'last_name', 'cpf', 'rg', 'birth_date', 'gender',
-        'cep', 'rua', 'bairro', 'cidade', 'estado', 'numero'
-    ];
-
-    const isProfileComplete = (profileData: typeof profile): boolean => {
-        if (!profileData) return false;
-
-        for (const field of ESSENTIAL_PROFILE_FIELDS) {
-            const value = profileData[field as keyof typeof profileData];
-            if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) {
-                return false;
-            }
-        }
-        return true;
-    };
-
-    const onSubmit = async (values: CompanyRegisterData) => {
+    const onSubmit = async (values: CompanyFormData) => {
         if (!userId) {
             showError("Usuário não autenticado.");
             return;
@@ -239,16 +126,16 @@ const ManagerCompanyRegister: React.FC = () => {
             user_id: userId,
             cnpj: values.cnpj.replace(/\D/g, ''),
             corporate_name: values.corporate_name,
-            trade_name: values.trade_name, // Agora é obrigatório
-            phone: values.phone ? values.phone.replace(/\D/g, '') : null, // Ainda pode ser null se o campo estiver vazio
-            email: values.email, // Agora é obrigatório
+            trade_name: values.trade_name,
+            phone: values.phone ? values.phone.replace(/\D/g, '') : null,
+            email: values.email,
             
             cep: values.cep ? values.cep.replace(/\D/g, '') : null,
-            street: values.street, // Agora é obrigatório
-            number: values.number, // Agora é obrigatório
-            neighborhood: values.neighborhood, // Agora é obrigatório
-            city: values.city, // Agora é obrigatório
-            state: values.state, // Agora é obrigatório
+            street: values.street,
+            number: values.number,
+            neighborhood: values.neighborhood,
+            city: values.city,
+            state: values.state,
             complement: values.complement || null,
         };
 
@@ -326,228 +213,13 @@ const ManagerCompanyRegister: React.FC = () => {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Form {...form}>
+                    <FormProvider {...form}> {/* Usando FormProvider */}
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                            
-                            {/* Seção de Dados Corporativos */}
-                            <div className="space-y-6 pt-4">
-                                <h3 className="text-lg font-semibold text-white border-b border-yellow-500/10 pb-2">Informações da Empresa</h3>
-                                
-                                <FormField
-                                    control={form.control}
-                                    name="corporate_name"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-white">Razão Social *</FormLabel>
-                                            <FormControl>
-                                                <Input 
-                                                    placeholder="Nome da Empresa S.A."
-                                                    {...field} 
-                                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <FormField
-                                    control={form.control}
-                                    name="cnpj"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-white">CNPJ *</FormLabel>
-                                            <FormControl>
-                                                <Input 
-                                                    placeholder="00.000.000/0000-00"
-                                                    {...field} 
-                                                    onChange={handleCnpjChange}
-                                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
-                                                    maxLength={18}
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <FormField
-                                        control={form.control}
-                                        name="trade_name"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-white">Nome Fantasia *</FormLabel>
-                                                <FormControl>
-                                                    <Input 
-                                                        placeholder="Nome Comercial"
-                                                        {...field} 
-                                                        className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="phone"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-white">Telefone *</FormLabel>
-                                                <FormControl>
-                                                    <Input 
-                                                        placeholder="(00) 00000-0000"
-                                                        {...field} 
-                                                        onChange={handlePhoneChange}
-                                                        className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
-                                                        maxLength={15}
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-                                
-                                <FormField
-                                    control={form.control}
-                                    name="email"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-white">E-mail da Empresa (Para Notificações) *</FormLabel>
-                                            <FormControl>
-                                                <Input 
-                                                    placeholder="contato@empresa.com"
-                                                    {...field} 
-                                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
-                                                />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
-
-                            {/* Seção de Endereço */}
-                            <div className="space-y-6 pt-4 border-t border-yellow-500/10">
-                                <h3 className="text-lg font-semibold text-white border-b border-yellow-500/10 pb-2">Endereço</h3>
-                                
-                                <FormField
-                                    control={form.control}
-                                    name="cep"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-white">CEP *</FormLabel>
-                                            <FormControl>
-                                                <div className="relative">
-                                                    <Input 
-                                                        placeholder="00000-000"
-                                                        {...field} 
-                                                        onChange={handleCepChange}
-                                                        disabled={isCepLoading} 
-                                                        className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 pr-10" 
-                                                        maxLength={9}
-                                                    />
-                                                    {isCepLoading && (
-                                                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                                                            <Loader2 className="w-4 h-4 animate-spin text-yellow-500" />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div className="md:col-span-2">
-                                        <FormField
-                                            control={form.control}
-                                            name="street"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-white">Rua *</FormLabel>
-                                                    <FormControl>
-                                                        <Input id="street" placeholder="Ex: Av. Paulista" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
-                                    <FormField
-                                        control={form.control}
-                                        name="number"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-white">Número *</FormLabel>
-                                                <FormControl>
-                                                    <Input id="number" placeholder="123" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-
-                                <FormField
-                                    control={form.control}
-                                    name="complement"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel className="text-white">Complemento (Opcional)</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="Apto 101, Bloco B" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <FormField
-                                        control={form.control}
-                                        name="neighborhood"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-white">Bairro *</FormLabel>
-                                                <FormControl>
-                                                    <Input placeholder="Jardim Paulista" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="city"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-white">Cidade *</FormLabel>
-                                                <FormControl>
-                                                    <Input placeholder="São Paulo" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="state"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-white">Estado *</FormLabel>
-                                                <FormControl>
-                                                    <Input placeholder="SP" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-                            </div>
+                            <CompanyForm 
+                                isSaving={isSaving} 
+                                isCepLoading={isCepLoading} 
+                                fetchAddressByCep={fetchAddressByCep} 
+                            />
 
                             {/* Seção de Sócios (Dados do Usuário Logado) */}
                             <div className="space-y-6 pt-4 border-t border-yellow-500/10">
@@ -577,7 +249,7 @@ const ManagerCompanyRegister: React.FC = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
                                         <div>
                                             <p><span className="font-medium text-white">Nome:</span> {profile.first_name} {profile.last_name}</p>
-                                            <p><span className="font-medium text-white">CPF:</span> {formatCNPJ(profile.cpf || '')}</p>
+                                            <p><span className="font-medium text-white">CPF:</span> {profile.cpf ? profile.cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4') : 'N/A'}</p>
                                             <p><span className="font-medium text-white">RG:</span> {profile.rg || 'N/A'}</p>
                                         </div>
                                         <div>
@@ -627,7 +299,7 @@ const ManagerCompanyRegister: React.FC = () => {
                                 </Button>
                             </div>
                         </form>
-                    </Form>
+                    </FormProvider>
                 </CardContent>
             </Card>
         </div>
