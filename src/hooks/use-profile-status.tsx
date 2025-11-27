@@ -6,6 +6,7 @@ interface ProfileStatus {
     isComplete: boolean;
     hasPendingNotifications: boolean;
     loading: boolean;
+    needsCompanyProfile: boolean; // New: indicates if a manager needs to create a company profile
 }
 
 // Export this function so Profile.tsx can use it for consistency
@@ -14,11 +15,25 @@ export const isValueEmpty = (value: any): boolean => {
     if (typeof value === 'string') {
         const trimmedValue = value.trim();
         if (trimmedValue === '') return true;
-        // Verifica placeholders comuns de data/documentos que podem ter sido salvos
+        // Check common date/document placeholders that might have been saved
         if (trimmedValue === '0000-00-00' || trimmedValue === '00.000.000-0' || trimmedValue === '00000-000') return true;
     }
+    // For numbers, 0 is a valid value, so it's not empty.
+    if (typeof value === 'number' && value === 0) return false;
     return false;
 };
+
+// Essential fields for a manager's personal profile
+const ESSENTIAL_MANAGER_PROFILE_FIELDS = [
+    'first_name', 'last_name', 'cpf', 'rg', 'birth_date', 'gender',
+    'cep', 'rua', 'bairro', 'cidade', 'estado', 'numero'
+];
+
+// Essential fields for a company profile
+const ESSENTIAL_COMPANY_PROFILE_FIELDS = [
+    'cnpj', 'corporate_name', 'phone', 'email',
+    'cep', 'street', 'neighborhood', 'city', 'state', 'number'
+];
 
 // Simulação de verificação de notificações de sistema para Gestores
 const checkManagerSystemNotifications = async (userId: string): Promise<boolean> => {
@@ -54,7 +69,7 @@ const checkManagerSystemNotifications = async (userId: string): Promise<boolean>
             return false;
         }
 
-        if (count && count > 2) {
+        if (count && count > 2) { // Arbitrary condition for "low stock" notification
             console.log("[ProfileStatus] Manager has active low stock system notification.");
             return true;
         }
@@ -68,6 +83,7 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
         isComplete: true,
         hasPendingNotifications: false,
         loading: isLoading,
+        needsCompanyProfile: false,
     });
 
     useEffect(() => {
@@ -76,25 +92,72 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
         if (isLoading) return;
 
         if (!profile) {
-            setStatus({ isComplete: true, hasPendingNotifications: false, loading: false }); // Perfil não encontrado, mas não é uma restrição
+            setStatus({ isComplete: true, hasPendingNotifications: false, loading: false, needsCompanyProfile: false });
             return;
         }
 
         const checkStatus = async () => {
             let hasPendingNotifications = false;
-            let isComplete = true; // Sempre true, pois não há mais exigências de completude
+            let isComplete = true;
+            let needsCompanyProfile = false;
 
-            // Apenas verifica notificações de sistema para gestores, independentemente do preenchimento do perfil
+            // Check personal profile completeness for managers (Admin Master or Manager PRO)
+            if (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2) {
+                for (const field of ESSENTIAL_MANAGER_PROFILE_FIELDS) {
+                    const value = profile[field as keyof ProfileData];
+                    if (isValueEmpty(value)) {
+                        isComplete = false;
+                        console.log(`[ProfileStatus] Manager personal profile incomplete: Missing field '${field}'`);
+                        break;
+                    }
+                }
+
+                // If it's a Manager PRO (tipo_usuario_id = 2), also check for company profile
+                if (profile.tipo_usuario_id === 2) {
+                    const { data: companyData, error: companyError } = await supabase
+                        .from('companies')
+                        .select('*')
+                        .eq('user_id', profile.id)
+                        .limit(1);
+
+                    if (companyError && companyError.code !== 'PGRST116') {
+                        console.error("[ProfileStatus] Error fetching company data:", companyError);
+                        isComplete = false; // Treat as incomplete if there's an error fetching company data
+                    } else if (!companyData || companyData.length === 0) {
+                        needsCompanyProfile = true;
+                        isComplete = false;
+                        console.log("[ProfileStatus] Manager PRO needs to create company profile.");
+                    } else {
+                        // Check company profile fields if company exists
+                        const companyProfile = companyData[0];
+                        for (const field of ESSENTIAL_COMPANY_PROFILE_FIELDS) {
+                            const value = companyProfile[field as keyof typeof companyProfile];
+                            if (isValueEmpty(value)) {
+                                isComplete = false;
+                                console.log(`[ProfileStatus] Manager company profile incomplete: Missing field '${field}'`);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            // For clients (tipo_usuario_id = 3), profile is always considered complete
+            else if (profile.tipo_usuario_id === 3) {
+                isComplete = true;
+            }
+
+            // Check for manager system notifications (independent of profile completeness)
             if (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2) {
                 hasPendingNotifications = await checkManagerSystemNotifications(profile.id);
             }
 
-            console.log(`[ProfileStatus] Final State - Profile Complete: ${isComplete}. Notifications Active: ${hasPendingNotifications}`);
+            console.log(`[ProfileStatus] Final State - Profile Complete: ${isComplete}. Needs Company: ${needsCompanyProfile}. Notifications Active: ${hasPendingNotifications}`);
 
             setStatus({
                 isComplete: isComplete,
                 hasPendingNotifications: hasPendingNotifications,
                 loading: false,
+                needsCompanyProfile: needsCompanyProfile,
             });
         };
 
