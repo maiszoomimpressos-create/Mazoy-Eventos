@@ -42,6 +42,7 @@ serve(async (req) => {
     });
   }
   const clientUserId = user.id;
+  console.log(`[DEBUG] Client authenticated. User ID: ${clientUserId}`);
 
   try {
     const { eventId, purchaseItems } = await req.json(); // purchaseItems: [{ ticketTypeId, quantity, price, name }]
@@ -64,6 +65,7 @@ serve(async (req) => {
         .single();
 
     if (eventError || !eventData) {
+        console.error(`[DEBUG] Event ID ${eventId} not found or error:`, eventError);
         return new Response(JSON.stringify({ error: 'Event not found or manager data missing.' }), { 
             status: 404, 
             headers: corsHeaders 
@@ -71,8 +73,12 @@ serve(async (req) => {
     }
     
     const managerUserId = eventData.user_id;
+    console.log(`[DEBUG] Event found. Manager ID: ${managerUserId}`);
     
     // 3. Fetch Manager Payment Settings directly using managerUserId
+    // BREAKPOINT SIMULADO AQUI
+    console.log(`[DEBUG BREAKPOINT] Attempting to fetch payment settings for manager: ${managerUserId}`);
+    
     const { data: paymentSettingsData, error: settingsError } = await supabaseService
         .from('payment_settings')
         .select('api_token')
@@ -81,7 +87,7 @@ serve(async (req) => {
 
     // Se houver erro na busca (incluindo PGRST116 - No rows found) ou se o token estiver ausente
     if (settingsError || !paymentSettingsData?.api_token) {
-        console.error(`[MP Preference] Payment settings missing for manager ${managerUserId}. Error: ${settingsError?.message || 'Token missing'}`);
+        console.error(`[DEBUG] Payment settings fetch failed for manager ${managerUserId}. Error: ${settingsError?.message || 'Token missing'}`);
         return new Response(JSON.stringify({ error: 'Payment gateway access token is not configured by the event manager. Please ask the manager to configure it in PRO Settings.' }), { 
             status: 403, 
             headers: corsHeaders 
@@ -89,6 +95,7 @@ serve(async (req) => {
     }
     
     const mpAccessToken = paymentSettingsData.api_token; 
+    console.log(`[DEBUG] Access Token found (masked length: ${mpAccessToken.length})`);
     
     // 4. Reserve/Identify available wristband analytics records
     const analyticsIdsToReserve: string[] = [];
