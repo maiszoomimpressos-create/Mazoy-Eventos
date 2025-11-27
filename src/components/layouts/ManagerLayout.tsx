@@ -135,21 +135,17 @@ const ManagerLayout: React.FC = () => {
                             Mazoy
                             <span className="ml-2 sm:ml-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black px-2 sm:px-3 py-0.5 rounded-lg text-xs sm:text-sm font-bold">{dashboardTitle}</span>
                         </div>
-                        <div className="hidden md:block">
-                            <NavLinks />
-                        </div>
-                    </div>
-                    <div className="flex items-center space-x-3 sm:space-x-4">
+                        
+                        {/* NOVO: DropdownMenu com o ícone de coroa como gatilho */}
                         {isManager && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button 
-                                        variant="outline" 
-                                        className="hidden md:flex items-center bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 transition-all duration-300 cursor-pointer px-3 py-1 h-8 text-sm"
+                                    <div 
+                                        className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center text-black font-bold text-sm cursor-pointer hover:scale-105 transition-transform duration-200"
+                                        title="Ações de Gestão PRO"
                                     >
-                                        <Crown className="mr-2 h-4 w-4" />
-                                        Gestão PRO
-                                    </Button>
+                                        <Crown className="h-5 w-5" />
+                                    </div>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent className="w-56 bg-black/90 border border-yellow-500/30 text-white">
                                     <DropdownMenuLabel className="text-yellow-500">Ações Rápidas</DropdownMenuLabel>
@@ -177,14 +173,19 @@ const ManagerLayout: React.FC = () => {
                             </DropdownMenu>
                         )}
 
+                        <div className="hidden md:block">
+                            <NavLinks />
+                        </div>
+                    </div>
+                    <div className="flex items-center space-x-3 sm:space-x-4">
+                        {/* O botão 'Gestão PRO' foi removido daqui */}
+
                         <button className="relative p-2 text-yellow-500 hover:bg-yellow-500/10 rounded-lg transition-colors cursor-pointer hidden sm:block">
                             <i className="fas fa-bell text-lg"></i>
                             <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-xs text-white">3</span>
                         </button>
                         <div className="flex items-center space-x-3 hidden sm:flex">
-                            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center text-black font-bold text-sm">
-                                <Crown className="h-5 w-5" />
-                            </div>
+                            {/* O ícone de coroa foi removido daqui, pois agora é o gatilho do dropdown */}
                             <div className="text-right hidden lg:block">
                                 <div className="text-white font-semibold text-sm">{userName}</div>
                                 <div className="text-gray-400 text-xs">{userRole}</div>
