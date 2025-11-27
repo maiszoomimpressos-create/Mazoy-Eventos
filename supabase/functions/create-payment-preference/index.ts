@@ -79,7 +79,6 @@ serve(async (req) => {
     console.log(`[DEBUG] Event found. Manager ID: ${managerUserId}`);
     
     // 3. Fetch Manager Payment Settings directly using managerUserId
-    // BREAKPOINT SIMULADO AQUI
     console.log(`[DEBUG BREAKPOINT] Attempting to fetch payment settings for manager: ${managerUserId}`);
     
     const { data: paymentSettingsData, error: settingsError } = await supabaseService
@@ -171,14 +170,25 @@ serve(async (req) => {
     }));
     
     // 8. Create MP Preference
+    
+    // Obtém a URL base do projeto Supabase para construir as URLs de retorno e notificação
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const notificationUrl = `${supabaseUrl}/functions/v1/mercadopago-webhook`;
+    const successUrl = `${supabaseUrl}/tickets?status=success&transaction_id=${transactionId}`;
+    const pendingUrl = `${supabaseUrl}/tickets?status=pending&transaction_id=${transactionId}`;
+    const failureUrl = `${supabaseUrl}/tickets?status=failure&transaction_id=${transactionId}`;
+    
+    console.log(`[DEBUG] Notification URL: ${notificationUrl}`);
+    console.log(`[DEBUG] Success URL: ${successUrl}`);
+
     const preference = {
         items: mpItems,
         external_reference: transactionId, // Usamos o ID da transação como referência externa
-        notification_url: `https://yzwfjyejqvawhooecbem.supabase.co/functions/v1/mercadopago-webhook`, // URL da Edge Function de Webhook
+        notification_url: notificationUrl, 
         back_urls: {
-            success: `${Deno.env.get('SUPABASE_URL')}/tickets?status=success&transaction_id=${transactionId}`,
-            pending: `${Deno.env.get('SUPABASE_URL')}/tickets?status=pending&transaction_id=${transactionId}`,
-            failure: `${Deno.env.get('SUPABASE_URL')}/tickets?status=failure&transaction_id=${transactionId}`,
+            success: successUrl,
+            pending: pendingUrl,
+            failure: failureUrl,
         },
         auto_return: "approved",
     };
