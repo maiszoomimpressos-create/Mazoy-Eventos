@@ -136,7 +136,7 @@ const ManagerLayout: React.FC = () => {
                             <span className="ml-2 sm:ml-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black px-2 sm:px-3 py-0.5 rounded-lg text-xs sm:text-sm font-bold">{dashboardTitle}</span>
                         </div>
                         
-                        {/* NOVO: DropdownMenu com o ícone de coroa como gatilho */}
+                        {/* DropdownMenu com o ícone de coroa como gatilho para ações rápidas */}
                         {isManager && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -172,26 +172,28 @@ const ManagerLayout: React.FC = () => {
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         )}
-
-                        {/* REMOVIDO: Os links de navegação principais foram removidos daqui */}
-                        {/* <div className="hidden md:block">
-                            <NavLinks />
-                        </div> */}
                     </div>
                     <div className="flex items-center space-x-3 sm:space-x-4">
                         <button className="relative p-2 text-yellow-500 hover:bg-yellow-500/10 rounded-lg transition-colors cursor-pointer hidden sm:block">
                             <i className="fas fa-bell text-lg"></i>
                             <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-xs text-white">3</span>
                         </button>
-                        <div className="flex items-center space-x-3 hidden sm:flex">
-                            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center text-black font-bold text-sm">
-                                <Crown className="h-5 w-5" />
-                            </div>
-                            <div className="text-right hidden lg:block">
-                                <div className="text-white font-semibold text-sm">{userName}</div>
-                                <div className="text-gray-400 text-xs">{userRole}</div>
-                            </div>
+                        
+                        {/* NOVO: Botão 'Gestor PRO' que navega para o dashboard */}
+                        <Button
+                            onClick={() => navigate('/manager/dashboard')}
+                            className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-black hover:from-yellow-600 hover:to-yellow-700 px-4 py-2 text-sm font-semibold transition-all duration-300 cursor-pointer flex items-center h-8 hidden sm:flex"
+                        >
+                            <Crown className="h-4 w-4 mr-2" />
+                            Gestor PRO
+                        </Button>
+
+                        {/* Informações do Usuário (Nome e Cargo) */}
+                        <div className="text-right hidden lg:block">
+                            <div className="text-white font-semibold text-sm">{userName}</div>
+                            <div className="text-gray-400 text-xs">{userRole}</div>
                         </div>
+
                         <Button
                             onClick={handleLogout}
                             className="bg-transparent border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 transition-all duration-300 cursor-pointer px-3 py-1 h-8 text-sm hidden sm:block"
