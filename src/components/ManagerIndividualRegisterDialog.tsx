@@ -305,7 +305,8 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                                 <Input 
                                                     placeholder="Seu primeiro nome" 
                                                     {...field} 
-                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 ${form.formState.errors.first_name ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                    isInvalid={!!form.formState.errors.first_name} // Adicionado isInvalid
+                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -322,7 +323,8 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                                 <Input 
                                                     placeholder="Seu sobrenome" 
                                                     {...field} 
-                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 ${form.formState.errors.last_name ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                    isInvalid={!!form.formState.errors.last_name} // Adicionado isInvalid
+                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -343,7 +345,8 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                                     placeholder="000.000.000-00"
                                                     {...field} 
                                                     onChange={handleCpfChange}
-                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 ${form.formState.errors.cpf ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                    isInvalid={!!form.formState.errors.cpf} // Adicionado isInvalid
+                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
                                                     maxLength={14}
                                                 />
                                             </FormControl>
@@ -362,7 +365,8 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                                     placeholder="00.000.000-0"
                                                     {...field} 
                                                     onChange={handleRgChange}
-                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 ${form.formState.errors.rg ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                    isInvalid={!!form.formState.errors.rg} // Adicionado isInvalid
+                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
                                                     maxLength={12}
                                                 />
                                             </FormControl>
@@ -383,7 +387,8 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                                 <Input 
                                                     type="date" 
                                                     {...field} 
-                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 ${form.formState.errors.birth_date ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                    isInvalid={!!form.formState.errors.birth_date} // Adicionado isInvalid
+                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -402,7 +407,8 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                             >
                                                 <FormControl>
                                                     <SelectTrigger 
-                                                        className={`w-full bg-black/60 text-white focus:ring-yellow-500 ${form.formState.errors.gender ? 'border-red-500' : 'border-yellow-500/30'}`}
+                                                        isInvalid={!!form.formState.errors.gender} // Adicionado isInvalid
+                                                        className={`w-full bg-black/60 text-white focus:ring-yellow-500`}
                                                     >
                                                         <SelectValue placeholder="Selecione seu gênero" />
                                                     </SelectTrigger>
@@ -437,7 +443,8 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                                         {...field} 
                                                         onChange={handleCepChange}
                                                         disabled={isCepLoading} 
-                                                        className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 pr-10 ${form.formState.errors.cep ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                        isInvalid={!!form.formState.errors.cep} // Adicionado isInvalid
+                                                        className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 pr-10`} 
                                                         maxLength={9}
                                                     />
                                                     {isCepLoading && (
@@ -468,7 +475,8 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                                         placeholder="Ex: Av. Paulista" 
                                                         {...field} 
                                                         disabled={isCepLoading} 
-                                                        className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 ${form.formState.errors.rua ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                        isInvalid={!!form.formState.errors.rua} // Adicionado isInvalid
+                                                        className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
                                                     />
                                                 </FormControl>
                                                 <FormMessage />
@@ -488,7 +496,8 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                                     placeholder="123" 
                                                     {...field} 
                                                     disabled={isCepLoading} 
-                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 ${form.formState.errors.numero ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                    isInvalid={!!form.formState.errors.numero} // Adicionado isInvalid
+                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -508,7 +517,8 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                                 placeholder="Apto 101, Bloco B" 
                                                 {...field} 
                                                 disabled={isCepLoading} 
-                                                className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 ${form.formState.errors.complemento ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                isInvalid={!!form.formState.errors.complemento} // Adicionado isInvalid
+                                                className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -528,7 +538,8 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                                     placeholder="Jardim Paulista" 
                                                     {...field} 
                                                     disabled={isCepLoading} 
-                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 ${form.formState.errors.bairro ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                    isInvalid={!!form.formState.errors.bairro} // Adicionado isInvalid
+                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -546,7 +557,8 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                                     placeholder="São Paulo" 
                                                     {...field} 
                                                     disabled={isCepLoading} 
-                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 ${form.formState.errors.cidade ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                    isInvalid={!!form.formState.errors.cidade} // Adicionado isInvalid
+                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -564,7 +576,8 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                                     placeholder="SP" 
                                                     {...field} 
                                                     disabled={isCepLoading} 
-                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 ${form.formState.errors.estado ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                    isInvalid={!!form.formState.errors.estado} // Adicionado isInvalid
+                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
                                                 />
                                             </FormControl>
                                             <FormMessage />

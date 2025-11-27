@@ -480,7 +480,8 @@ const Profile: React.FC = () => {
                                                                     placeholder="Seu nome" 
                                                                     {...field} 
                                                                     disabled={!isEditing} 
-                                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed ${form.formState.errors.first_name ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                                    isInvalid={!!form.formState.errors.first_name} // Adicionado isInvalid
+                                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed`} 
                                                                 />
                                                             </FormControl>
                                                             <FormMessage />
@@ -498,7 +499,8 @@ const Profile: React.FC = () => {
                                                                     placeholder="Seu sobrenome" 
                                                                     {...field} 
                                                                     disabled={!isEditing} 
-                                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed ${form.formState.errors.last_name ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                                    isInvalid={!!form.formState.errors.last_name} // Adicionado isInvalid
+                                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed`} 
                                                                 />
                                                             </FormControl>
                                                             <FormMessage />
@@ -530,7 +532,8 @@ const Profile: React.FC = () => {
                                                                     {...field} 
                                                                     onChange={handleCpfChange}
                                                                     disabled={!isEditing} 
-                                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed ${form.formState.errors.cpf ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                                    isInvalid={!!form.formState.errors.cpf} // Adicionado isInvalid
+                                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed`} 
                                                                     maxLength={14}
                                                                 />
                                                             </FormControl>
@@ -550,7 +553,8 @@ const Profile: React.FC = () => {
                                                                     {...field} 
                                                                     onChange={handleRgChange}
                                                                     disabled={!isEditing} 
-                                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed ${form.formState.errors.rg ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                                    isInvalid={!!form.formState.errors.rg} // Adicionado isInvalid
+                                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed`} 
                                                                     maxLength={12}
                                                                 />
                                                             </FormControl>
@@ -572,7 +576,8 @@ const Profile: React.FC = () => {
                                                                     type="date" 
                                                                     {...field} 
                                                                     disabled={!isEditing} 
-                                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed ${form.formState.errors.birth_date ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                                    isInvalid={!!form.formState.errors.birth_date} // Adicionado isInvalid
+                                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed`} 
                                                                 />
                                                             </FormControl>
                                                             <FormMessage />
@@ -592,7 +597,8 @@ const Profile: React.FC = () => {
                                                             >
                                                                 <FormControl>
                                                                     <SelectTrigger 
-                                                                        className={`w-full bg-black/60 text-white focus:ring-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed ${form.formState.errors.gender ? 'border-red-500' : 'border-yellow-500/30'}`}
+                                                                        isInvalid={!!form.formState.errors.gender} // Adicionado isInvalid
+                                                                        className={`w-full bg-black/60 text-white focus:ring-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed`}
                                                                     >
                                                                         <SelectValue placeholder="Selecione seu gênero" />
                                                                     </SelectTrigger>
@@ -627,7 +633,8 @@ const Profile: React.FC = () => {
                                                                         {...field} 
                                                                         onChange={handleCepChange}
                                                                         disabled={!isEditing || isCepLoading} 
-                                                                        className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed pr-10 ${form.formState.errors.cep ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                                        isInvalid={!!form.formState.errors.cep} // Adicionado isInvalid
+                                                                        className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed pr-10`} 
                                                                         maxLength={9}
                                                                     />
                                                                     {isCepLoading && (
@@ -657,7 +664,8 @@ const Profile: React.FC = () => {
                                                                         placeholder="Ex: Av. Paulista" 
                                                                         {...field} 
                                                                         disabled={!isEditing || isCepLoading} 
-                                                                        className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed ${form.formState.errors.rua ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                                        isInvalid={!!form.formState.errors.rua} // Adicionado isInvalid
+                                                                        className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed`} 
                                                                     />
                                                                 </FormControl>
                                                                 <FormMessage />
@@ -677,7 +685,8 @@ const Profile: React.FC = () => {
                                                                     placeholder="123" 
                                                                     {...field} 
                                                                     disabled={!isEditing || isCepLoading} 
-                                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed ${form.formState.errors.numero ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                                    isInvalid={!!form.formState.errors.numero} // Adicionado isInvalid
+                                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed`} 
                                                                 />
                                                             </FormControl>
                                                             <FormMessage />
@@ -697,7 +706,8 @@ const Profile: React.FC = () => {
                                                                 placeholder="Apto 101, Bloco B" 
                                                                 {...field} 
                                                                 disabled={!isEditing || isCepLoading} 
-                                                                className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed ${form.formState.errors.complemento ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                                isInvalid={!!form.formState.errors.complemento} // Adicionado isInvalid
+                                                                className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed`} 
                                                             />
                                                         </FormControl>
                                                         <FormMessage />
@@ -718,7 +728,8 @@ const Profile: React.FC = () => {
                                                                         placeholder="Jardim Paulista" 
                                                                         {...field} 
                                                                         disabled={!isEditing || isCepLoading} 
-                                                                        className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed ${form.formState.errors.bairro ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                                        isInvalid={!!form.formState.errors.bairro} // Adicionado isInvalid
+                                                                        className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed`} 
                                                                     />
                                                                 </FormControl>
                                                                 <FormMessage />
@@ -737,7 +748,8 @@ const Profile: React.FC = () => {
                                                                     placeholder="São Paulo" 
                                                                     {...field} 
                                                                     disabled={!isEditing || isCepLoading} 
-                                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed ${form.formState.errors.cidade ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                                    isInvalid={!!form.formState.errors.cidade} // Adicionado isInvalid
+                                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed`} 
                                                                 />
                                                             </FormControl>
                                                             <FormMessage />
@@ -755,7 +767,8 @@ const Profile: React.FC = () => {
                                                                     placeholder="SP" 
                                                                     {...field} 
                                                                     disabled={!isEditing || isCepLoading} 
-                                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed ${form.formState.errors.estado ? 'border-red-500' : 'border-yellow-500/30'}`} 
+                                                                    isInvalid={!!form.formState.errors.estado} // Adicionado isInvalid
+                                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed`} 
                                                                 />
                                                             </FormControl>
                                                             <FormMessage />

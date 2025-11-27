@@ -157,6 +157,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ isSaving, isCepLoading, fetch
                                 <Input 
                                     placeholder="Nome da Empresa S.A."
                                     {...field} 
+                                    isInvalid={!!form.formState.errors.corporate_name} // Adicionado isInvalid
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
                                     disabled={isSaving}
                                 />
@@ -177,6 +178,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ isSaving, isCepLoading, fetch
                                     placeholder="00.000.000/0000-00"
                                     {...field} 
                                     onChange={handleCnpjChange}
+                                    isInvalid={!!form.formState.errors.cnpj} // Adicionado isInvalid
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
                                     maxLength={18}
                                     disabled={isSaving}
@@ -198,6 +200,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ isSaving, isCepLoading, fetch
                                     <Input 
                                         placeholder="Nome Comercial"
                                         {...field} 
+                                        isInvalid={!!form.formState.errors.trade_name} // Adicionado isInvalid
                                         className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
                                         disabled={isSaving}
                                     />
@@ -217,6 +220,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ isSaving, isCepLoading, fetch
                                         placeholder="(00) 00000-0000"
                                         {...field} 
                                         onChange={handlePhoneChange}
+                                        isInvalid={!!form.formState.errors.phone} // Adicionado isInvalid
                                         className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
                                         maxLength={15}
                                         disabled={isSaving}
@@ -238,6 +242,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ isSaving, isCepLoading, fetch
                                 <Input 
                                     placeholder="contato@empresa.com"
                                     {...field} 
+                                    isInvalid={!!form.formState.errors.email} // Adicionado isInvalid
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
                                     disabled={isSaving}
                                 />
@@ -265,6 +270,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ isSaving, isCepLoading, fetch
                                         {...field} 
                                         onChange={handleCepChange}
                                         disabled={isSaving || isCepLoading} 
+                                        isInvalid={!!form.formState.errors.cep} // Adicionado isInvalid
                                         className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 pr-10" 
                                         maxLength={9}
                                     />
@@ -289,7 +295,14 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ isSaving, isCepLoading, fetch
                                 <FormItem>
                                     <FormLabel className="text-white">Rua {isManagerContext && '*'}</FormLabel>
                                     <FormControl>
-                                        <Input id="street" placeholder="Ex: Av. Paulista" {...field} disabled={isSaving || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
+                                        <Input 
+                                            id="street" 
+                                            placeholder="Ex: Av. Paulista" 
+                                            {...field} 
+                                            disabled={isSaving || isCepLoading} 
+                                            isInvalid={!!form.formState.errors.street} // Adicionado isInvalid
+                                            className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
+                                        />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -303,7 +316,14 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ isSaving, isCepLoading, fetch
                             <FormItem>
                                 <FormLabel className="text-white">Número {isManagerContext && '*'}</FormLabel>
                                 <FormControl>
-                                    <Input id="number" placeholder="123" {...field} disabled={isSaving || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
+                                    <Input 
+                                        id="number" 
+                                        placeholder="123" 
+                                        {...field} 
+                                        disabled={isSaving || isCepLoading} 
+                                        isInvalid={!!form.formState.errors.number} // Adicionado isInvalid
+                                        className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -318,7 +338,13 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ isSaving, isCepLoading, fetch
                         <FormItem>
                             <FormLabel className="text-white">Complemento (Opcional)</FormLabel>
                             <FormControl>
-                                <Input placeholder="Apto 101, Bloco B" {...field} disabled={isSaving || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
+                                <Input 
+                                    placeholder="Apto 101, Bloco B" 
+                                    {...field} 
+                                    disabled={isSaving || isCepLoading} 
+                                    isInvalid={!!form.formState.errors.complement} // Adicionado isInvalid
+                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
+                                />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -333,7 +359,13 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ isSaving, isCepLoading, fetch
                             <FormItem>
                                 <FormLabel className="text-white">Bairro {isManagerContext && '*'}</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Jardim Paulista" {...field} disabled={isSaving || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
+                                    <Input 
+                                        placeholder="Jardim Paulista" 
+                                        {...field} 
+                                        disabled={isSaving || isCepLoading} 
+                                        isInvalid={!!form.formState.errors.neighborhood} // Adicionado isInvalid
+                                        className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -346,7 +378,13 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ isSaving, isCepLoading, fetch
                             <FormItem>
                                 <FormLabel className="text-white">Cidade {isManagerContext && '*'}</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="São Paulo" {...field} disabled={isSaving || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
+                                    <Input 
+                                        placeholder="São Paulo" 
+                                        {...field} 
+                                        disabled={isSaving || isCepLoading} 
+                                        isInvalid={!!form.formState.errors.city} // Adicionado isInvalid
+                                        className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -359,7 +397,13 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ isSaving, isCepLoading, fetch
                             <FormItem>
                                 <FormLabel className="text-white">Estado {isManagerContext && '*'}</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="SP" {...field} disabled={isSaving || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
+                                    <Input 
+                                        placeholder="SP" 
+                                        {...field} 
+                                        disabled={isSaving || isCepLoading} 
+                                        isInvalid={!!form.formState.errors.state} // Adicionado isInvalid
+                                        className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
