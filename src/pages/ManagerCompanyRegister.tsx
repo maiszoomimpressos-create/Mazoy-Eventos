@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
-import { Loader2, Building, ArrowLeft, User, Mail, Phone, MapPin } from 'lucide-react';
+import { Loader2, Building, ArrowLeft, User, Mail, Phone, MapPin, AlertTriangle } from 'lucide-react';
 import { useProfile } from '@/hooks/use-profile'; // Para puxar dados do sócio
 
 // --- Utility Functions (Copied from ManagerCompanyProfile.tsx) ---
@@ -84,18 +84,18 @@ const formatCEP = (value: string) => {
 const companyRegisterSchema = z.object({
     corporate_name: z.string().min(3, { message: "Razão Social é obrigatória." }),
     cnpj: z.string().refine(validateCNPJ, { message: "CNPJ inválido. Verifique os dígitos." }),
-    trade_name: z.string().optional().nullable(),
-    phone: z.string().optional().nullable(),
-    email: z.string().email({ message: "E-mail inválido." }).optional().nullable(),
+    trade_name: z.string().min(1, { message: "Nome Fantasia é obrigatório." }), // Tornando obrigatório
+    phone: z.string().min(1, { message: "Telefone é obrigatório." }), // Tornando obrigatório
+    email: z.string().email({ message: "E-mail inválido." }).min(1, { message: "E-mail da Empresa é obrigatório." }), // Tornando obrigatório
     
-    // Address Fields
-    cep: z.string().optional().nullable().refine((val) => !val || val.replace(/\D/g, '').length === 8, { message: "CEP inválido (8 dígitos)." }),
-    street: z.string().optional().nullable(),
-    neighborhood: z.string().optional().nullable(),
-    city: z.string().optional().nullable(),
-    state: z.string().optional().nullable(),
-    number: z.string().optional().nullable(),
-    complement: z.string().optional().nullable(),
+    // Address Fields - Tornando todos obrigatórios, exceto complemento
+    cep: z.string().min(1, { message: "CEP é obrigatório." }).refine((val) => val.replace(/\D/g, '').length === 8, { message: "CEP inválido (8 dígitos)." }),
+    street: z.string().min(1, { message: "Rua é obrigatória." }),
+    neighborhood: z.string().min(1, { message: "Bairro é obrigatório." }),
+    city: z.string().min(1, { message: "Cidade é obrigatória." }),
+    state: z.string().min(1, { message: "Estado é obrigatório." }),
+    number: z.string().min(1, { message: "Número é obrigatório." }),
+    complement: z.string().optional().nullable(), // Complemento pode ser opcional
 });
 
 type CompanyRegisterData = z.infer<typeof companyRegisterSchema>;
@@ -105,7 +105,7 @@ type CompanyRegisterData = z.infer<typeof companyRegisterSchema>;
 const ManagerCompanyRegister: React.FC = () => {
     const navigate = useNavigate();
     const [userId, setUserId] = useState<string | null>(null);
-    const [userEmail, setUserEmail] = useState<string | null>(null); // Novo estado para o e-mail do usuário
+    const [userEmail, setUserEmail] = useState<string | null>(null);
     const [isFetchingUser, setIsFetchingUser] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [isCepLoading, setIsCepLoading] = useState(false);
@@ -120,7 +120,7 @@ const ManagerCompanyRegister: React.FC = () => {
                 return;
             }
             setUserId(user.id);
-            setUserEmail(user.email); // Define o e-mail do usuário
+            setUserEmail(user.email);
             setIsFetchingUser(false);
         };
         fetchUser();
@@ -201,12 +201,37 @@ const ManagerCompanyRegister: React.FC = () => {
             fetchAddressByCep(formattedCep);
         }
     };
+    
+    // Campos essenciais do perfil do usuário que devem estar preenchidos
+    const ESSENTIAL_PROFILE_FIELDS = [
+        'first_name', 'last_name', 'cpf', 'rg', 'birth_date', 'gender',
+        'cep', 'rua', 'bairro', 'cidade', 'estado', 'numero'
+    ];
+
+    const isProfileComplete = (profileData: typeof profile): boolean => {
+        if (!profileData) return false;
+
+        for (const field of ESSENTIAL_PROFILE_FIELDS) {
+            const value = profileData[field as keyof typeof profileData];
+            if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) {
+                return false;
+            }
+        }
+        return true;
+    };
 
     const onSubmit = async (values: CompanyRegisterData) => {
         if (!userId) {
             showError("Usuário não autenticado.");
             return;
         }
+        
+        // Validação do perfil do sócio antes de prosseguir
+        if (!profile || !isProfileComplete(profile)) {
+            showError("Seu perfil pessoal está incompleto. Por favor, preencha todos os dados essenciais do seu perfil antes de registrar a empresa.");
+            return;
+        }
+
         setIsSaving(true);
         const toastId = showLoading("Registrando empresa...");
 
@@ -214,16 +239,16 @@ const ManagerCompanyRegister: React.FC = () => {
             user_id: userId,
             cnpj: values.cnpj.replace(/\D/g, ''),
             corporate_name: values.corporate_name,
-            trade_name: values.trade_name || null,
-            phone: values.phone ? values.phone.replace(/\D/g, '') : null,
-            email: values.email || null,
+            trade_name: values.trade_name, // Agora é obrigatório
+            phone: values.phone ? values.phone.replace(/\D/g, '') : null, // Ainda pode ser null se o campo estiver vazio
+            email: values.email, // Agora é obrigatório
             
             cep: values.cep ? values.cep.replace(/\D/g, '') : null,
-            street: values.street || null,
-            number: values.number || null,
-            neighborhood: values.neighborhood || null,
-            city: values.city || null,
-            state: values.state || null,
+            street: values.street, // Agora é obrigatório
+            number: values.number, // Agora é obrigatório
+            neighborhood: values.neighborhood, // Agora é obrigatório
+            city: values.city, // Agora é obrigatório
+            state: values.state, // Agora é obrigatório
             complement: values.complement || null,
         };
 
@@ -352,7 +377,7 @@ const ManagerCompanyRegister: React.FC = () => {
                                         name="trade_name"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="text-white">Nome Fantasia (Opcional)</FormLabel>
+                                                <FormLabel className="text-white">Nome Fantasia *</FormLabel>
                                                 <FormControl>
                                                     <Input 
                                                         placeholder="Nome Comercial"
@@ -369,7 +394,7 @@ const ManagerCompanyRegister: React.FC = () => {
                                         name="phone"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="text-white">Telefone (Opcional)</FormLabel>
+                                                <FormLabel className="text-white">Telefone *</FormLabel>
                                                 <FormControl>
                                                     <Input 
                                                         placeholder="(00) 00000-0000"
@@ -390,7 +415,7 @@ const ManagerCompanyRegister: React.FC = () => {
                                     name="email"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-white">E-mail da Empresa (Para Notificações)</FormLabel>
+                                            <FormLabel className="text-white">E-mail da Empresa (Para Notificações) *</FormLabel>
                                             <FormControl>
                                                 <Input 
                                                     placeholder="contato@empresa.com"
@@ -413,7 +438,7 @@ const ManagerCompanyRegister: React.FC = () => {
                                     name="cep"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-white">CEP (Opcional)</FormLabel>
+                                            <FormLabel className="text-white">CEP *</FormLabel>
                                             <FormControl>
                                                 <div className="relative">
                                                     <Input 
@@ -443,7 +468,7 @@ const ManagerCompanyRegister: React.FC = () => {
                                             name="street"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-white">Rua (Opcional)</FormLabel>
+                                                    <FormLabel className="text-white">Rua *</FormLabel>
                                                     <FormControl>
                                                         <Input id="street" placeholder="Ex: Av. Paulista" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                                     </FormControl>
@@ -457,7 +482,7 @@ const ManagerCompanyRegister: React.FC = () => {
                                         name="number"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="text-white">Número (Opcional)</FormLabel>
+                                                <FormLabel className="text-white">Número *</FormLabel>
                                                 <FormControl>
                                                     <Input id="number" placeholder="123" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                                 </FormControl>
@@ -487,7 +512,7 @@ const ManagerCompanyRegister: React.FC = () => {
                                         name="neighborhood"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="text-white">Bairro (Opcional)</FormLabel>
+                                                <FormLabel className="text-white">Bairro *</FormLabel>
                                                 <FormControl>
                                                     <Input placeholder="Jardim Paulista" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                                 </FormControl>
@@ -500,7 +525,7 @@ const ManagerCompanyRegister: React.FC = () => {
                                         name="city"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="text-white">Cidade (Opcional)</FormLabel>
+                                                <FormLabel className="text-white">Cidade *</FormLabel>
                                                 <FormControl>
                                                     <Input placeholder="São Paulo" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                                 </FormControl>
@@ -513,7 +538,7 @@ const ManagerCompanyRegister: React.FC = () => {
                                         name="state"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="text-white">Estado (Opcional)</FormLabel>
+                                                <FormLabel className="text-white">Estado *</FormLabel>
                                                 <FormControl>
                                                     <Input placeholder="SP" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                                 </FormControl>
@@ -530,17 +555,35 @@ const ManagerCompanyRegister: React.FC = () => {
                                     <User className="h-5 w-5 mr-2 text-yellow-500" />
                                     Dados do Sócio (Você)
                                 </h3>
+                                {!isProfileComplete(profile) && (
+                                    <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-xl flex items-start space-x-3 mb-4">
+                                        <AlertTriangle className="h-5 w-5 mt-1 flex-shrink-0" />
+                                        <div>
+                                            <h4 className="font-semibold text-white mb-1">Perfil Pessoal Incompleto</h4>
+                                            <p className="text-sm text-gray-300">
+                                                Para registrar sua empresa, seu perfil pessoal deve estar completo. Por favor, preencha todos os campos essenciais do seu perfil.
+                                            </p>
+                                            <Button 
+                                                variant="link" 
+                                                className="h-auto p-0 mt-2 text-xs text-yellow-500 hover:text-yellow-400"
+                                                onClick={() => navigate('/profile')}
+                                            >
+                                                Ir para o Perfil Pessoal
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
                                 {profile ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
                                         <div>
                                             <p><span className="font-medium text-white">Nome:</span> {profile.first_name} {profile.last_name}</p>
-                                            <p><span className="font-medium text-white">CPF:</span> {formatCNPJ(profile.cpf || '')}</p> {/* Reutilizando formatCNPJ para CPF */}
+                                            <p><span className="font-medium text-white">CPF:</span> {formatCNPJ(profile.cpf || '')}</p>
                                             <p><span className="font-medium text-white">RG:</span> {profile.rg || 'N/A'}</p>
                                         </div>
                                         <div>
                                             <p><span className="font-medium text-white">Nascimento:</span> {profile.birth_date ? new Date(profile.birth_date).toLocaleDateString('pt-BR') : 'N/A'}</p>
                                             <p><span className="font-medium text-white">Gênero:</span> {profile.gender || 'N/A'}</p>
-                                            <p><span className="font-medium text-white">E-mail:</span> {userEmail || 'N/A'}</p> {/* Usando o estado userEmail */}
+                                            <p><span className="font-medium text-white">E-mail:</span> {userEmail || 'N/A'}</p>
                                         </div>
                                         <div className="md:col-span-2 text-xs text-gray-500 pt-2 border-t border-yellow-500/10">
                                             <p>Estes dados são do seu perfil de usuário e serão associados à empresa como sócio principal.</p>
@@ -557,7 +600,7 @@ const ManagerCompanyRegister: React.FC = () => {
                             <div className="pt-4 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                                 <Button
                                     type="submit"
-                                    disabled={isSaving}
+                                    disabled={isSaving || !isProfileComplete(profile)}
                                     className="flex-1 bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
                                 >
                                     {isSaving ? (

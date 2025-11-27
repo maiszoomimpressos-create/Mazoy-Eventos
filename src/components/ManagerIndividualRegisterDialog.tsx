@@ -74,14 +74,14 @@ const validateCEP = (cep: string) => {
 
 const managerIndividualProfileSchema = z.object({
     first_name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
-    last_name: z.string().min(1, { message: "Sobrenome é obrigatório." }), // Tornando obrigatório
+    last_name: z.string().min(1, { message: "Sobrenome é obrigatório." }),
     birth_date: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de nascimento é obrigatória." }),
-    gender: z.string().min(1, { message: "Gênero é obrigatório." }).refine((val) => val !== 'not_specified', { message: "Selecione um gênero válido." }), // Tornando obrigatório
+    gender: z.string().min(1, { message: "Gênero é obrigatório." }).refine((val) => GENDER_OPTIONS.includes(val), { message: "Selecione um gênero válido." }), // Tornando obrigatório e validando contra opções
     
     cpf: z.string().refine(validateCPF, { message: "CPF inválido." }),
-    rg: z.string().min(1, { message: "RG é obrigatório." }).refine(validateRG, { message: "RG inválido." }), // Tornando obrigatório
+    rg: z.string().min(1, { message: "RG é obrigatório." }).refine(validateRG, { message: "RG inválido." }),
 
-    // Campos de Endereço - Tornando todos obrigatórios
+    // Campos de Endereço - Tornando todos obrigatórios, exceto complemento
     cep: z.string().min(1, { message: "CEP é obrigatório." }).refine(validateCEP, { message: "CEP inválido (8 dígitos)." }),
     rua: z.string().min(1, { message: "Rua é obrigatória." }),
     bairro: z.string().min(1, { message: "Bairro é obrigatório." }),
@@ -127,9 +127,9 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
         if (profile) {
             form.reset({
                 first_name: profile.first_name || '',
-                last_name: profile.last_name || '',
+                last_name: profile.last_name || '', // Usando last_name do perfil
                 birth_date: profile.birth_date || '',
-                gender: profile.gender || 'not_specified',
+                gender: profile.gender || '', // Se for null/vazio, o Zod vai pegar
                 cpf: profile.cpf ? formatCPF(profile.cpf) : '',
                 rg: profile.rg ? formatRG(profile.rg) : '',
                 cep: profile.cep ? formatCEP(profile.cep) : '',
@@ -234,21 +234,21 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
         const cleanCPF = values.cpf.replace(/\D/g, '');
         const cleanRG = values.rg ? values.rg.replace(/\D/g, '') : null;
         const cleanCEP = values.cep ? values.cep.replace(/\D/g, '') : null;
-        const genderToSave = (values.gender === "not_specified" || !values.gender) ? null : values.gender;
+        const genderToSave = values.gender; // Agora é sempre uma string válida
 
         const dataToSave = {
             first_name: values.first_name,
-            last_name: values.last_name || null,
+            last_name: values.last_name, // Salvando last_name
             birth_date: values.birth_date,
             gender: genderToSave,
             cpf: cleanCPF,
             rg: cleanRG,
             cep: cleanCEP,
-            rua: values.rua || null,
-            bairro: values.bairro || null,
-            cidade: values.cidade || null,
-            estado: values.estado || null,
-            numero: values.numero || null,
+            rua: values.rua,
+            bairro: values.bairro,
+            cidade: values.cidade,
+            estado: values.estado,
+            numero: values.numero,
             complemento: values.complemento || null,
             tipo_usuario_id: 2, // Define como Gestor PRO (Pessoa Física)
         };
@@ -312,7 +312,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                     name="last_name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-white">Sobrenome *</FormLabel> {/* Tornando obrigatório */}
+                                            <FormLabel className="text-white">Sobrenome *</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="Seu sobrenome" {...field} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                             </FormControl>
@@ -347,7 +347,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                     name="rg"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-white">RG *</FormLabel> {/* Tornando obrigatório */}
+                                            <FormLabel className="text-white">RG *</FormLabel>
                                             <FormControl>
                                                 <Input 
                                                     placeholder="00.000.000-0"
@@ -386,10 +386,10 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                     name="gender"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-white">Gênero *</FormLabel> {/* Tornando obrigatório */}
+                                            <FormLabel className="text-white">Gênero *</FormLabel>
                                             <Select 
-                                                onValueChange={(value) => field.onChange(value === "not_specified" ? null : value)} 
-                                                defaultValue={field.value || "not_specified"} 
+                                                onValueChange={field.onChange} 
+                                                defaultValue={field.value} 
                                             >
                                                 <FormControl>
                                                     <SelectTrigger className="w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500">
@@ -397,9 +397,6 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent className="bg-black border-yellow-500/30 text-white">
-                                                    <SelectItem value="not_specified" className="text-gray-500">
-                                                        Não especificado
-                                                    </SelectItem>
                                                     {GENDER_OPTIONS.map(option => (
                                                         <SelectItem key={option} value={option} className="hover:bg-yellow-500/10 cursor-pointer">
                                                             {option}
@@ -415,13 +412,13 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
 
                             {/* Seção de Endereço */}
                             <div className="pt-4 border-t border-yellow-500/20">
-                                <h3 className="text-xl font-semibold text-white mb-4">Endereço *</h3> {/* Título de seção obrigatório */}
+                                <h3 className="text-xl font-semibold text-white mb-4">Endereço *</h3>
                                 <FormField
                                     control={form.control}
                                     name="cep"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-white">CEP *</FormLabel> {/* Tornando obrigatório */}
+                                            <FormLabel className="text-white">CEP *</FormLabel>
                                             <FormControl>
                                                 <div className="relative">
                                                     <Input 
@@ -453,7 +450,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                         name="rua"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="text-white">Rua *</FormLabel> {/* Tornando obrigatório */}
+                                                <FormLabel className="text-white">Rua *</FormLabel>
                                                 <FormControl>
                                                     <Input id="rua" placeholder="Ex: Av. Paulista" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                                 </FormControl>
@@ -467,7 +464,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                     name="numero"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-white">Número *</FormLabel> {/* Tornando obrigatório */}
+                                            <FormLabel className="text-white">Número *</FormLabel>
                                             <FormControl>
                                                 <Input id="numero" placeholder="123" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                             </FormControl>
@@ -497,7 +494,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                     name="bairro"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-white">Bairro *</FormLabel> {/* Tornando obrigatório */}
+                                            <FormLabel className="text-white">Bairro *</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="Jardim Paulista" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                             </FormControl>
@@ -510,7 +507,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                     name="cidade"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-white">Cidade *</FormLabel> {/* Tornando obrigatório */}
+                                            <FormLabel className="text-white">Cidade *</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="São Paulo" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                             </FormControl>
@@ -523,7 +520,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                     name="estado"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-white">Estado *</FormLabel> {/* Tornando obrigatório */}
+                                            <FormLabel className="text-white">Estado *</FormLabel>
                                             <FormControl>
                                                 <Input placeholder="SP" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                             </FormControl>

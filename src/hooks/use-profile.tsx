@@ -4,18 +4,19 @@ import { showError } from '@/utils/toast';
 
 interface ProfileData {
     first_name: string;
+    last_name: string; // Adicionado last_name
     avatar_url: string | null;
-    cpf: string; // Alterado para string, será '' se for null no DB
-    rg: string; // Alterado para string, será '' se for null no DB
-    birth_date: string; // Alterado para string, será '' se for null no DB
-    gender: string; // Alterado para string, será '' se for null no DB
-    cep: string; // Alterado para string, será '' se for null no DB
-    rua: string; // Alterado para string, será '' se for null no DB
-    bairro: string; // Alterado para string, será '' se for null no DB
-    cidade: string; // Alterado para string, será '' se for null no DB
-    estado: string; // Alterado para string, será '' se for null no DB
-    numero: string; // Alterado para string, será '' se for null no DB
-    complemento: string; // Alterado para string, será '' se for null no DB
+    cpf: string;
+    rg: string;
+    birth_date: string;
+    gender: string;
+    cep: string;
+    rua: string;
+    bairro: string;
+    cidade: string;
+    estado: string;
+    numero: string;
+    complemento: string;
     tipo_usuario_id: number;
 }
 
@@ -25,7 +26,7 @@ const fetchProfile = async (userId: string): Promise<ProfileData | null> => {
     const { data, error } = await supabase
         .from('profiles')
         .select(`
-            first_name, avatar_url, cpf, rg, birth_date, gender, 
+            first_name, last_name, avatar_url, cpf, rg, birth_date, gender, 
             cep, rua, bairro, cidade, estado, numero, complemento,
             tipo_usuario_id
         `)
@@ -40,6 +41,7 @@ const fetchProfile = async (userId: string): Promise<ProfileData | null> => {
     // Mapeia dados para garantir que campos que podem ser NULL no DB sejam strings vazias no frontend
     return {
         first_name: data.first_name || '',
+        last_name: data.last_name || '', // Mapeando last_name
         avatar_url: data.avatar_url || null,
         cpf: data.cpf || '',
         rg: data.rg || '',
