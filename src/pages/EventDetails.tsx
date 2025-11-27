@@ -105,39 +105,39 @@ const EventDetails: React.FC = () => {
         
         // 2. LÓGICA DE COMPRA (Se autenticado)
         
-        // Agrega todos os itens selecionados para uma única chamada à Edge Function
-        const purchaseItems = Object.entries(selectedTickets)
+        // Para simplificar, vamos processar TODOS os ingressos selecionados.
+        // Criamos uma lista de promessas de compra.
+        const purchasePromises = Object.entries(selectedTickets)
             .filter(([, quantity]) => quantity > 0)
-            .map(([ticketId, quantity]) => {
+            .map(async ([ticketId, quantity]) => {
                 const ticketDetails = ticketTypes.find(t => t.id === ticketId);
                 
                 if (!ticketDetails) {
-                    // Isso não deve acontecer se a lógica de seleção estiver correta
                     throw new Error(`Detalhes do ingresso ${ticketId} não encontrados.`);
                 }
 
-                return {
+                return purchaseTicket({
+                    eventId: event.id,
                     ticketTypeId: ticketId,
                     quantity: quantity,
                     price: ticketDetails.price,
-                };
+                });
             });
 
         try {
-            const success = await purchaseTicket({
-                eventId: event.id, // UUID do evento
-                purchaseItems: purchaseItems,
-            });
+            const results = await Promise.all(purchasePromises);
             
-            if (success) {
+            // Se todas as compras foram bem-sucedidas (o hook purchaseTicket retorna true em caso de sucesso)
+            if (results.every(result => result === true)) {
                 // Após a compra bem-sucedida, limpa a seleção e navega para a página de ingressos
                 setSelectedTickets({});
                 navigate('/tickets');
+            } else {
+                // Se alguma falhou, o purchaseTicket já deve ter exibido um erro.
+                showError("Algumas compras falharam. Verifique a disponibilidade.");
             }
-            // Se falhar, o hook purchaseTicket já exibiu o erro.
-            
         } catch (e: any) {
-            console.error("Erro durante o processamento de compra:", e);
+            console.error("Erro durante o processamento de múltiplas compras:", e);
             showError(e.message || "Ocorreu um erro ao processar a compra.");
         }
     };
@@ -294,6 +294,8 @@ const EventDetails: React.FC = () => {
                                                                     onClick={() => handleTicketChange(ticket.id, currentQuantity + 1)}
                                                                     className="w-7 h-7 sm:w-8 sm:h-8 bg-yellow-500/20 border border-yellow-500/40 rounded-full flex items-center justify-center text-yellow-500 hover:bg-yellow-500/30 transition-all duration-300 cursor-pointer disabled:opacity-30"
                                                                     // CORREÇÃO: Se a quantidade atual é igual à disponibilidade, o botão deve ser desabilitado.
+                                                                    // Se o problema é que ele está desabilitando cedo demais, a única causa é que a disponibilidade é 1.
+                                                                    // Mantendo a lógica correta de limite de estoque:
                                                                     disabled={!isAvailable || currentQuantity >= ticket.available || isPurchasing}
                                                                 >
                                                                     <i className="fas fa-plus text-xs"></i>
@@ -365,7 +367,7 @@ const EventDetails: React.FC = () => {
                             </p>
                         </div>
                         <div>
-                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg}>Links Úteis</h4>
+                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg">Links Úteis</h4>
                             <ul className="space-y-2 text-sm">
                                 <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Sobre Nós</a></li>
                                 <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Como Funciona</a></li>
@@ -374,7 +376,7 @@ const EventDetails: React.FC = () => {
                             </ul>
                         </div>
                         <div>
-                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg}>Suporte</h4>
+                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg">Suporte</h4>
                             <ul className="space-y-2 text-sm">
                                 <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Central de Ajuda</a></li>
                                 <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Contato</a></li>
@@ -383,7 +385,7 @@ const EventDetails: React.FC = () => {
                             </ul>
                         </div>
                         <div>
-                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg}>Redes Sociais</h4>
+                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg">Redes Sociais</h4>
                             <div className="flex space-x-4">
                                 <a href="#" className="text-yellow-500 hover:text-yellow-600 transition-colors cursor-pointer">
                                     <i className="fab fa-instagram text-xl sm:text-2xl"></i>
