@@ -76,7 +76,8 @@ const managerIndividualProfileSchema = z.object({
     first_name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
     last_name: z.string().min(1, { message: "Sobrenome é obrigatório." }),
     birth_date: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de nascimento é obrigatória." }),
-    gender: z.string().min(1, { message: "Gênero é obrigatório." }).refine((val) => GENDER_OPTIONS.includes(val), { message: "Selecione um gênero válido." }), // Tornando obrigatório e validando contra opções
+    // Gênero agora é opcional no Zod, mas a lógica de isProfileFullyComplete ainda o considera essencial para gestores
+    gender: z.string().nullable().optional(), 
     
     cpf: z.string().refine(validateCPF, { message: "CPF inválido." }),
     rg: z.string().min(1, { message: "RG é obrigatório." }).refine(validateRG, { message: "RG inválido." }),
@@ -84,7 +85,7 @@ const managerIndividualProfileSchema = z.object({
     // Campos de Endereço - Tornando todos obrigatórios, exceto complemento
     cep: z.string().min(1, { message: "CEP é obrigatório." }).refine(validateCEP, { message: "CEP inválido (8 dígitos)." }),
     rua: z.string().min(1, { message: "Rua é obrigatória." }),
-    bairro: z.string().min(1, { message: "Bairro é obrigatório." }),
+    bairro: z.string().min(1, { message: "Bairro é obrigatória." }),
     cidade: z.string().min(1, { message: "Cidade é obrigatória." }),
     estado: z.string().min(1, { message: "Estado é obrigatório." }),
     numero: z.string().min(1, { message: "Número é obrigatório." }),
@@ -110,7 +111,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
             first_name: '',
             last_name: '',
             birth_date: '',
-            gender: '',
+            gender: '', // Default para string vazia para mapear para "Não especificado"
             cpf: '',
             rg: '',
             cep: '',
@@ -234,7 +235,8 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
         const cleanCPF = values.cpf.replace(/\D/g, '');
         const cleanRG = values.rg ? values.rg.replace(/\D/g, '') : null;
         const cleanCEP = values.cep ? values.cep.replace(/\D/g, '') : null;
-        const genderToSave = values.gender; // Agora é sempre uma string válida
+        // Se o gênero for string vazia, ele será tratado como null pelo Supabase
+        const genderToSave = values.gender || null; 
 
         const dataToSave = {
             first_name: values.first_name,
@@ -389,7 +391,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                             <FormLabel className="text-white">Gênero *</FormLabel>
                                             <Select 
                                                 onValueChange={field.onChange} 
-                                                defaultValue={field.value} 
+                                                defaultValue={field.value || ""} // Mapeia null/undefined para string vazia para a opção "Não especificado"
                                             >
                                                 <FormControl>
                                                     <SelectTrigger className="w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500">
@@ -397,6 +399,9 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent className="bg-black border-yellow-500/30 text-white">
+                                                    <SelectItem value="" className="text-gray-500">
+                                                        Não especificado
+                                                    </SelectItem>
                                                     {GENDER_OPTIONS.map(option => (
                                                         <SelectItem key={option} value={option} className="hover:bg-yellow-500/10 cursor-pointer">
                                                             {option}

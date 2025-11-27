@@ -48,7 +48,8 @@ const profileSchema = z.object({
     first_name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
     last_name: z.string().min(1, { message: "Sobrenome é obrigatório." }), // Tornando last_name obrigatório
     birth_date: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de nascimento é obrigatória." }),
-    gender: z.string().min(1, { message: "Gênero é obrigatório." }).refine((val) => GENDER_OPTIONS.includes(val), { message: "Selecione um gênero válido." }), // Tornando obrigatório e validando contra opções
+    // Gênero agora é opcional no Zod, mas a lógica de isProfileFullyComplete ainda o considera essencial para gestores
+    gender: z.string().nullable().optional(), 
     
     cpf: z.string().refine(validateCPF, { message: "CPF inválido." }),
     rg: z.string().min(1, { message: "RG é obrigatório." }).refine(validateRG, { message: "RG inválido." }), // Tornando RG obrigatório
@@ -126,7 +127,7 @@ const Profile: React.FC = () => {
             first_name: '',
             last_name: '', 
             birth_date: '',
-            gender: '',
+            gender: '', // Default para string vazia para mapear para "Não especificado"
             cpf: '',
             rg: '',
             cep: '',
@@ -141,7 +142,7 @@ const Profile: React.FC = () => {
             first_name: profile?.first_name || '',
             last_name: profile?.last_name || '', 
             birth_date: profile?.birth_date || '',
-            gender: profile?.gender || '',
+            gender: profile?.gender || '', // Se profile.gender for null, será ''
             cpf: profile?.cpf ? formatCPF(profile.cpf) : '',
             rg: profile?.rg ? formatRG(profile.rg) : '',
             cep: profile?.cep ? formatCEP(profile.cep) : '',
@@ -161,7 +162,7 @@ const Profile: React.FC = () => {
                 first_name: profile.first_name || '',
                 last_name: profile.last_name || '',
                 birth_date: profile.birth_date || '',
-                gender: profile.gender || '',
+                gender: profile.gender || '', // Se profile.gender for null, será ''
                 cpf: profile.cpf ? formatCPF(profile.cpf) : '',
                 rg: profile.rg ? formatRG(profile.rg) : '',
                 cep: profile.cep ? formatCEP(profile.cep) : '',
@@ -242,7 +243,8 @@ const Profile: React.FC = () => {
         const cleanRG = values.rg ? values.rg.replace(/\D/g, '') : null;
         const cleanCEP = values.cep ? values.cep.replace(/\D/g, '') : null;
         
-        const genderToSave = values.gender; // Agora é sempre uma string válida
+        // Se o gênero for string vazia, ele será tratado como null pelo Supabase
+        const genderToSave = values.gender || null; 
 
         // Certifique-se de que campos de endereço vazios sejam salvos como null, não como strings vazias
         const ruaToSave = values.rua || null;
@@ -548,7 +550,7 @@ const Profile: React.FC = () => {
                                                             <FormLabel className="text-white">Gênero *</FormLabel>
                                                             <Select 
                                                                 onValueChange={field.onChange} 
-                                                                defaultValue={field.value || ""}
+                                                                defaultValue={field.value || ""} // Mapeia null/undefined para string vazia para a opção "Não especificado"
                                                                 disabled={!isEditing}
                                                             >
                                                                 <FormControl>
@@ -559,6 +561,9 @@ const Profile: React.FC = () => {
                                                                     </SelectTrigger>
                                                                 </FormControl>
                                                                 <SelectContent className="bg-black border-yellow-500/30 text-white">
+                                                                    <SelectItem value="" className="text-gray-500">
+                                                                        Não especificado
+                                                                    </SelectItem>
                                                                     {GENDER_OPTIONS.map(option => (
                                                                         <SelectItem key={option} value={option} className="hover:bg-yellow-500/10 cursor-pointer">
                                                                             {option}

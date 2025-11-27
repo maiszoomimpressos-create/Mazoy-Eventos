@@ -9,7 +9,7 @@ interface ProfileData {
     cpf: string;
     rg: string;
     birth_date: string;
-    gender: string;
+    gender: string | null; // Permitir null para o gênero
     cep: string;
     rua: string;
     bairro: string;
@@ -39,6 +39,7 @@ const fetchProfile = async (userId: string): Promise<ProfileData | null> => {
     }
     
     // Mapeia dados para garantir que campos que podem ser NULL no DB sejam strings vazias no frontend
+    // ou null, dependendo da necessidade do componente. Para 'gender', null é aceitável.
     return {
         first_name: data.first_name || '',
         last_name: data.last_name || '', // Mapeando last_name
@@ -46,7 +47,7 @@ const fetchProfile = async (userId: string): Promise<ProfileData | null> => {
         cpf: data.cpf || '',
         rg: data.rg || '',
         birth_date: data.birth_date || '',
-        gender: data.gender || '',
+        gender: data.gender || null, // Mapeia null para null, string vazia para string vazia
         cep: data.cep || '',
         rua: data.rua || '',
         bairro: data.bairro || '',
