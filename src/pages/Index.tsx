@@ -9,7 +9,7 @@ import MobileMenu from '@/components/MobileMenu';
 import { supabase } from '@/integrations/supabase/client';
 import { trackAdvancedFilterUse } from '@/utils/metrics';
 import { usePublicEvents, PublicEvent } from '@/hooks/use-public-events';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react'; // Importando ChevronLeft e ChevronRight
 import EventCarousel from '@/components/EventCarousel'; // Importando o novo componente
 
 const EVENTS_PER_PAGE = 12;
@@ -360,7 +360,7 @@ const Index: React.FC = () => {
                                             disabled={currentPage === 1}
                                             className="w-10 h-10 sm:w-12 sm:h-12 bg-black/60 border border-yellow-500/30 rounded-xl flex items-center justify-center text-yellow-500 hover:bg-yellow-500/20 hover:border-yellow-500 transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            <i className="fas fa-chevron-left"></i>
+                                            <ChevronLeft className="h-5 w-5" /> {/* Ícone ChevronLeft */}
                                         </button>
                                         
                                         {getPageNumbers().map((page) => (
@@ -381,7 +381,7 @@ const Index: React.FC = () => {
                                             disabled={currentPage === totalPages}
                                             className="w-10 h-10 sm:w-12 sm:h-12 bg-black/60 border border-yellow-500/30 rounded-xl flex items-center justify-center text-yellow-500 hover:bg-yellow-500/20 hover:border-yellow-500 transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            <i className="fas fa-chevron-right"></i>
+                                            <ChevronRight className="h-5 w-5" /> {/* Ícone ChevronRight */}
                                         </button>
                                     </div>
                                 )}
@@ -443,7 +443,7 @@ const Index: React.FC = () => {
                             </p>
                         </div>
                         <div>
-                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg">Links Úteis</h4>
+                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg}>Links Úteis</h4>
                             <ul className="space-y-2 text-sm">
                                 <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Sobre Nós</a></li>
                                 <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Como Funciona</a></li>
@@ -452,7 +452,7 @@ const Index: React.FC = () => {
                             </ul>
                         </div>
                         <div>
-                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg">Suporte</h4>
+                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg}>Suporte</h4>
                             <ul className="space-y-2 text-sm">
                                 <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Central de Ajuda</a></li>
                                 <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Contato</a></li>
@@ -461,7 +461,7 @@ const Index: React.FC = () => {
                             </ul>
                         </div>
                         <div>
-                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg">Redes Sociais</h4>
+                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg}>Redes Sociais</h4>
                             <div className="flex space-x-4">
                                 <a href="#" className="text-yellow-500 hover:text-yellow-600 transition-colors cursor-pointer">
                                     <i className="fab fa-instagram text-xl sm:text-2xl"></i>
