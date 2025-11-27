@@ -153,9 +153,11 @@ const ManagerLayout: React.FC = () => {
                                 <DropdownMenuContent className="w-56 bg-black/90 border border-yellow-500/30 text-white">
                                     <DropdownMenuLabel className="text-yellow-500">Ações de Gestão PRO</DropdownMenuLabel>
                                     <DropdownMenuSeparator className="bg-yellow-500/20" />
-                                    <DropdownMenuItem onClick={() => navigate('/manager/dashboard')} className="cursor-pointer hover:bg-yellow-500/10">
-                                        <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard PRO
-                                    </DropdownMenuItem>
+                                    {location.pathname !== '/manager/dashboard' && (
+                                        <DropdownMenuItem onClick={() => navigate('/manager/dashboard')} className="cursor-pointer hover:bg-yellow-500/10">
+                                            <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard PRO
+                                        </DropdownMenuItem>
+                                    )}
                                     <DropdownMenuItem onClick={() => navigate('/manager/events')} className="cursor-pointer hover:bg-yellow-500/10">
                                         <CalendarCheck className="mr-2 h-4 w-4" /> Meus Eventos
                                     </DropdownMenuItem>
