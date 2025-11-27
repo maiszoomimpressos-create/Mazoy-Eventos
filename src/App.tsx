@@ -32,6 +32,7 @@ import ClientLayout from "./components/layouts/ClientLayout";
 import ForgotPassword from "./pages/ForgotPassword";
 import FinalizarCompra from "./pages/FinalizarCompra";
 import ScrollToTop from "./components/ScrollToTop"; // Importação do novo componente
+import ManagerRegister from "./pages/ManagerRegister";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/events/:id" element={<EventDetails />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/tickets" element={<MyTickets />} />
+            <Route path="/manager/register" element={<ManagerRegister />} /> {/* Rota para clientes se tornarem gestores */}
           </Route>
           
           {/* Auth Routes (No layout/Full screen) */}
@@ -79,6 +81,9 @@ const App = () => (
           {/* Admin Master Routes (tipo_usuario_id = 1) */}
           <Route element={<AdminMasterRouteGuard />}>
             <Route element={<ManagerLayout />}>
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                {/* Nova rota para Admin Master acessar o cadastro de gestor */}
+                <Route path="/admin/register-manager" element={<ManagerRegister />} />
                 <Route path="/manager/settings/advanced" element={<ManagerAdvancedSettings />} />
             </Route>
           </Route>
