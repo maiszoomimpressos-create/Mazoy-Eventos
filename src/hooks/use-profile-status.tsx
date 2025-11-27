@@ -22,6 +22,7 @@ const ALL_PROFILE_FIELDS_TO_CHECK = [
     'cidade',
     'estado',
     'numero',
+    // 'complemento', // REMOVIDO: Complemento não é mais um campo essencial para a completude do perfil
 ];
 
 // Função auxiliar para verificar se um valor é considerado vazio
