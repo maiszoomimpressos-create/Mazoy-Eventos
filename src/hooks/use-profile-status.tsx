@@ -39,30 +39,27 @@ export const ALL_PROFILE_FIELDS_TO_CHECK = [
 // Simulação de verificação de notificações de sistema para Gestores
 const checkManagerSystemNotifications = async (userId: string): Promise<boolean> => {
     // Fetch manager settings for system notifications
-    // Usando .limit(1) para evitar o erro 406 quando não há configurações
     const { data: settingsArray, error: settingsError } = await supabase
         .from('manager_settings')
         .select('low_stock_system')
         .eq('user_id', userId) 
-        .limit(1); // Usar limit(1) em vez de single()
+        .limit(1);
 
     let settings = {};
     if (settingsError) {
         console.error(`[ProfileStatus] Error fetching manager settings for user ${userId}:`, settingsError);
-        // Se não houver linhas (PGRST116) ou um 406, tratamos como se não houvesse configurações.
         if (settingsError.code !== 'PGRST116' && settingsError.code !== '406') { 
             console.warn(`[ProfileStatus] Unexpected error code ${settingsError.code} for manager settings. Treating as no settings configured.`);
         }
     } else if (settingsArray && settingsArray.length > 0) {
-        settings = settingsArray[0]; // Pega o primeiro (e único) item do array
+        settings = settingsArray[0];
         console.log(`[ProfileStatus] Manager settings fetched for user ${userId}:`, settings);
     } else {
         console.log(`[ProfileStatus] No manager settings found for user ${userId}.`);
     }
 
     // Exemplo 1: Alerta de Baixo Estoque (se a configuração estiver ativa)
-    if ((settings as any).low_stock_system) { // Acessa low_stock_system de forma segura
-        // Simulação: Se o gestor tiver mais de 2 eventos cadastrados, simulamos um alerta de baixo estoque.
+    if ((settings as any).low_stock_system) {
         const { count, error } = await supabase
             .from('events')
             .select('id', { count: 'exact', head: true })
@@ -104,49 +101,54 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
             let isComplete = true; 
             const currentMissingFields: string[] = []; 
 
-            // 1. Verificar campos pessoais essenciais para TODOS os tipos de usuário
-            for (const field of ALL_PROFILE_FIELDS_TO_CHECK) {
-                const value = profile[field as keyof ProfileData];
-                if (isValueEmpty(value)) {
-                    isComplete = false;
-                    currentMissingFields.push(field); 
-                }
-            }
-
-            // 2. Lógica adicional para Gestores (tipo_usuario_id = 2)
-            // Se o usuário é um Gestor PRO (tipo 2), ele também precisa ter um perfil de empresa cadastrado.
-            if (profile.tipo_usuario_id === 2) {
-                if (profile.id) { 
-                    const { data: companyData, error: companyError } = await supabase
-                        .from('companies')
-                        .select('id')
-                        .eq('user_id', profile.id) 
-                        .single();
-                    
-                    if (companyError && companyError.code !== 'PGRST116') { 
-                        console.error("[ProfileStatus] Error checking company profile for manager:", companyError);
-                        isComplete = false; 
-                        currentMissingFields.push('company_profile_error');
-                    } else if (!companyData) {
-                        isComplete = false; 
-                        currentMissingFields.push('company_profile');
+            // Lógica para Clientes (tipo_usuario_id = 3)
+            if (profile.tipo_usuario_id === 3) {
+                // Para clientes, o perfil é considerado completo para fins de navegação e notificações
+                // mesmo que alguns campos pessoais estejam vazios.
+                isComplete = true; 
+                hasPendingNotifications = false; // Clientes não terão notificações por perfil incompleto
+            } 
+            // Lógica para Gestores (tipo_usuario_id = 1 ou 2)
+            else if (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2) {
+                // 1. Verificar campos pessoais essenciais para Gestores
+                for (const field of ALL_PROFILE_FIELDS_TO_CHECK) {
+                    const value = profile[field as keyof ProfileData];
+                    if (isValueEmpty(value)) {
+                        isComplete = false;
+                        currentMissingFields.push(field); 
                     }
-                } else {
-                    isComplete = false;
-                    currentMissingFields.push('company_profile_id_missing');
                 }
+
+                // 2. Lógica adicional para Gestores PRO (tipo_usuario_id = 2)
+                // Se o usuário é um Gestor PRO (tipo 2), ele também precisa ter um perfil de empresa cadastrado.
+                if (profile.tipo_usuario_id === 2) {
+                    if (profile.id) { 
+                        const { data: companyData, error: companyError } = await supabase
+                            .from('companies')
+                            .select('id')
+                            .eq('user_id', profile.id) 
+                            .limit(1); // Usando limit(1) para evitar 406
+
+                        if (companyError && companyError.code !== 'PGRST116' && companyError.code !== '406') { 
+                            console.error("[ProfileStatus] Error checking company profile for manager:", companyError);
+                            isComplete = false; 
+                            currentMissingFields.push('company_profile_error');
+                        } else if (!companyData || companyData.length === 0) { // Verifica se o array está vazio
+                            isComplete = false; 
+                            currentMissingFields.push('company_profile');
+                        }
+                    } else {
+                        isComplete = false;
+                        currentMissingFields.push('company_profile_id_missing');
+                    }
+                }
+                
+                // Notificações pendentes para gestores: se o perfil estiver incompleto OU se houver notificações de sistema
+                hasPendingNotifications = !isComplete || await checkManagerSystemNotifications(profile.id);
             }
 
             if (!isComplete) {
                 console.warn(`[ProfileStatus] Profile is INCOMPLETE. Missing fields: ${currentMissingFields.join(', ')}`);
-            }
-
-            // --- Lógica de Notificações Pendentes ---
-            if (profile.tipo_usuario_id === 3) {
-                hasPendingNotifications = !isComplete;
-            }
-            else if (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2) {
-                hasPendingNotifications = await checkManagerSystemNotifications(profile.id);
             }
 
             console.log(`[ProfileStatus] Final State - Profile Complete: ${isComplete}. Notifications Active: ${hasPendingNotifications}`);
