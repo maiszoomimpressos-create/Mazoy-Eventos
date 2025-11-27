@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Plus, ArrowLeft, ImageOff } from 'lucide-react';
 import { format } from 'date-fns';
 import { DatePicker } from '@/components/DatePicker';
+import ImageUploadPicker from '@/components/ImageUploadPicker'; // Importando o novo componente
 
 // Define the structure for the form data
 interface EventFormData {
@@ -91,6 +92,10 @@ const ManagerCreateEvent: React.FC = () => {
 
     const handleSelectChange = (value: string) => {
         setFormData(prev => ({ ...prev, category: value }));
+    };
+    
+    const handleImageUpload = (url: string) => {
+        setFormData(prev => ({ ...prev, image_url: url }));
     };
 
     const validateForm = (): { isValid: boolean, isoDate: string | null } => {
@@ -264,45 +269,20 @@ const ManagerCreateEvent: React.FC = () => {
                             />
                         </div>
                         
-                        {/* Linha 4: Imagem/Banner Preview */}
+                        {/* Linha 4: Imagem/Banner Preview - Usando o novo componente */}
                         <div className="space-y-4 pt-4 border-t border-yellow-500/20">
-                            <h3 className="text-xl font-semibold text-white">Banner do Evento</h3>
-                            
-                            {/* Preview da Imagem */}
-                            <div className="w-full h-48 bg-black/60 border border-yellow-500/30 rounded-xl overflow-hidden flex items-center justify-center">
-                                {formData.image_url ? (
-                                    <img 
-                                        src={formData.image_url} 
-                                        alt="Preview do Banner" 
-                                        className="w-full h-full object-cover object-center"
-                                        onError={(e) => {
-                                            // Fallback se a URL da imagem estiver quebrada
-                                            e.currentTarget.onerror = null; 
-                                            e.currentTarget.src = 'placeholder.svg'; // Usar um placeholder local
-                                            e.currentTarget.className = "w-16 h-16 text-gray-500";
-                                        }}
-                                    />
-                                ) : (
-                                    <div className="text-center text-gray-500">
-                                        <ImageOff className="h-8 w-8 mx-auto mb-2" />
-                                        Nenhuma URL de imagem fornecida.
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Campo URL da Imagem */}
-                            <div>
-                                <label htmlFor="image_url" className="block text-sm font-medium text-white mb-2">URL da Imagem/Banner *</label>
-                                <Input 
-                                    id="image_url" 
-                                    value={formData.image_url} 
-                                    onChange={handleChange} 
-                                    placeholder="Ex: https://readdy.ai/api/search-image?query=..."
-                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
-                                    required
+                            <h3 className="text-xl font-semibold text-white">Banner do Evento *</h3>
+                            {userId && (
+                                <ImageUploadPicker
+                                    userId={userId}
+                                    currentImageUrl={formData.image_url}
+                                    onImageUpload={handleImageUpload}
+                                    disabled={isLoading}
+                                    width={550}
+                                    height={380}
+                                    placeholderText="Nenhuma imagem de banner selecionada."
                                 />
-                                <p className="text-xs text-gray-500 mt-1">Cole a URL da imagem do banner aqui para pré-visualizar acima.</p>
-                            </div>
+                            )}
                         </div>
 
                         {/* Linha 5: Data, Horário, Categoria */}
