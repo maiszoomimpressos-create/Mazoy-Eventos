@@ -81,9 +81,10 @@ serve(async (req) => {
     
     // 3. Reserve/Identify available wristband analytics records
     const analyticsIdsToUpdate: string[] = [];
+    const itemDetailsMap = new Map<string, { price: number, quantity: number }>(); // Map to store unit price and quantity per wristband ID
     
     for (const item of purchaseItems) {
-        const { ticketTypeId, quantity } = item;
+        const { ticketTypeId, quantity, price } = item;
         
         // Fetch N records of analytics that are 'active' and not associated with a client
         const { data: availableAnalytics, error: fetchAnalyticsError } = await supabaseService
@@ -104,6 +105,7 @@ serve(async (req) => {
         }
         
         analyticsIdsToUpdate.push(...availableAnalytics.map(a => a.id));
+        itemDetailsMap.set(ticketTypeId, { price, quantity });
     }
     
     // 4. Insert pending transaction into receivables
@@ -125,8 +127,6 @@ serve(async (req) => {
 
     // 5. Simulate Mercado Pago Call (using fetched keys)
     // --- SIMULAÇÃO DE PAGAMENTO ---
-    // Aqui, em um ambiente real, você chamaria a API do Mercado Pago usando paymentSettings.api_key/api_token
-    // e aguardaria o retorno.
     
     const paymentSuccess = Math.random() > 0.1; // 90% success rate simulation
     const paymentGatewayId = paymentSuccess ? `MP-${Date.now()}` : null;
@@ -152,20 +152,42 @@ serve(async (req) => {
 
     if (paymentSuccess) {
         // Update wristband analytics: associate client and mark as used/sold
-        const { error: updateAnalyticsError } = await supabaseService
+        
+        // We need to fetch the wristband_id for each analytics record to get the unit price/quantity details
+        const { data: analyticsToUpdate, error: fetchUpdateError } = await supabaseService
             .from('wristband_analytics')
-            .update({ 
+            .select('id, wristband_id')
+            .in('id', analyticsIdsToUpdate);
+            
+        if (fetchUpdateError) {
+            console.error("CRITICAL: Failed to fetch analytics records for update:", fetchUpdateError);
+            throw new Error("Payment successful, but failed to retrieve ticket details for assignment.");
+        }
+        
+        // Prepare batch update for analytics records
+        const updates = analyticsToUpdate.map(record => {
+            const itemDetails = itemDetailsMap.get(record.wristband_id);
+            
+            return {
+                id: record.id,
                 client_user_id: clientUserId,
                 status: 'used', 
                 event_type: 'purchase',
                 event_data: {
                     purchase_date: new Date().toISOString(),
-                    total_paid: totalValue,
+                    total_paid: totalValue, // Total value of the entire transaction (for context)
                     client_id: clientUserId,
                     transaction_id: transactionId,
+                    // Explicitly storing unit price and quantity (1 per analytics record)
+                    unit_price: itemDetails?.price || 0, 
+                    quantity_purchased: 1, // Each analytics record represents 1 ticket
                 }
-            })
-            .in('id', analyticsIdsToUpdate);
+            };
+        });
+
+        const { error: updateAnalyticsError } = await supabaseService
+            .from('wristband_analytics')
+            .upsert(updates); // Using upsert for batch update by ID
 
         if (updateAnalyticsError) {
             console.error("CRITICAL: Failed to update wristband analytics after successful payment:", updateAnalyticsError);
