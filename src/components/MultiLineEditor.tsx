@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2, Edit, Save, CheckSquare, XSquare } from 'lucide-react';
+import { Loader2, Edit, Save, CheckSquare, XSquare, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/use-profile';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
@@ -38,6 +38,7 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
     const { data: termsData, isLoading: isLoadingTerms, isError: isErrorTerms, refetch } = useQuery({
         queryKey: ['termsAndConditions'],
         queryFn: fetchTermsAndConditions,
+        enabled: true, // Sempre tenta buscar os termos
         staleTime: 1000 * 60 * 60, // Cache por 1 hora
         onError: (error) => {
             console.error("Erro ao carregar termos e condições:", error);
@@ -119,6 +120,7 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
             dismissToast(toastId);
             showSuccess("Termos e condições atualizados com sucesso!");
             setIsEditing(false);
+            queryClient.invalidateQueries({ queryKey: ['termsAndConditions'] }); // Invalida a query para forçar a re-busca
             refetch(); // Rebusca os termos para garantir que o cache seja atualizado
 
         } catch (e: any) {
@@ -207,8 +209,10 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
                             className="bg-yellow-500 text-black hover:bg-yellow-600 py-2 text-base font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50 h-10"
                         >
                             {isSaving ? (
-                                <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                                Salvando...
+                                <div className="flex items-center justify-center">
+                                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                                    Salvando...
+                                </div>
                             ) : (
                                 <>
                                     <Save className="w-4 h-4 mr-2" />
