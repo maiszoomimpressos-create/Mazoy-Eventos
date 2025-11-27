@@ -53,8 +53,8 @@ const ManagerRegister: React.FC = () => {
                     >
                         {isSubmitting ? (
                             <div className="flex items-center justify-center">
-                                <Loader2 className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin mr-2"></div>
-                                Carregando...
+                                <Loader2 className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin mr-2"></Loader2>
+                                <span>Carregando...</span> {/* Texto encapsulado em <span> */}
                             </div>
                         ) : (
                             'Continuar'
