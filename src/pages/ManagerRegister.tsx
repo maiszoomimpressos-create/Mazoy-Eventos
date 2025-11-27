@@ -43,7 +43,7 @@ const ManagerRegister: React.FC = () => {
                 </div>
                 
                 {/* Renderiza o novo componente TermsAndConditionsDialog */}
-                <TermsAndConditionsDialog onAgree={handleAgreeToTerms} initialAgreedState={agreedToTerms} />
+                <TermsAndConditionsDialog onAgree={handleAgreeToTerms} initialAgreedState={agreedToTerms} termsType="manager_registration" />
 
                 <div className="space-y-4">
                     <Button

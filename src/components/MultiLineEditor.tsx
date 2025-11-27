@@ -15,15 +15,17 @@ interface MultiLineEditorProps {
     onAgree: (agreed: boolean) => void;
     initialAgreedState?: boolean;
     showAgreementCheckbox?: boolean; // Nova prop
+    termsType?: 'general' | 'manager_registration'; // Novo: Tipo de termos a serem carregados
 }
 
 const ADMIN_MASTER_USER_TYPE_ID = 1;
 
-// Hook para buscar os termos e condições
-const fetchTermsAndConditions = async () => {
+// Hook para buscar os termos e condições, agora com filtro por tipo
+const fetchTermsAndConditions = async (type: 'general' | 'manager_registration') => {
     const { data, error } = await supabase
         .from('terms_and_conditions')
         .select('*')
+        .eq('type', type) // Filtra pelo novo campo 'type'
         .order('updated_at', { ascending: false })
         .limit(1)
         .single();
@@ -34,16 +36,16 @@ const fetchTermsAndConditions = async () => {
     return data;
 };
 
-const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgreedState = false, showAgreementCheckbox = true }) => {
+const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgreedState = false, showAgreementCheckbox = true, termsType = 'general' }) => {
     const queryClient = useQueryClient();
     const { data: termsData, isLoading: isLoadingTerms, isError: isErrorTerms, refetch } = useQuery({
-        queryKey: ['termsAndConditions'],
-        queryFn: fetchTermsAndConditions,
+        queryKey: ['termsAndConditions', termsType], // Inclui termsType na chave de cache
+        queryFn: () => fetchTermsAndConditions(termsType),
         enabled: true, // Sempre tenta buscar os termos
         staleTime: 1000 * 60 * 60, // Cache por 1 hora
         onError: (error) => {
-            console.error("Erro ao carregar termos e condições:", error);
-            showError("Erro ao carregar os termos e condições. Tente recarregar a página.");
+            console.error(`Erro ao carregar termos e condições (${termsType}):`, error);
+            showError(`Erro ao carregar os termos e condições (${termsType}). Tente recarregar a página.`);
         }
     });
 
@@ -67,6 +69,8 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
     useEffect(() => {
         if (termsData?.content) {
             setEditedContent(termsData.content);
+        } else {
+            setEditedContent(''); // Limpa o conteúdo se não houver termos para o tipo
         }
     }, [termsData]);
 
@@ -110,8 +114,9 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
                         content: editedContent, 
                         updated_by: userId,
                         updated_at: new Date().toISOString(),
+                        type: termsType, // Garante que o tipo seja salvo corretamente
                     },
-                    { onConflict: 'id' } // Tenta atualizar pelo ID, se não existir, insere
+                    { onConflict: 'type' } // Conflito agora é no 'type' para garantir unicidade por tipo
                 );
 
             if (error) {
@@ -121,7 +126,7 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
             dismissToast(toastId);
             showSuccess("Termos e condições atualizados com sucesso!");
             setIsEditing(false);
-            queryClient.invalidateQueries({ queryKey: ['termsAndConditions'] }); // Invalida a query para forçar a re-busca
+            queryClient.invalidateQueries({ queryKey: ['termsAndConditions', termsType] }); // Invalida a query para forçar a re-busca
             refetch(); // Rebusca os termos para garantir que o cache seja atualizado
 
         } catch (e: any) {
@@ -143,13 +148,33 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
     }
 
     if (isErrorTerms || !termsData) {
-        return (
-            <div className="bg-red-500/20 border border-red-500/30 text-red-400 p-6 rounded-xl">
-                <h3 className="text-red-400 text-xl">Erro ao Carregar Termos</h3>
-                <p className="text-gray-400 text-sm">Não foi possível carregar os termos e condições. Por favor, tente novamente mais tarde.</p>
-            </div>
-        );
+        // Se não houver termos para o tipo, e for Admin Master, permite editar para criar
+        if (isAdminMaster && !isEditing) {
+            return (
+                <div className="bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 p-6 rounded-xl space-y-4">
+                    <h3 className="text-white text-xl">Termos de Uso ({termsType === 'general' ? 'Gerais' : 'Registro de Gestor'}) não encontrados.</h3>
+                    <p className="text-gray-300 text-sm">Clique em "Editar Termos" para criar o conteúdo inicial.</p>
+                    <Button 
+                        onClick={() => setIsEditing(true)}
+                        variant="outline"
+                        className="bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 text-sm h-9 px-4"
+                    >
+                        <Edit className="mr-2 h-4 w-4" />
+                        Criar Termos
+                    </Button>
+                </div>
+            );
+        } else if (!isAdminMaster) {
+            return (
+                <div className="bg-red-500/20 border border-red-500/30 text-red-400 p-6 rounded-xl">
+                    <h3 className="text-red-400 text-xl">Erro ao Carregar Termos</h3>
+                    <p className="text-gray-400 text-sm">Não foi possível carregar os termos e condições. Por favor, tente novamente mais tarde.</p>
+                </div>
+            );
+        }
     }
+
+    const editorTitle = termsType === 'general' ? 'Termos e Condições Gerais' : 'Termos de Registro de Gestor';
 
     return (
         <div className="space-y-6">
@@ -158,7 +183,7 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
                 {!showAgreementCheckbox && ( // Se não for para mostrar o checkbox, significa que é o editor principal
                     <h2 className="text-white text-xl sm:text-2xl font-semibold flex items-center">
                         <CheckSquare className="h-6 w-6 mr-3 text-yellow-500" />
-                        Termos e Condições
+                        {editorTitle}
                     </h2>
                 )}
                 {isAdminMaster && !showAgreementCheckbox && ( // Botão de edição só para Admin Master e se não for pop-up
@@ -197,7 +222,7 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
                     />
                 ) : (
                     <div className="p-4">
-                        {termsData.content}
+                        {termsData?.content || 'Nenhum termo disponível para este tipo.'}
                     </div>
                 )}
             </div>

@@ -697,7 +697,7 @@ const Profile: React.FC = () => {
                             {/* MultiLineEditor component added here */}
                             <div className="mt-8">
                                 {/* Renderiza o novo componente TermsAndConditionsDialog */}
-                                <TermsAndConditionsDialog onAgree={handleTermsAgree} showAgreementCheckbox={false} />
+                                <TermsAndConditionsDialog onAgree={handleTermsAgree} showAgreementCheckbox={false} termsType="general" />
                             </div>
                         </div>
                     </div>

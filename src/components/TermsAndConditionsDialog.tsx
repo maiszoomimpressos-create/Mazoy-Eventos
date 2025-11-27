@@ -16,14 +16,15 @@ import { FileText } from 'lucide-react';
 interface TermsAndConditionsDialogProps {
     onAgree: (agreed: boolean) => void;
     initialAgreedState?: boolean;
-    // Adiciona uma prop para controlar se o botão de concordar deve ser exibido
     showAgreementCheckbox?: boolean; 
+    termsType?: 'general' | 'manager_registration'; // Novo: Tipo de termos a serem carregados
 }
 
 const TermsAndConditionsDialog: React.FC<TermsAndConditionsDialogProps> = ({ 
     onAgree, 
     initialAgreedState = false,
-    showAgreementCheckbox = true // Por padrão, mostra o checkbox
+    showAgreementCheckbox = true,
+    termsType = 'general' // Valor padrão
 }) => {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [agreedInternally, setAgreedInternally] = useState(initialAgreedState);
@@ -32,6 +33,8 @@ const TermsAndConditionsDialog: React.FC<TermsAndConditionsDialogProps> = ({
         setAgreedInternally(agreed);
         onAgree(agreed);
     };
+    
+    const dialogTitle = termsType === 'general' ? 'Termos e Condições de Uso' : 'Termos de Registro de Gestor';
 
     return (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -48,7 +51,7 @@ const TermsAndConditionsDialog: React.FC<TermsAndConditionsDialogProps> = ({
                 <DialogHeader>
                     <DialogTitle className="text-yellow-500 text-2xl flex items-center">
                         <FileText className="h-6 w-6 mr-2" />
-                        Termos e Condições de Uso
+                        {dialogTitle}
                     </DialogTitle>
                     <DialogDescription className="text-gray-400">
                         Leia atentamente nossos termos antes de prosseguir.
@@ -58,8 +61,8 @@ const TermsAndConditionsDialog: React.FC<TermsAndConditionsDialogProps> = ({
                 <MultiLineEditor 
                     onAgree={handleAgreeChange} 
                     initialAgreedState={agreedInternally}
-                    // Passa a prop para o MultiLineEditor para ele saber se deve mostrar o checkbox
                     showAgreementCheckbox={showAgreementCheckbox} 
+                    termsType={termsType} // Passa o tipo de termos
                 />
             </DialogContent>
         </Dialog>
