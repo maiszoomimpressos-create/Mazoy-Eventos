@@ -8,7 +8,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { useProfileStatus } from '@/hooks/use-profile-status';
 import { useProfile, ProfileData } from '@/hooks/use-profile';
 import NotificationBell from './NotificationBell';
-import { Shield, PlusCircle, UserPlus } from 'lucide-react'; // Importando UserPlus para a nova funcionalidade
+import { Shield, PlusCircle, UserPlus, Crown } from 'lucide-react'; // Adicionando Crown aqui
 import { useUserType } from '@/hooks/use-user-type';
 
 const AuthStatusMenu: React.FC = () => {
