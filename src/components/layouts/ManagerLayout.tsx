@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Menu, X, Loader2, Crown } from 'lucide-react';
+import { Menu, X, Loader2, Crown, LayoutDashboard, CalendarCheck, PlusCircle, QrCode, Settings } from 'lucide-react'; // Importando novos ícones
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"; // Importando DropdownMenu
 import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/use-profile';
 import { useUserType } from '@/hooks/use-user-type';
@@ -86,25 +87,20 @@ const ManagerLayout: React.FC = () => {
     
     const dashboardTitle = isAdminMaster && location.pathname.startsWith('/admin') ? 'ADMIN' : 'PRO';
     
-    // Removendo a declaração duplicada de userRole
     const userName = profile?.first_name || 'Gestor';
-    const userRole = userTypeName; // Usando o valor do hook useUserType
+    const userRole = userTypeName;
 
     const NavLinks: React.FC<{ onClick?: () => void }> = ({ onClick }) => (
         <nav className="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0">
             {navItems.map(item => {
-                // Determine if the link is active based on the current path
                 let isActive = false;
                 
                 if (item.path === '/') {
-                    // Home is active only if the path is exactly '/'
                     isActive = location.pathname === '/';
                 } else if (item.path !== '#') {
-                    // Other paths are active if the current path starts with them
                     isActive = location.pathname.startsWith(item.path);
                 }
                 
-                // Special handling for Dashboard links to ensure only one is highlighted
                 const isManagerDashboardActive = location.pathname === '/manager/dashboard' && item.path === '/manager/dashboard';
                 const isAdminDashboardActive = location.pathname === '/admin/dashboard' && item.path === '/admin/dashboard';
                 
@@ -144,6 +140,43 @@ const ManagerLayout: React.FC = () => {
                         </div>
                     </div>
                     <div className="flex items-center space-x-3 sm:space-x-4">
+                        {isManager && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button 
+                                        variant="outline" 
+                                        className="hidden md:flex items-center bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 transition-all duration-300 cursor-pointer px-3 py-1 h-8 text-sm"
+                                    >
+                                        <Crown className="mr-2 h-4 w-4" />
+                                        Gestão PRO
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-56 bg-black/90 border border-yellow-500/30 text-white">
+                                    <DropdownMenuLabel className="text-yellow-500">Ações Rápidas</DropdownMenuLabel>
+                                    <DropdownMenuSeparator className="bg-yellow-500/20" />
+                                    <DropdownMenuItem onClick={() => navigate('/manager/dashboard')} className="cursor-pointer hover:bg-yellow-500/10">
+                                        <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard PRO
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => navigate('/manager/events')} className="cursor-pointer hover:bg-yellow-500/10">
+                                        <CalendarCheck className="mr-2 h-4 w-4" /> Meus Eventos
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => navigate('/manager/events/create')} className="cursor-pointer hover:bg-yellow-500/10">
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Cadastrar Novo Evento
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => navigate('/manager/wristbands')} className="cursor-pointer hover:bg-yellow-500/10">
+                                        <QrCode className="mr-2 h-4 w-4" /> Gestão de Pulseiras
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => navigate('/manager/wristbands/create')} className="cursor-pointer hover:bg-yellow-500/10">
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Cadastrar Nova Pulseira
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator className="bg-yellow-500/20" />
+                                    <DropdownMenuItem onClick={() => navigate('/manager/settings')} className="cursor-pointer hover:bg-yellow-500/10">
+                                        <Settings className="mr-2 h-4 w-4" /> Configurações
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+
                         <button className="relative p-2 text-yellow-500 hover:bg-yellow-500/10 rounded-lg transition-colors cursor-pointer hidden sm:block">
                             <i className="fas fa-bell text-lg"></i>
                             <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-xs text-white">3</span>
