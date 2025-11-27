@@ -56,34 +56,40 @@ serve(async (req) => {
     // Calculate total value
     const totalValue = purchaseItems.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
     
-    // 2. Fetch Event Details to get Manager ID and Company Payment Settings
+    // 2. Fetch Event Details to get Manager ID
     const { data: eventData, error: eventError } = await supabaseService
         .from('events')
-        .select('user_id, companies(payment_settings(api_key, api_token))')
+        .select('user_id')
         .eq('id', eventId)
         .single();
 
     if (eventError || !eventData) {
-        return new Response(JSON.stringify({ error: 'Event not found or manager data missing.' }), { 
+        return new Response(JSON.stringify({ error: 'Event not found.' }), { 
             status: 404, 
             headers: corsHeaders 
         });
     }
     
     const managerUserId = eventData.user_id;
-    const paymentSettings = eventData.companies?.payment_settings?.[0];
     
-    // Usamos api_token como o Access Token do Mercado Pago
-    const mpAccessToken = paymentSettings?.api_token; 
-    
-    if (!mpAccessToken) {
-        return new Response(JSON.stringify({ error: 'Payment gateway access token is not configured by the manager.' }), { 
+    // 3. Fetch Manager Payment Settings directly using managerUserId
+    const { data: paymentSettingsData, error: settingsError } = await supabaseService
+        .from('payment_settings')
+        .select('api_token')
+        .eq('user_id', managerUserId)
+        .single();
+
+    if (settingsError || !paymentSettingsData?.api_token) {
+        // Se não encontrar as configurações ou o token, retorna erro 403/404
+        return new Response(JSON.stringify({ error: 'Payment gateway access token is not configured by the event manager. Please ask the manager to configure it in PRO Settings.' }), { 
             status: 403, 
             headers: corsHeaders 
         });
     }
     
-    // 3. Reserve/Identify available wristband analytics records
+    const mpAccessToken = paymentSettingsData.api_token; 
+    
+    // 4. Reserve/Identify available wristband analytics records
     const analyticsIdsToReserve: string[] = [];
     
     for (const item of purchaseItems) {
@@ -101,7 +107,7 @@ serve(async (req) => {
         if (fetchAnalyticsError) throw fetchAnalyticsError;
 
         if (!availableAnalytics || availableAnalytics.length < quantity) {
-            return new Response(JSON.stringify({ error: `Not enough tickets available for type ${ticketTypeId}.` }), { 
+            return new Response(JSON.stringify({ error: `Not enough tickets available for type ${ticketTypeId}. Available: ${availableAnalytics?.length || 0}. Requested: ${quantity}.` }), { 
                 status: 409, 
                 headers: corsHeaders 
             });
@@ -110,7 +116,7 @@ serve(async (req) => {
         analyticsIdsToReserve.push(...availableAnalytics.map(a => a.id));
     }
     
-    // 4. Insert pending transaction into receivables
+    // 5. Insert pending transaction into receivables
     const { data: transactionData, error: insertTransactionError } = await supabaseService
         .from('receivables')
         .insert({
@@ -127,12 +133,12 @@ serve(async (req) => {
     if (insertTransactionError) throw insertTransactionError;
     const transactionId = transactionData.id;
     
-    // 5. Configure Mercado Pago SDK
+    // 6. Configure Mercado Pago SDK
     mercadopago.configure({
         access_token: mpAccessToken,
     });
 
-    // 6. Prepare MP Preference Items
+    // 7. Prepare MP Preference Items
     const mpItems = purchaseItems.map((item: any) => ({
         title: item.name || 'Ingresso Evento',
         unit_price: item.price,
@@ -140,7 +146,7 @@ serve(async (req) => {
         currency_id: 'BRL',
     }));
     
-    // 7. Create MP Preference
+    // 8. Create MP Preference
     const preference = {
         items: mpItems,
         external_reference: transactionId, // Usamos o ID da transação como referência externa
@@ -156,21 +162,21 @@ serve(async (req) => {
     const mpResponse = await mercadopago.preferences.create(preference);
     
     if (!mpResponse.body.init_point) {
-        // Se falhar, reverter a transação pendente (opcional, mas boa prática)
+        // Se falhar, reverter a transação pendente
         await supabaseService.from('receivables').delete().eq('id', transactionId);
-        return new Response(JSON.stringify({ error: 'Failed to create Mercado Pago preference.' }), { 
+        return new Response(JSON.stringify({ error: 'Failed to create Mercado Pago preference. Check MP configuration details.' }), { 
             status: 500, 
             headers: corsHeaders 
         });
     }
 
-    // 8. Update receivables with payment gateway ID (MP preference ID)
+    // 9. Update receivables with payment gateway ID (MP preference ID)
     await supabaseService
         .from('receivables')
         .update({ payment_gateway_id: mpResponse.body.id })
         .eq('id', transactionId);
 
-    // 9. Return checkout URL
+    // 10. Return checkout URL
     return new Response(JSON.stringify({ 
         message: 'Payment preference created successfully.',
         checkoutUrl: mpResponse.body.init_point,
