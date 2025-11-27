@@ -97,19 +97,26 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
             // 2. Lógica adicional para Gestores (tipo_usuario_id = 2)
             // Se o usuário é um Gestor PRO (tipo 2), ele também precisa ter um perfil de empresa cadastrado.
             if (profile.tipo_usuario_id === 2) {
-                const { data: companyData, error: companyError } = await supabase
-                    .from('companies')
-                    .select('id')
-                    .eq('user_id', profile.id)
-                    .single();
-                
-                if (companyError && companyError.code !== 'PGRST116') { // PGRST116 = No rows found
-                    console.error("Error checking company profile for manager:", companyError);
-                    isComplete = false; // Erro ao buscar empresa também torna o perfil incompleto
-                    currentMissingFields.push('company_profile_error');
-                } else if (!companyData) {
-                    isComplete = false; // Nenhuma empresa encontrada para o gestor
-                    currentMissingFields.push('company_profile');
+                // Adiciona verificação para profile.id antes de fazer a consulta
+                if (profile.id) { 
+                    const { data: companyData, error: companyError } = await supabase
+                        .from('companies')
+                        .select('id')
+                        .eq('user_id', profile.id) 
+                        .single();
+                    
+                    if (companyError && companyError.code !== 'PGRST116') { // PGRST116 = No rows found
+                        console.error("Error checking company profile for manager:", companyError);
+                        isComplete = false; // Erro ao buscar empresa também torna o perfil incompleto
+                        currentMissingFields.push('company_profile_error');
+                    } else if (!companyData) {
+                        isComplete = false; // Nenhuma empresa encontrada para o gestor
+                        currentMissingFields.push('company_profile');
+                    }
+                } else {
+                    // Se profile.id for undefined, também consideramos incompleto para o perfil da empresa
+                    isComplete = false;
+                    currentMissingFields.push('company_profile_id_missing');
                 }
             }
 

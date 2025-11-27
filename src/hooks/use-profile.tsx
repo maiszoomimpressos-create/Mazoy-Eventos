@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 
 interface ProfileData {
+    id: string; // Adicionado o ID do perfil
     first_name: string;
     last_name: string; // Adicionado last_name
     avatar_url: string | null;
@@ -26,7 +27,7 @@ const fetchProfile = async (userId: string): Promise<ProfileData | null> => {
     const { data, error } = await supabase
         .from('profiles')
         .select(`
-            first_name, last_name, avatar_url, cpf, rg, birth_date, gender, 
+            id, first_name, last_name, avatar_url, cpf, rg, birth_date, gender, 
             cep, rua, bairro, cidade, estado, numero, complemento,
             tipo_usuario_id
         `)
@@ -41,6 +42,7 @@ const fetchProfile = async (userId: string): Promise<ProfileData | null> => {
     // Mapeia dados para garantir que campos que podem ser NULL no DB sejam strings vazias no frontend
     // ou null, dependendo da necessidade do componente. Para 'gender', null é aceitável.
     return {
+        id: data.id, // Incluindo o ID
         first_name: data.first_name || '',
         last_name: data.last_name || '', // Mapeando last_name
         avatar_url: data.avatar_url || null,
