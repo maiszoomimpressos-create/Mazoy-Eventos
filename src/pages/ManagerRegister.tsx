@@ -8,6 +8,7 @@ import { Loader2 } from 'lucide-react';
 import { showSuccess } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/use-profile';
+import ManagerTypeSelectionDialog from '@/components/ManagerTypeSelectionDialog'; // Importando o novo modal
 
 const ADMIN_MASTER_USER_TYPE_ID = 1;
 
@@ -16,6 +17,7 @@ const ManagerRegister: React.FC = () => {
     const location = useLocation();
     const [agreedToTerms, setAgreedToTerms] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [showTypeSelectionModal, setShowTypeSelectionModal] = useState(false); // Novo estado para o modal
 
     const [userId, setUserId] = useState<string | undefined>(undefined);
     React.useEffect(() => {
@@ -35,11 +37,22 @@ const ManagerRegister: React.FC = () => {
     };
 
     const handleContinue = () => {
-        setIsSubmitting(true);
+        // Em vez de navegar, abre o modal de seleção de tipo
+        setShowTypeSelectionModal(true);
+    };
+
+    const handleSelectManagerType = (type: 'individual' | 'company') => {
+        setShowTypeSelectionModal(false); // Fecha o modal
+        setIsSubmitting(true); // Indica que está processando a navegação
+        showSuccess(`Você selecionou o cadastro como ${type === 'individual' ? 'Pessoa Física' : 'Pessoa Jurídica'}.`);
+        
         setTimeout(() => {
             setIsSubmitting(false);
-            showSuccess("Termos aceitos! Prossiga com o cadastro detalhado.");
-            navigate('/');
+            if (type === 'individual') {
+                navigate('/manager/register/individual');
+            } else {
+                navigate('/manager/register/company');
+            }
         }, 1500);
     };
 
@@ -94,6 +107,14 @@ const ManagerRegister: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {/* Novo Modal de Seleção de Tipo de Gestor */}
+            <ManagerTypeSelectionDialog
+                isOpen={showTypeSelectionModal}
+                onClose={() => setShowTypeSelectionModal(false)}
+                onSelectType={handleSelectManagerType}
+                isSubmitting={isSubmitting}
+            />
         </div>
     );
 };
