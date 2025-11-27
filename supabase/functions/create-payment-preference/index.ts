@@ -64,7 +64,7 @@ serve(async (req) => {
         .single();
 
     if (eventError || !eventData) {
-        return new Response(JSON.stringify({ error: 'Event not found.' }), { 
+        return new Response(JSON.stringify({ error: 'Event not found or manager data missing.' }), { 
             status: 404, 
             headers: corsHeaders 
         });
@@ -79,8 +79,9 @@ serve(async (req) => {
         .eq('user_id', managerUserId)
         .single();
 
+    // Se houver erro na busca (incluindo PGRST116 - No rows found) ou se o token estiver ausente
     if (settingsError || !paymentSettingsData?.api_token) {
-        // Se não encontrar as configurações ou o token, retorna erro 403/404
+        console.error(`[MP Preference] Payment settings missing for manager ${managerUserId}. Error: ${settingsError?.message || 'Token missing'}`);
         return new Response(JSON.stringify({ error: 'Payment gateway access token is not configured by the event manager. Please ask the manager to configure it in PRO Settings.' }), { 
             status: 403, 
             headers: corsHeaders 
