@@ -2,31 +2,35 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Settings, User, CreditCard, Bell, Loader2, Building } from 'lucide-react'; // Importando Building
+import { Settings, User, CreditCard, Bell, Loader2, Building } from 'lucide-react';
 import { useProfile } from '@/hooks/use-profile';
 import { supabase } from '@/integrations/supabase/client';
-import { useManagerCompany } from '@/hooks/use-manager-company'; // Importando useManagerCompany
+import { useManagerCompany } from '@/hooks/use-manager-company';
 
 const ADMIN_MASTER_USER_TYPE_ID = 1;
-const MANAGER_PRO_USER_TYPE_ID = 2; // Tipo para gestores (PF ou PJ)
+const MANAGER_PRO_USER_TYPE_ID = 2;
 
 const ManagerSettings: React.FC = () => {
     const navigate = useNavigate();
     const [userId, setUserId] = useState<string | undefined>(undefined);
+    const [loadingSession, setLoadingSession] = useState(true); // Adicionado estado para o carregamento da sessão
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
             setUserId(user?.id);
+            setLoadingSession(false); // Define como falso após tentar obter o usuário
         });
     }, []);
 
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
-    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId); // Busca dados da empresa
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId);
+
+    // Combinando todos os estados de carregamento
+    const isLoadingCombined = loadingSession || isLoadingProfile || isLoadingCompany;
 
     const isAdminMaster = profile?.tipo_usuario_id === ADMIN_MASTER_USER_TYPE_ID;
     const isManagerPro = profile?.tipo_usuario_id === MANAGER_PRO_USER_TYPE_ID;
 
-    // Define a primeira opção de configuração dinamicamente
     let profileSettingsOption = null;
     if (isManagerPro) {
         if (company) {
@@ -41,13 +45,10 @@ const ManagerSettings: React.FC = () => {
                 icon: <User className="h-6 w-6 text-yellow-500" />, 
                 title: "Perfil do Gestor", 
                 description: "Atualize seus dados pessoais como gestor individual.", 
-                path: "/profile" // Redireciona para o perfil pessoal para edição
+                path: "/profile"
             };
         }
     } else if (isAdminMaster) {
-        // Para Admin Master, se tiver uma empresa, mostra o perfil da empresa.
-        // Caso contrário, este cartão pode não ser o foco principal ou pode ser omitido.
-        // Por simplicidade, se for Admin Master e tiver empresa, mostra o perfil da empresa.
         if (company) {
             profileSettingsOption = { 
                 icon: <Building className="h-6 w-6 text-yellow-500" />, 
@@ -56,9 +57,6 @@ const ManagerSettings: React.FC = () => {
                 path: "/manager/settings/company-profile" 
             };
         } else {
-            // Admin Master sem empresa, pode não ter um cartão específico aqui,
-            // ou pode ser direcionado para o perfil pessoal se necessário.
-            // Por enquanto, não criamos um cartão para "Perfil do Admin" aqui.
             profileSettingsOption = null; 
         }
     }
@@ -77,7 +75,7 @@ const ManagerSettings: React.FC = () => {
         settingsOptions.push({ icon: <Settings className="h-6 w-6 text-yellow-500" />, title: "Configurações Avançadas", description: "Ajustes de sistema, segurança e integrações.", path: "/manager/settings/advanced" });
     }
 
-    if (isLoading || isLoadingProfile || isLoadingCompany) {
+    if (isLoadingCombined) { // Usando a variável combinada
         return (
             <div className="max-w-7xl mx-auto text-center py-20">
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
@@ -87,7 +85,7 @@ const ManagerSettings: React.FC = () => {
     }
 
     return (
-        <div className="max-w-7xl mx-auto pt-8"> {/* Adicionado pt-8 para espaçamento */}
+        <div className="max-w-7xl mx-auto pt-8">
             <div className="mb-8">
                 <h1 className="text-2xl sm:text-3xl font-serif text-yellow-500 mb-2">Configurações do Gestor</h1>
                 <p className="text-gray-400 text-sm sm:text-base">Gerencie as configurações da sua conta PRO e do sistema.</p>
