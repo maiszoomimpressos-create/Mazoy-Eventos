@@ -49,10 +49,16 @@ export const usePurchaseTicket = () => {
             });
 
             if (edgeError) {
+                // Se o erro for um erro de rede ou timeout
                 throw new Error(edgeError.message);
             }
             
             if (responseData.error) {
+                // Se a Edge Function retornou um erro 4xx ou 5xx com um corpo de erro
+                if (responseData.error.includes('Payment gateway access token is not configured')) {
+                    showError("Erro de Configuração: O gestor do evento precisa configurar o Token Secreto do Mercado Pago nas Configurações PRO.");
+                    return false;
+                }
                 throw new Error(responseData.error);
             }
             

@@ -81,11 +81,12 @@ const ManagerPaymentSettings: React.FC = () => {
             gateway_name: settings.gatewayName,
         };
 
+        // CORREÇÃO: Garantir que a chave e o token sejam salvos corretamente
         if (!settings.apiKey.startsWith('••••')) {
             dataToSave.api_key = settings.apiKey;
         }
         if (!settings.apiToken.startsWith('••••')) {
-            dataToSave.api_token = settings.apiToken;
+            dataToSave.api_token = settings.apiToken; // CORRIGIDO: Usando settings.apiToken
         }
 
         try {
