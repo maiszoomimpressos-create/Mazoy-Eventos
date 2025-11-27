@@ -55,6 +55,9 @@ const App = () => (
             <Route path="/manager/register" element={<ManagerRegister />} /> {/* Rota para clientes se tornarem gestores */}
             <Route path="/manager/register/individual" element={<ManagerIndividualRegister />} /> {/* Nova rota */}
             <Route path="/manager/register/company" element={<ManagerCompanyRegister />} /> {/* Nova rota */}
+            {/* Rota /events/:id removida */}
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/tickets" element={<MyTickets />} />
           </Route>
           
           {/* Auth Routes (No layout/Full screen) */}
