@@ -81,14 +81,14 @@ const managerIndividualProfileSchema = z.object({
     cpf: z.string().refine(validateCPF, { message: "CPF inválido." }),
     rg: z.string().min(1, { message: "RG é obrigatório." }).refine(validateRG, { message: "RG inválido." }),
 
-    // Campos de Endereço - Tornando todos obrigatórios
+    // Campos de Endereço - Tornando todos obrigatórios, exceto complemento
     cep: z.string().min(1, { message: "CEP é obrigatório." }).refine(validateCEP, { message: "CEP inválido (8 dígitos)." }),
     rua: z.string().min(1, { message: "Rua é obrigatória." }),
     bairro: z.string().min(1, { message: "Bairro é obrigatória." }),
     cidade: z.string().min(1, { message: "Cidade é obrigatória." }),
     estado: z.string().min(1, { message: "Estado é obrigatória." }),
     numero: z.string().min(1, { message: "Número é obrigatório." }),
-    complemento: z.string().min(1, { message: "Complemento é obrigatório." }), // Tornando complemento obrigatório
+    complemento: z.string().optional().nullable(), // Tornando complemento opcional
 });
 
 type ManagerIndividualProfileData = z.infer<typeof managerIndividualProfileSchema>;
@@ -503,7 +503,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                 name="complemento"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-white">Complemento *</FormLabel>
+                                        <FormLabel className="text-white">Complemento (Opcional)</FormLabel>
                                         <FormControl>
                                             <Input 
                                                 placeholder="Apto 101, Bloco B" 

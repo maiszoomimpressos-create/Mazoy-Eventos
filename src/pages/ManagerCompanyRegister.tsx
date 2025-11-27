@@ -9,11 +9,12 @@ import { Form } from '@/components/ui/form';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { Loader2, Building, ArrowLeft, User, AlertTriangle } from 'lucide-react';
 import CompanyForm, { companySchema, CompanyFormData } from '@/components/CompanyForm'; // Importando o novo componente e schema
+import { useProfile } from '@/hooks/use-profile'; // Importando useProfile
 
 // Campos essenciais do perfil do usuário que devem estar preenchidos
 const ESSENTIAL_PROFILE_FIELDS = [
     'first_name', 'last_name', 'cpf', 'rg', 'birth_date', 'gender',
-    'cep', 'rua', 'bairro', 'cidade', 'estado', 'numero', 'complemento' // 'complemento' agora é obrigatório para gestores
+    'cep', 'rua', 'bairro', 'cidade', 'estado', 'numero'
 ];
 
 const isProfileComplete = (profileData: typeof useProfile extends (...args: any[]) => { profile: infer T } ? T : never): boolean => {
