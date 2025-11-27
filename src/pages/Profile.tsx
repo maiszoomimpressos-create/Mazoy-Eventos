@@ -17,6 +17,7 @@ import { useProfileStatus } from '@/hooks/use-profile-status';
 import { useProfile, ProfileData } from '@/hooks/use-profile';
 import { useQueryClient } from '@tanstack/react-query';
 import TermsAndConditionsDialog from '@/components/TermsAndConditionsDialog';
+import { AlertTriangle } from 'lucide-react'; // Importando AlertTriangle
 
 const GENDER_OPTIONS = [
     "Masculino",
@@ -327,6 +328,46 @@ const Profile: React.FC = () => {
         // O MultiLineEditor dentro do dialog não terá o checkbox visível.
     };
 
+    // Função para obter os campos faltando
+    const getMissingFields = (): string[] => {
+        if (!profile) return []; // Se não há perfil, todos os campos estão 'faltando'
+
+        const missing: string[] = [];
+        const fieldsToCheck = profile?.tipo_usuario_id === 3 ? [ // Cliente
+            'first_name', 'last_name', 'cpf', 'rg', 'birth_date', 'gender',
+            'cep', 'rua', 'bairro', 'cidade', 'estado', 'numero'
+        ] : [ // Gestor (Admin ou PRO)
+            'first_name', 'last_name', 'cpf', 'rg', 'birth_date', 'gender',
+            'cep', 'rua', 'bairro', 'cidade', 'estado', 'numero'
+        ];
+
+        const fieldNamesMap: { [key: string]: string } = {
+            first_name: 'Nome',
+            last_name: 'Sobrenome',
+            cpf: 'CPF',
+            rg: 'RG',
+            birth_date: 'Data de Nascimento',
+            gender: 'Gênero',
+            cep: 'CEP',
+            rua: 'Rua',
+            bairro: 'Bairro',
+            cidade: 'Cidade',
+            estado: 'Estado',
+            numero: 'Número',
+            // complemento: 'Complemento', // Complemento é opcional agora
+        };
+
+        for (const field of fieldsToCheck) {
+            const value = profile[field as keyof ProfileData];
+            if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) {
+                missing.push(fieldNamesMap[field] || field);
+            }
+        }
+        return missing;
+    };
+
+    const missingFields = getMissingFields();
+
     if (loading) {
         return (
             <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -397,12 +438,17 @@ const Profile: React.FC = () => {
                     {/* Alerta de Perfil Incompleto para Clientes */}
                     {hasPendingNotifications && profile?.tipo_usuario_id === 3 && (
                         <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-xl mb-8 flex items-start space-x-3 animate-fadeInUp">
-                            <i className="fas fa-exclamation-triangle text-xl mt-1"></i>
+                            <AlertTriangle className="h-5 w-5 mt-1 flex-shrink-0" />
                             <div>
                                 <h3 className="font-semibold text-white mb-1">Atenção: Perfil Incompleto</h3>
                                 <p className="text-sm">
-                                    Por favor, preencha todos os campos do seu perfil (incluindo RG, Gênero e Endereço completo) para liberar todas as funcionalidades e garantir a emissão correta de ingressos.
+                                    Por favor, preencha os seguintes campos essenciais para liberar todas as funcionalidades e garantir a emissão correta de ingressos:
                                 </p>
+                                <ul className="list-disc list-inside text-sm mt-2">
+                                    {missingFields.map((field, index) => (
+                                        <li key={index} className="text-gray-300">{field}</li>
+                                    ))}
+                                </ul>
                             </div>
                         </div>
                     )}
@@ -410,12 +456,17 @@ const Profile: React.FC = () => {
                     {/* Alerta de Perfil Incompleto para Gestores */}
                     { (profile?.tipo_usuario_id === 1 || profile?.tipo_usuario_id === 2) && !isProfileFullyComplete && (
                         <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-xl mb-8 flex items-start space-x-3 animate-fadeInUp">
-                            <i className="fas fa-exclamation-triangle text-xl mt-1"></i>
+                            <AlertTriangle className="h-5 w-5 mt-1 flex-shrink-0" />
                             <div>
                                 <h3 className="font-semibold text-white mb-1">Atenção: Perfil de Gestor Incompleto</h3>
                                 <p className="text-sm">
-                                    Seu perfil de gestor está incompleto. O acesso ao Dashboard PRO será bloqueado até que todos os campos essenciais sejam preenchidos.
+                                    Seu perfil de gestor está incompleto. O acesso ao Dashboard PRO será bloqueado até que todos os campos essenciais sejam preenchidos:
                                 </p>
+                                <ul className="list-disc list-inside text-sm mt-2">
+                                    {missingFields.map((field, index) => (
+                                        <li key={index} className="text-gray-300">{field}</li>
+                                    ))}
+                                </ul>
                             </div>
                         </div>
                     )}
