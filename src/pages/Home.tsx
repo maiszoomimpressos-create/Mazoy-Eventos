@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { categories } from '@/data/events'; // Mantendo categories
+import { categories } from '@/data/events';
 import AuthStatusMenu from '@/components/AuthStatusMenu';
 import { Input } from "@/components/ui/input";
 import MobileMenu from '@/components/MobileMenu';
@@ -10,73 +10,85 @@ import { supabase } from '@/integrations/supabase/client';
 import { trackAdvancedFilterUse } from '@/utils/metrics';
 import { usePublicEvents, PublicEvent } from '@/hooks/use-public-events';
 import { Loader2 } from 'lucide-react';
-import EventCarousel from '@/components/EventCarousel'; // Importando o novo componente
+import { showError } from '@/utils/toast';
 
 const EVENTS_PER_PAGE = 12;
 
 // Helper function to get the minimum price display
 const getMinPriceDisplay = (price: number | null): string => {
-    if (price === null || price === 0) return 'Grátis';
-    // Formata para R$ X.XX, usando vírgula como separador decimal
+    if (price === null) return 'Grátis';
     return `R$ ${price.toFixed(2).replace('.', ',')}`;
 };
 
-const Index: React.FC = () => {
+const Home: React.FC = () => {
     const navigate = useNavigate();
-    const location = useLocation(); // Hook para acessar a localização atual
     const [userId, setUserId] = useState<string | undefined>(undefined);
     
-    // Extrai o termo de busca da URL (ex: /?search=termo)
-    const queryParams = new URLSearchParams(location.search);
-    const initialSearchTerm = queryParams.get('search') || '';
-    
-    const [searchTerm, setSearchTerm] = useState(initialSearchTerm); // Inicializa com o termo da URL
-    
-    // Carregamento de eventos do Supabase
     const { events: allEvents, isLoading: isLoadingEvents, isError: isErrorEvents } = usePublicEvents();
     
-    // Fetch user ID on mount
+    const [stagedSearchTerm, setStagedSearchTerm] = useState('');
+    const [stagedPriceRanges, setStagedPriceRanges] = useState<string[]>([]);
+    const [stagedTimeRanges, setStagedTimeRanges] = useState<string[]>([]);
+    const [stagedStatuses, setStagedStatuses] = useState<string[]>([]);
+
+    const [appliedSearchTerm, setAppliedSearchTerm] = useState('');
+    const [appliedPriceRanges, setAppliedPriceRanges] = useState<string[]>([]);
+    const [appliedTimeRanges, setAppliedTimeRanges] = useState<string[]>([]);
+    const [appliedStatuses, setAppliedStatuses] = useState<string[]>([]);
+
+    const [currentPage, setCurrentPage] = useState(1);
+
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
             setUserId(user?.id);
         });
     }, []);
-    
-    // Sincroniza o estado de busca com a URL quando o componente é montado ou a URL muda
+
     useEffect(() => {
-        const newSearchTerm = queryParams.get('search') || '';
-        if (newSearchTerm !== searchTerm) {
-            setSearchTerm(newSearchTerm);
-            setCurrentPage(1);
-        }
-    }, [location.search]);
+        setStagedSearchTerm(appliedSearchTerm);
+        setStagedPriceRanges(appliedPriceRanges);
+        setStagedTimeRanges(appliedTimeRanges);
+        setStagedStatuses(appliedStatuses);
+    }, [appliedSearchTerm, appliedPriceRanges, appliedTimeRanges, appliedStatuses]);
 
 
-    // Lógica de Filtragem
-    const filteredEventsBySearch = allEvents.filter(event =>
-        event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    // Paginação
-    const [currentPage, setCurrentPage] = useState(1);
-    const totalPages = Math.ceil(filteredEventsBySearch.length / EVENTS_PER_PAGE);
-
-    // CORRIGIDO: Redireciona para a tela de detalhes do evento
     const handleEventClick = (event: PublicEvent) => {
-        navigate(`/events/${event.id}`);
+        navigate(`/finalizar-compra`);
+        console.log(`Navegando para Finalizar Compra para o evento: ${event.title}`);
     };
     
+    const handleStagedPriceRangeChange = (range: string, isChecked: boolean) => {
+        setStagedPriceRanges(prev => 
+            isChecked ? [...prev, range] : prev.filter(r => r !== range)
+        );
+    };
+
+    const handleStagedTimeRangeChange = (range: string, isChecked: boolean) => {
+        setStagedTimeRanges(prev => 
+            isChecked ? [...prev, range] : prev.filter(r => r !== range)
+        );
+    };
+
+    const handleStagedStatusChange = (status: string, isChecked: boolean) => {
+        setStagedStatuses(prev => 
+            isChecked ? [...prev, status] : prev.filter(s => s !== status)
+        );
+    };
+
     const handleApplyFilters = () => {
         if (userId) {
             trackAdvancedFilterUse(userId);
         }
-        console.log("Aplicando filtros avançados...");
+        setAppliedSearchTerm(stagedSearchTerm);
+        setAppliedPriceRanges(stagedPriceRanges);
+        setAppliedTimeRanges(stagedTimeRanges);
+        setAppliedStatuses(stagedStatuses);
         setCurrentPage(1);
+        console.log("Filtros aplicados!");
     };
     
+    const totalPages = Math.ceil(filteredEvents.length / EVENTS_PER_PAGE);
+
     const handlePageChange = (page: number) => {
         if (page >= 1 && page <= totalPages) {
             setCurrentPage(page);
@@ -94,10 +106,72 @@ const Index: React.FC = () => {
         }
     };
 
-    // Lógica de Paginação
+    const filteredEvents = useMemo(() => {
+        let tempEvents = allEvents;
+
+        if (appliedSearchTerm) {
+            tempEvents = tempEvents.filter(event =>
+                event.title.toLowerCase().includes(appliedSearchTerm.toLowerCase()) ||
+                event.description.toLowerCase().includes(appliedSearchTerm.toLowerCase()) ||
+                event.location.toLowerCase().includes(appliedSearchTerm.toLowerCase()) ||
+                event.category.toLowerCase().includes(appliedSearchTerm.toLowerCase())
+            );
+        }
+
+        if (appliedPriceRanges.length > 0) {
+            tempEvents = tempEvents.filter(event => {
+                const price = event.min_price;
+                
+                return appliedPriceRanges.some(range => {
+                    switch (range) {
+                        case 'free': return price === 0;
+                        case 'under100': return price !== null && price > 0 && price <= 100;
+                        case '100to300': return price !== null && price > 100 && price <= 300;
+                        case 'over300': return price !== null && price > 300;
+                        default: return false;
+                    }
+                });
+            });
+        }
+
+        if (appliedTimeRanges.length > 0) {
+            tempEvents = tempEvents.filter(event => {
+                const eventTime = event.time;
+                const [startTimeStr] = eventTime.split(' - ');
+                const [hours] = startTimeStr.split(':').map(Number);
+                const eventHour = hours;
+
+                return appliedTimeRanges.some(range => {
+                    switch (range) {
+                        case 'morning': return eventHour >= 6 && eventHour < 12;
+                        case 'afternoon': return eventHour >= 12 && eventHour < 18;
+                        case 'night': return eventHour >= 18 || eventHour < 6;
+                        default: return false;
+                    }
+                });
+            });
+        }
+
+        if (appliedStatuses.length > 0) {
+            tempEvents = tempEvents.filter(event => {
+                return appliedStatuses.some(status => {
+                    switch (status) {
+                        case 'open_sales': return event.total_available_tickets > 0;
+                        case 'low_stock': 
+                            return event.total_available_tickets > 0 && event.capacity > 0 && 
+                                   (event.total_available_tickets / event.capacity) <= 0.1;
+                        default: return false;
+                    }
+                });
+            });
+        }
+
+        return tempEvents;
+    }, [allEvents, appliedSearchTerm, appliedPriceRanges, appliedTimeRanges, appliedStatuses]);
+
     const startIndex = (currentPage - 1) * EVENTS_PER_PAGE;
     const endIndex = startIndex + EVENTS_PER_PAGE;
-    const displayedEvents = filteredEventsBySearch.slice(startIndex, endIndex);
+    const displayedEvents = filteredEvents.slice(startIndex, endIndex);
     
     const getPageNumbers = () => {
         const maxPagesToShow = 5;
@@ -113,20 +187,7 @@ const Index: React.FC = () => {
             pages.push(i);
         }
         return pages;
-    };
-    
-    // Função para atualizar o termo de busca e a URL
-    const handleSearchChange = (value: string) => {
-        setSearchTerm(value);
-        setCurrentPage(1);
-        
-        // Atualiza a URL sem recarregar a página
-        if (value) {
-            navigate(`/?search=${encodeURIComponent(value)}`, { replace: true });
-        } else {
-            navigate('/', { replace: true });
-        }
-    };
+    }; // <-- FIX: Semicolon added here.
 
     return (
         <div className="min-h-screen bg-black text-white overflow-x-hidden">
@@ -144,13 +205,12 @@ const Index: React.FC = () => {
                         </nav>
                     </div>
                     <div className="flex items-center space-x-3 sm:space-x-4">
-                        {/* CAMPO DE BUSCA NO HEADER (AGORA FUNCIONAL) */}
                         <div className="relative hidden lg:block">
                             <Input 
                                 type="search" 
                                 placeholder="Buscar eventos..." 
-                                value={searchTerm}
-                                onChange={(e) => handleSearchChange(e.target.value)}
+                                value={stagedSearchTerm}
+                                onChange={(e) => setStagedSearchTerm(e.target.value)}
                                 className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 w-48 md:w-64 pl-4 pr-10 py-2 rounded-xl"
                             />
                             <i className="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-yellow-500/60"></i>
@@ -162,19 +222,30 @@ const Index: React.FC = () => {
                     </div>
                 </div>
             </header>
-            <section id="home" className="pt-20 pb-8 px-4 sm:px-6">
-                <div className="max-w-7xl mx-auto">
-                    <div className="relative h-[300px] sm:h-[400px] lg:h-[500px] overflow-hidden">
-                        {isLoadingEvents ? (
-                            <div className="flex items-center justify-center h-full bg-black/60 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/20">
-                                <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
-                            </div>
-                        ) : (
-                            <EventCarousel events={allEvents} />
-                        )}
-                    </div>
+            
+            {/* Hero Section (Originalmente vazia) */}
+            <section id="home" className="relative w-full h-[500px] sm:h-[600px] md:h-[700px] overflow-hidden bg-black pt-20">
+                <div className="relative z-10 max-w-7xl mx-auto h-full flex flex-col justify-center items-center text-center px-4 sm:px-6">
+                    <h1 className="text-4xl sm:text-6xl lg:text-7xl font-serif text-yellow-500 font-bold mb-4 sm:mb-6">
+                        Mazoy
+                    </h1>
+                    <h2 className="text-2xl sm:text-4xl lg:text-5xl font-bold text-white mb-6 sm:mb-8 leading-tight">
+                        Experiências Premium. Ingressos Exclusivos.
+                    </h2>
+                    <p className="text-base sm:text-xl text-gray-300 max-w-3xl mb-8 sm:mb-10">
+                        Descubra os eventos mais sofisticados.
+                    </p>
+                    <Button
+                        onClick={() => {
+                            document.getElementById('eventos')?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="bg-yellow-500 text-black hover:bg-yellow-600 px-8 sm:px-10 py-3 sm:py-4 text-base sm:text-lg font-semibold transition-all duration-300 cursor-pointer"
+                    >
+                        Explorar Eventos
+                    </Button>
                 </div>
             </section>
+
             <section id="eventos" className="py-12 sm:py-20 px-4 sm:px-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-10 sm:mb-16">
@@ -183,7 +254,18 @@ const Index: React.FC = () => {
                     </div>
                     <div className="mb-12">
                         <div className="flex flex-col lg:flex-row gap-6 mb-8">
-                            {/* CAMPO DE BUSCA REMOVIDO DAQUI, POIS FOI MOVIDO PARA O HEADER */}
+                            <div className="flex-1">
+                                <div className="relative">
+                                    <Input
+                                        type="text"
+                                        placeholder="Buscar eventos..."
+                                        value={stagedSearchTerm}
+                                        onChange={(e) => setStagedSearchTerm(e.target.value)}
+                                        className="w-full bg-black/60 border border-yellow-500/30 rounded-xl px-4 sm:px-6 py-3 sm:py-4 text-white placeholder-gray-400 text-base sm:text-lg focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300"
+                                    />
+                                    <i className="fas fa-search absolute right-4 sm:right-6 top-1/2 transform -translate-y-1/2 text-yellow-500 text-lg"></i>
+                                </div>
+                            </div>
                             <div className="flex flex-wrap gap-4">
                                 <select className="bg-black/60 border border-yellow-500/30 rounded-xl px-4 sm:px-6 py-3 sm:py-4 text-white focus:border-yellow-500 focus:outline-none cursor-pointer text-sm sm:text-base">
                                     <option value="">Todas as Categorias</option>
@@ -220,19 +302,39 @@ const Index: React.FC = () => {
                                         <h4 className="text-white font-medium mb-3">Faixa de Preço</h4>
                                         <div className="space-y-3">
                                             <label className="flex items-center cursor-pointer">
-                                                <input type="checkbox" className="mr-3 accent-yellow-500" />
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="mr-3 accent-yellow-500" 
+                                                    checked={stagedPriceRanges.includes('free')}
+                                                    onChange={(e) => handleStagedPriceRangeChange('free', e.target.checked)}
+                                                />
                                                 <span className="text-gray-300">Gratuito</span>
                                             </label>
                                             <label className="flex items-center cursor-pointer">
-                                                <input type="checkbox" className="mr-3 accent-yellow-500" />
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="mr-3 accent-yellow-500" 
+                                                    checked={stagedPriceRanges.includes('under100')}
+                                                    onChange={(e) => handleStagedPriceRangeChange('under100', e.target.checked)}
+                                                />
                                                 <span className="text-gray-300">Até R$ 100</span>
                                             </label>
                                             <label className="flex items-center cursor-pointer">
-                                                <input type="checkbox" className="mr-3 accent-yellow-500" />
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="mr-3 accent-yellow-500" 
+                                                    checked={stagedPriceRanges.includes('100to300')}
+                                                    onChange={(e) => handleStagedPriceRangeChange('100to300', e.target.checked)}
+                                                />
                                                 <span className="text-gray-300">R$ 100 - R$ 300</span>
                                             </label>
                                             <label className="flex items-center cursor-pointer">
-                                                <input type="checkbox" className="mr-3 accent-yellow-500" />
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="mr-3 accent-yellow-500" 
+                                                    checked={stagedPriceRanges.includes('over300')}
+                                                    onChange={(e) => handleStagedPriceRangeChange('over300', e.target.checked)}
+                                                />
                                                 <span className="text-gray-300">Acima de R$ 300</span>
                                             </label>
                                         </div>
@@ -241,15 +343,30 @@ const Index: React.FC = () => {
                                         <h4 className="text-white font-medium mb-3">Horário</h4>
                                         <div className="space-y-3">
                                             <label className="flex items-center cursor-pointer">
-                                                <input type="checkbox" className="mr-3 accent-yellow-500" />
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="mr-3 accent-yellow-500" 
+                                                    checked={stagedTimeRanges.includes('morning')}
+                                                    onChange={(e) => handleStagedTimeRangeChange('morning', e.target.checked)}
+                                                />
                                                 <span className="text-gray-300">Manhã (06:00 - 12:00)</span>
                                             </label>
                                             <label className="flex items-center cursor-pointer">
-                                                <input type="checkbox" className="mr-3 accent-yellow-500" />
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="mr-3 accent-yellow-500" 
+                                                    checked={stagedTimeRanges.includes('afternoon')}
+                                                    onChange={(e) => handleStagedTimeRangeChange('afternoon', e.target.checked)}
+                                                />
                                                 <span className="text-gray-300">Tarde (12:00 - 18:00)</span>
                                             </label>
                                             <label className="flex items-center cursor-pointer">
-                                                <input type="checkbox" className="mr-3 accent-yellow-500" />
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="mr-3 accent-yellow-500" 
+                                                    checked={stagedTimeRanges.includes('night')}
+                                                    onChange={(e) => handleStagedTimeRangeChange('night', e.target.checked)}
+                                                />
                                                 <span className="text-gray-300">Noite (18:00 - 00:00)</span>
                                             </label>
                                         </div>
@@ -258,11 +375,21 @@ const Index: React.FC = () => {
                                         <h4 className="text-white font-medium mb-3">Status</h4>
                                         <div className="space-y-3">
                                             <label className="flex items-center cursor-pointer">
-                                                <input type="checkbox" className="mr-3 accent-yellow-500" defaultChecked />
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="mr-3 accent-yellow-500" 
+                                                    checked={stagedStatuses.includes('open_sales')}
+                                                    onChange={(e) => handleStagedStatusChange('open_sales', e.target.checked)}
+                                                />
                                                 <span className="text-gray-300">Vendas Abertas</span>
                                             </label>
                                             <label className="flex items-center cursor-pointer">
-                                                <input type="checkbox" className="mr-3 accent-yellow-500" />
+                                                <input 
+                                                    type="checkbox" 
+                                                    className="mr-3 accent-yellow-500" 
+                                                    checked={stagedStatuses.includes('low_stock')}
+                                                    onChange={(e) => handleStagedStatusChange('low_stock', e.target.checked)}
+                                                />
                                                 <span className="text-gray-300">Últimos Ingressos</span>
                                             </label>
                                         </div>
@@ -279,13 +406,13 @@ const Index: React.FC = () => {
                                 {isLoadingEvents ? (
                                     <div className="text-center py-20">
                                         <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
-                                        <p className="text-gray-400">Carregando eventos...</p>
+                                        <p className className="text-gray-400">Carregando eventos...</p>
                                     </div>
-                                ) : isErrorEvents || filteredEventsBySearch.length === 0 ? (
+                                ) : isErrorEvents || filteredEvents.length === 0 ? (
                                     <div className="text-center py-20">
                                         <i className="fas fa-calendar-times text-5xl text-gray-600 mb-4"></i>
                                         <p className="text-gray-400 text-lg">Nenhum evento encontrado.</p>
-                                        <p className="text-gray-500 text-sm mt-2">Tente ajustar sua pesquisa ou filtros.</p>
+                                        <p className="text-gray-500 text-sm mt-2">Ajuste seus filtros ou cadastre um evento na área do gestor para vê-lo aqui.</p>
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
@@ -293,7 +420,7 @@ const Index: React.FC = () => {
                                             <Card
                                                 key={event.id}
                                                 className="bg-black/60 backdrop-blur-sm border border-yellow-500/30 rounded-2xl overflow-hidden hover:border-yellow-500/60 hover:shadow-2xl hover:shadow-yellow-500/20 transition-all duration-300 cursor-pointer hover:scale-[1.02] group"
-                                                onClick={() => handleEventClick(event)}
+                                                onClick={() => handleEventClick(event)} // Redireciona para FinalizarCompra
                                             >
                                                 <div className="relative overflow-hidden">
                                                     <img
@@ -337,11 +464,13 @@ const Index: React.FC = () => {
                                                     <div className="flex items-center justify-between pt-4 border-t border-yellow-500/20">
                                                         <div className="flex flex-col">
                                                             <span className="text-sm text-gray-400">A partir de</span>
-                                                            <span className="text-xl font-bold text-yellow-500 whitespace-nowrap">
+                                                            <span className="text-2xl font-bold text-yellow-500">
                                                                 {getMinPriceDisplay(event.min_price)}
                                                             </span>
                                                         </div>
                                                         <Button
+                                                            // Garante que o clique no botão também chame a função de redirecionamento
+                                                            onClick={(e) => { e.stopPropagation(); handleEventClick(event); }}
                                                             className="bg-yellow-500 text-black hover:bg-yellow-600 transition-all duration-300 cursor-pointer px-4 sm:px-6"
                                                         >
                                                             Ver Detalhes
@@ -353,7 +482,7 @@ const Index: React.FC = () => {
                                     </div>
                                 )}
                                 
-                                {filteredEventsBySearch.length > EVENTS_PER_PAGE && (
+                                {filteredEvents.length > EVENTS_PER_PAGE && (
                                     <div className="flex items-center justify-center mt-12 space-x-2">
                                         <button 
                                             onClick={() => handlePageChange(currentPage - 1)}
@@ -387,7 +516,7 @@ const Index: React.FC = () => {
                                 )}
                                 <div className="text-center mt-8">
                                     <p className="text-gray-400 text-sm sm:text-base">
-                                        Mostrando <span className="text-yellow-500 font-semibold">{startIndex + 1}-{Math.min(endIndex, filteredEventsBySearch.length)}</span> de <span className="text-yellow-500 font-semibold">{filteredEventsBySearch.length}</span> eventos
+                                        Mostrando <span className="text-yellow-500 font-semibold">{startIndex + 1}-{Math.min(endIndex, filteredEvents.length)}</span> de <span className="text-yellow-500 font-semibold">{filteredEvents.length}</span> eventos
                                     </p>
                                 </div>
                             </div>
@@ -443,7 +572,7 @@ const Index: React.FC = () => {
                             </p>
                         </div>
                         <div>
-                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg">Links Úteis</h4>
+                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg}>Links Úteis</h4>
                             <ul className="space-y-2 text-sm">
                                 <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Sobre Nós</a></li>
                                 <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Como Funciona</a></li>
@@ -452,7 +581,7 @@ const Index: React.FC = () => {
                             </ul>
                         </div>
                         <div>
-                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg">Suporte</h4>
+                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg}>Suporte</h4>
                             <ul className="space-y-2 text-sm">
                                 <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Central de Ajuda</a></li>
                                 <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Contato</a></li>
@@ -461,7 +590,7 @@ const Index: React.FC = () => {
                             </ul>
                         </div>
                         <div>
-                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg">Redes Sociais</h4>
+                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg}>Redes Sociais</h4>
                             <div className="flex space-x-4">
                                 <a href="#" className="text-yellow-500 hover:text-yellow-600 transition-colors cursor-pointer">
                                     <i className="fab fa-instagram text-xl sm:text-2xl"></i>
@@ -474,8 +603,7 @@ const Index: React.FC = () => {
                                 </a>
                                 <a href="#" className="text-yellow-500 hover:text-yellow-600 transition-colors cursor-pointer">
                                     <i className="fab fa-linkedin text-xl sm:text-2xl"></i>
-                                </a
-                            >
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -490,4 +618,4 @@ const Index: React.FC = () => {
     );
 };
 
-export default Index;
+export default Home;
