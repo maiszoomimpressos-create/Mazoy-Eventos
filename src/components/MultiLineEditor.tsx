@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, Edit, Save, CheckSquare, XSquare, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useProfile } from '@/hooks/use-profile';
+import { useProfile } = from '@/hooks/use-profile';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -186,18 +186,20 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
                 <div 
                     ref={contentRef}
                     onScroll={isClient ? handleScroll : undefined} // Apenas clientes precisam rolar até o final
-                    className="max-h-96 overflow-y-auto p-2 bg-black/60 border border-yellow-500/20 rounded-xl text-gray-300 text-sm leading-relaxed whitespace-pre-wrap"
+                    className="max-h-96 overflow-y-auto bg-black/60 border border-yellow-500/20 rounded-xl text-gray-300 text-sm leading-relaxed whitespace-pre-wrap"
                 >
                     {isEditing ? (
                         <Textarea
                             value={editedContent}
                             onChange={(e) => setEditedContent(e.target.value)}
-                            className="w-full h-full bg-transparent border-none focus:ring-0 text-white resize-none"
+                            className="w-full h-full bg-transparent border-none focus:ring-0 text-white resize-none p-4"
                             rows={15}
                             disabled={isSaving}
                         />
                     ) : (
-                        termsData.content
+                        <div className="p-4"> {/* Adiciona p-4 aqui para o modo de visualização */}
+                            {termsData.content}
+                        </div>
                     )}
                 </div>
 
