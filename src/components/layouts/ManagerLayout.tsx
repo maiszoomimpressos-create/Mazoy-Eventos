@@ -44,11 +44,12 @@ const ManagerLayout: React.FC = () => {
             if (location.pathname.startsWith('/manager') || location.pathname.startsWith('/admin')) {
                 navigate('/manager/login');
             }
-            return (
-                <div className="min-h-screen bg-black text-white flex items-center justify-center">
-                    <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
-                </div>
-            );
+        }
+        // If loading, show spinner
+        return (
+            <div className="min-h-screen bg-black text-white flex items-center justify-center">
+                <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
+            </div>
         );
     }
     
