@@ -55,6 +55,7 @@ const ManagerCreateEvent: React.FC = () => {
     });
     const [isLoading, setIsLoading] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
+    const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({}); // Estado para erros de validação
     
     // Estado para o modal de pulseiras
     const [showWristbandModal, setShowWristbandModal] = useState(false);
@@ -76,6 +77,9 @@ const ManagerCreateEvent: React.FC = () => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value, type } = e.target;
         
+        // Limpa o erro para o campo atual quando o usuário começa a digitar
+        setFormErrors(prev => ({ ...prev, [id]: '' }));
+
         if (type === 'number') {
             setFormData(prev => ({ 
                 ...prev, 
@@ -88,31 +92,35 @@ const ManagerCreateEvent: React.FC = () => {
     
     const handleDateChange = (date: Date | undefined) => {
         setFormData(prev => ({ ...prev, date }));
+        setFormErrors(prev => ({ ...prev, date: '' })); // Limpa o erro para o campo de data
     };
 
     const handleSelectChange = (value: string) => {
         setFormData(prev => ({ ...prev, category: value }));
+        setFormErrors(prev => ({ ...prev, category: '' })); // Limpa o erro para o campo de categoria
     };
     
     const handleImageUpload = (url: string) => {
         setFormData(prev => ({ ...prev, image_url: url }));
+        setFormErrors(prev => ({ ...prev, image_url: '' })); // Limpa o erro para o campo de imagem
     };
 
-    const validateForm = (): { isValid: boolean, isoDate: string | null } => {
-        const errors: string[] = [];
+    const validateForm = (): { isValid: boolean, errors: { [key: string]: string }, isoDate: string | null } => {
+        const newErrors: { [key: string]: string } = {};
+        let isValid = true;
         let isoDate: string | null = null;
         
-        if (!formData.title) errors.push("Título é obrigatório.");
-        if (!formData.description) errors.push("Descrição é obrigatória.");
-        if (!formData.time) errors.push("Horário é obrigatório.");
-        if (!formData.location) errors.push("Localização é obrigatória.");
-        if (!formData.address) errors.push("Endereço detalhado é obrigatório.");
-        if (!formData.image_url) errors.push("URL da Imagem/Banner é obrigatória.");
-        if (!formData.duration) errors.push("Duração é obrigatória.");
+        if (!formData.title) { newErrors.title = "Título é obrigatório."; isValid = false; }
+        if (!formData.description) { newErrors.description = "Descrição é obrigatória."; isValid = false; }
+        if (!formData.time) { newErrors.time = "Horário é obrigatório."; isValid = false; }
+        if (!formData.location) { newErrors.location = "Localização é obrigatória."; isValid = false; }
+        if (!formData.address) { newErrors.address = "Endereço detalhado é obrigatório."; isValid = false; }
+        if (!formData.image_url) { newErrors.image_url = "URL da Imagem/Banner é obrigatória."; isValid = false; }
+        if (!formData.duration) { newErrors.duration = "Duração é obrigatória."; isValid = false; }
         
         // Validação da Data (agora é um objeto Date)
         if (!formData.date) {
-            errors.push("Data é obrigatória.");
+            newErrors.date = "Data é obrigatória."; isValid = false;
         } else {
             // Converte para o formato ISO (YYYY-MM-DD) para salvar no Supabase
             isoDate = format(formData.date, 'yyyy-MM-dd');
@@ -120,28 +128,28 @@ const ManagerCreateEvent: React.FC = () => {
 
         const minAge = Number(formData.min_age);
         if (formData.min_age === '' || formData.min_age === null || isNaN(minAge) || minAge < 0) {
-            errors.push("Idade Mínima é obrigatória e deve ser 0 ou maior.");
+            newErrors.min_age = "Idade Mínima é obrigatória e deve ser 0 ou maior."; isValid = false;
         }
         
         const capacity = Number(formData.capacity);
         if (formData.capacity === '' || formData.capacity === null || isNaN(capacity) || capacity <= 0) {
-            errors.push("Capacidade é obrigatória e deve ser maior que zero.");
+            newErrors.capacity = "Capacidade é obrigatória e deve ser maior que zero."; isValid = false;
         }
 
-        if (!formData.category) errors.push("Categoria é obrigatória.");
+        if (!formData.category) { newErrors.category = "Categoria é obrigatória."; isValid = false; }
 
-        if (errors.length > 0) {
-            showError(`Por favor, preencha todos os campos corretamente.`);
-            return { isValid: false, isoDate: null };
-        }
-        return { isValid: true, isoDate };
+        return { isValid, errors: newErrors, isoDate };
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const validationResult = validateForm();
-        
-        if (!validationResult.isValid || !userId || !validationResult.isoDate) return;
+        setFormErrors(validationResult.errors); // Atualiza o estado de erros
+
+        if (!validationResult.isValid || !userId || !validationResult.isoDate) {
+            showError("Por favor, preencha todos os campos obrigatórios."); // Toast genérico
+            return;
+        }
 
         const toastId = showLoading("Publicando evento...");
         setIsLoading(true);
@@ -177,6 +185,7 @@ const ManagerCreateEvent: React.FC = () => {
             
             setNewEventId(data.id);
             setShowWristbandModal(true);
+            setFormErrors({}); // Limpa todos os erros após o sucesso
 
         } catch (error: any) {
             dismissToast(toastId);
@@ -227,8 +236,10 @@ const ManagerCreateEvent: React.FC = () => {
                                     onChange={handleChange} 
                                     placeholder="Ex: Concerto Sinfônico Premium"
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    isInvalid={!!formErrors.title} // Passa a prop de erro
                                     required
                                 />
+                                {formErrors.title && <p className="text-red-400 text-xs mt-1">{formErrors.title}</p>}
                             </div>
                             <div>
                                 <label htmlFor="location" className="block text-sm font-medium text-white mb-2">Localização (Nome do Local) *</label>
@@ -238,8 +249,10 @@ const ManagerCreateEvent: React.FC = () => {
                                     onChange={handleChange} 
                                     placeholder="Ex: Teatro Municipal"
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    isInvalid={!!formErrors.location} // Passa a prop de erro
                                     required
                                 />
+                                {formErrors.location && <p className="text-red-400 text-xs mt-1">{formErrors.location}</p>}
                             </div>
                         </div>
 
@@ -252,8 +265,10 @@ const ManagerCreateEvent: React.FC = () => {
                                 onChange={handleChange} 
                                 placeholder="Ex: Praça Ramos de Azevedo, s/n - República, São Paulo - SP"
                                 className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                isInvalid={!!formErrors.address} // Passa a prop de erro
                                 required
                             />
+                            {formErrors.address && <p className="text-red-400 text-xs mt-1">{formErrors.address}</p>}
                         </div>
 
                         {/* Linha 3: Descrição */}
@@ -265,8 +280,10 @@ const ManagerCreateEvent: React.FC = () => {
                                 onChange={handleChange} 
                                 placeholder="Descreva o evento, destaques e público-alvo."
                                 className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 min-h-[100px]"
+                                isInvalid={!!formErrors.description} // Passa a prop de erro
                                 required
                             />
+                            {formErrors.description && <p className="text-red-400 text-xs mt-1">{formErrors.description}</p>}
                         </div>
                         
                         {/* Linha 4: Imagem/Banner Preview - Usando o novo componente */}
@@ -281,8 +298,10 @@ const ManagerCreateEvent: React.FC = () => {
                                     width={550}
                                     height={380}
                                     placeholderText="Nenhuma imagem de banner selecionada."
+                                    isInvalid={!!formErrors.image_url} // Passa a prop de erro
                                 />
                             )}
+                            {formErrors.image_url && <p className="text-red-400 text-xs mt-1">{formErrors.image_url}</p>}
                         </div>
 
                         {/* Linha 5: Data, Horário, Categoria */}
@@ -293,7 +312,9 @@ const ManagerCreateEvent: React.FC = () => {
                                     date={formData.date}
                                     setDate={handleDateChange}
                                     placeholder="DD/MM/AAAA ou Selecione"
+                                    isInvalid={!!formErrors.date} // Passa a prop de erro
                                 />
+                                {formErrors.date && <p className="text-red-400 text-xs mt-1">{formErrors.date}</p>}
                             </div>
                             <div>
                                 <label htmlFor="time" className="block text-sm font-medium text-white mb-2">Horário *</label>
@@ -303,13 +324,18 @@ const ManagerCreateEvent: React.FC = () => {
                                     value={formData.time} 
                                     onChange={handleChange} 
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    isInvalid={!!formErrors.time} // Passa a prop de erro
                                     required
                                 />
+                                {formErrors.time && <p className="text-red-400 text-xs mt-1">{formErrors.time}</p>}
                             </div>
                             <div>
                                 <label htmlFor="category" className="block text-sm font-medium text-white mb-2">Categoria *</label>
                                 <Select onValueChange={handleSelectChange} value={formData.category}>
-                                    <SelectTrigger className="w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500">
+                                    <SelectTrigger 
+                                        className="w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500"
+                                        isInvalid={!!formErrors.category} // Passa a prop de erro
+                                    >
                                         <SelectValue placeholder="Selecione a Categoria" />
                                     </SelectTrigger>
                                     <SelectContent className="bg-black border-yellow-500/30 text-white">
@@ -320,6 +346,7 @@ const ManagerCreateEvent: React.FC = () => {
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                {formErrors.category && <p className="text-red-400 text-xs mt-1">{formErrors.category}</p>}
                             </div>
                         </div>
                         
@@ -334,10 +361,12 @@ const ManagerCreateEvent: React.FC = () => {
                                     onChange={handleChange} 
                                     placeholder="Ex: 500"
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    isInvalid={!!formErrors.capacity} // Passa a prop de erro
                                     min="1"
                                     required
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Número máximo de pessoas permitidas.</p>
+                                {formErrors.capacity && <p className="text-red-400 text-xs mt-1">{formErrors.capacity}</p>}
                             </div>
                             <div>
                                 <label htmlFor="duration" className="block text-sm font-medium text-white mb-2">Duração (Ex: 2h30min) *</label>
@@ -348,9 +377,11 @@ const ManagerCreateEvent: React.FC = () => {
                                     onChange={handleChange} 
                                     placeholder="Ex: 3 horas ou 2h30min"
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    isInvalid={!!formErrors.duration} // Passa a prop de erro
                                     required
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Duração estimada do evento.</p>
+                                {formErrors.duration && <p className="text-red-400 text-xs mt-1">{formErrors.duration}</p>}
                             </div>
                             <div>
                                 <label htmlFor="min_age" className="block text-sm font-medium text-white mb-2">Idade Mínima (Anos) *</label>
@@ -361,10 +392,12 @@ const ManagerCreateEvent: React.FC = () => {
                                     onChange={handleChange} 
                                     placeholder="0 (Livre)"
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    isInvalid={!!formErrors.min_age} // Passa a prop de erro
                                     min="0"
                                     required
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Defina 0 para classificação livre.</p>
+                                {formErrors.min_age && <p className="text-red-400 text-xs mt-1">{formErrors.min_age}</p>}
                             </div>
                         </div>
 

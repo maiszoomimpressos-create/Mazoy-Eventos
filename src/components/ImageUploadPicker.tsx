@@ -18,6 +18,7 @@ interface ImageUploadPickerProps {
     bucketName?: string; // Default to 'event-banners'
     folderPath?: string; // Default to 'banners'
     maxFileSizeMB?: number; // Default to 5MB
+    isInvalid?: boolean; // Adicionando a prop isInvalid
 }
 
 const ImageUploadPicker: React.FC<ImageUploadPickerProps> = ({
@@ -31,6 +32,7 @@ const ImageUploadPicker: React.FC<ImageUploadPickerProps> = ({
     bucketName = 'event-banners',
     folderPath = 'banners',
     maxFileSizeMB = 5,
+    isInvalid = false, // Valor padrão
 }) => {
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -98,8 +100,9 @@ const ImageUploadPicker: React.FC<ImageUploadPickerProps> = ({
         <div className="space-y-4">
             <div 
                 className={cn(
-                    "w-full bg-black/60 border border-yellow-500/30 rounded-xl overflow-hidden flex items-center justify-center relative",
-                    "group cursor-pointer hover:border-yellow-500/60 transition-all duration-300"
+                    "w-full bg-black/60 border rounded-xl overflow-hidden flex items-center justify-center relative",
+                    "group cursor-pointer hover:border-yellow-500/60 transition-all duration-300",
+                    isInvalid ? "border-red-500" : "border-yellow-500/30" // Aplica borda vermelha se inválido
                 )}
                 style={{ height: `${height}px` }}
                 onClick={disabled || uploading ? undefined : handleButtonClick}
