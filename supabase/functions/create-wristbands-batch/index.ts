@@ -38,26 +38,23 @@ serve(async (req) => {
   const userId = user.id;
 
   try {
-    const { event_id, base_code, access_type, price, quantity } = await req.json();
+    const { event_id, company_id, base_code, access_type, price, quantity } = await req.json();
 
     // 2. Input Validation
-    if (!event_id || !base_code || !access_type || price === undefined || quantity === undefined || quantity < 1) {
-      return new Response(JSON.stringify({ error: 'Missing or invalid required fields.' }), { 
+    if (!event_id || !company_id || !base_code || !access_type || price === undefined || quantity === undefined || quantity < 1) {
+      return new Response(JSON.stringify({ error: 'Missing or invalid required fields (event_id, company_id, base_code, etc.).' }), { 
         status: 400, 
         headers: corsHeaders 
       });
     }
     
-    // 3. Security Check: Ensure the user is authorized (RLS handles event ownership)
-    // Since we removed the PJ flow, we assume company_id = user_id for simplicity (or null if not required by schema)
-    // Based on the schema, company_id is required (UUID). We use user_id as company_id for PF managers.
-    const company_id = userId; 
+    // 3. Security Check: RLS on 'wristbands' and 'user_companies' ensures the user is authorized to insert for this company_id.
 
     // 4. Insert the main wristband record
     const wristbandData = {
         event_id: event_id,
         company_id: company_id,
-        manager_user_id: userId,
+        manager_user_id: userId, // Mantemos o user_id como o criador/gestor
         code: base_code,
         access_type: access_type,
         status: 'active',
@@ -105,6 +102,7 @@ serve(async (req) => {
                     price: price,
                     manager_id: userId,
                     event_id: event_id,
+                    company_id: company_id, // Adicionando company_id ao event_data
                     initial_status: 'active',
                     sequential_entry: i + j + 1,
                 },
@@ -117,9 +115,9 @@ serve(async (req) => {
 
         if (analyticsError) {
             console.error(`Warning: Failed to insert analytics batch starting at index ${i}:`, analyticsError);
-            // Decide whether to throw an error or continue. For analytics, we might continue.
-            // For this case, we'll throw to ensure all records are created or none.
-            throw analyticsError; 
+            // Se a inserção de analytics falhar, devemos reverter a criação da pulseira principal
+            await supabase.from('wristbands').delete().eq('id', wristbandId);
+            throw new Error(`Falha crítica ao criar registros de analytics. Pulseira principal revertida. Erro: ${analyticsError.message}`);
         }
         totalInsertedAnalytics += currentBatchSize;
     }

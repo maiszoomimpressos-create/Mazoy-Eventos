@@ -9,12 +9,15 @@ export interface WristbandData {
     status: 'active' | 'used' | 'lost' | 'cancelled';
     created_at: string;
     event_id: string;
+    company_id: string; // Novo campo
     
     // Dados do evento associado (join)
     events: {
         title: string;
     } | null;
 }
+
+const ADMIN_MASTER_USER_TYPE_ID = 1;
 
 const fetchManagerWristbands = async (userId: string, userTypeId: number): Promise<WristbandData[]> => {
     if (!userId) {
@@ -31,12 +34,11 @@ const fetchManagerWristbands = async (userId: string, userTypeId: number): Promi
             status,
             created_at,
             event_id,
+            company_id,
             events (title)
         `);
 
-    // Se não for Admin Master (tipo 1), a RLS já filtra por empresa/gestor.
-    // Se for Admin Master, a RLS permite ver tudo, então não adicionamos filtro aqui.
-    // Apenas ordenamos.
+    // A RLS já filtra por company_id através da tabela user_companies.
     query = query.order('created_at', { ascending: false });
 
     const { data, error } = await query;

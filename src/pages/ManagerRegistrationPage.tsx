@@ -91,8 +91,10 @@ const ManagerRegistrationPage: React.FC = () => {
             
             // 3. Redirecionamento baseado na escolha
             if (type === 'PF') {
+                // PF: Vai direto para a criação de eventos (não precisa de perfil de empresa)
                 navigate('/manager/events/create', { replace: true });
             } else { // PJ
+                // PJ: Vai para o cadastro do perfil da empresa
                 navigate('/manager/settings/company-profile', { replace: true });
             }
 

@@ -24,7 +24,7 @@ import { DatePicker } from '@/components/DatePicker';
 import ImageUploadPicker from '@/components/ImageUploadPicker';
 import { useProfileStatus } from '@/hooks/use-profile-status';
 import { useProfile } from '@/hooks/use-profile';
-import { useManagerCompany } from '@/hooks/use-manager-company'; // Mantendo o import, mas a lógica interna foi simplificada
+import { useManagerCompany } from '@/hooks/use-manager-company';
 
 // Define the structure for the form data
 interface EventFormData {
@@ -83,6 +83,13 @@ const ManagerCreateEvent: React.FC = () => {
 
     const isProfileIncomplete = needsPersonalProfileCompletion;
     const isPageLoading = isLoadingProfile || isLoadingProfileStatus || isLoadingCompany || !userId; 
+    
+    // Verifica se o gestor é PJ e ainda não cadastrou a empresa
+    const isPJManager = profile?.tipo_usuario_id === 2;
+    const needsCompanyProfile = isPJManager && !company;
+    
+    const isFormDisabled = isProfileIncomplete || needsCompanyProfile;
+
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value, type } = e.target;
@@ -153,8 +160,8 @@ const ManagerCreateEvent: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (isProfileIncomplete) {
-            showError("Por favor, complete seu perfil para criar eventos.");
+        if (isFormDisabled) {
+            showError("Por favor, complete seu perfil e/ou cadastre sua empresa para criar eventos.");
             return;
         }
 
@@ -165,6 +172,9 @@ const ManagerCreateEvent: React.FC = () => {
             showError("Por favor, preencha todos os campos obrigatórios.");
             return;
         }
+        
+        // O ID da empresa é o ID da empresa principal do gestor (ou null se for PF e não tiver empresa)
+        const companyIdToUse = company?.id || null; 
 
         setIsLoading(true);
         const toastId = showLoading("Publicando evento...");
@@ -174,7 +184,7 @@ const ManagerCreateEvent: React.FC = () => {
                 .from('events')
                 .insert([
                     {
-                        user_id: userId,
+                        company_id: companyIdToUse, // Usando company_id
                         title: formData.title,
                         description: formData.description,
                         date: validationResult.isoDate,
@@ -244,14 +254,17 @@ const ManagerCreateEvent: React.FC = () => {
                 </Button>
             </div>
 
-            {isProfileIncomplete && (
+            {isFormDisabled && (
                 <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-xl mb-8 flex items-start space-x-3 animate-fadeInUp">
                     <AlertTriangle className="h-5 w-5 mt-1 flex-shrink-0" />
                     <div>
-                        <h3 className="font-semibold text-white mb-1">Perfil Incompleto!</h3>
+                        <h3 className="font-semibold text-white mb-1">Ação Bloqueada</h3>
                         <p className="text-sm text-gray-300">
                             {needsPersonalProfileCompletion && (
                                 <p className="mb-2">Seu perfil pessoal está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/profile')}>complete-o aqui</Button> para criar eventos.</p>
+                            )}
+                            {needsCompanyProfile && (
+                                <p className="mb-2">Você é um Gestor PJ. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/manager/settings/company-profile')}>cadastre sua empresa aqui</Button> para associar eventos.</p>
                             )}
                         </p>
                         <p className="mt-2 text-sm text-white font-semibold">O formulário de criação de evento está desabilitado.</p>
@@ -277,7 +290,7 @@ const ManagerCreateEvent: React.FC = () => {
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                     isInvalid={!!formErrors.title}
                                     required
-                                    disabled={isProfileIncomplete}
+                                    disabled={isFormDisabled}
                                 />
                                 {formErrors.title && <p className="text-red-400 text-xs mt-1">{formErrors.title}</p>}
                             </div>
@@ -291,7 +304,7 @@ const ManagerCreateEvent: React.FC = () => {
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                     isInvalid={!!formErrors.location}
                                     required
-                                    disabled={isProfileIncomplete}
+                                    disabled={isFormDisabled}
                                 />
                                 {formErrors.location && <p className="text-red-400 text-xs mt-1">{formErrors.location}</p>}
                             </div>
@@ -308,7 +321,7 @@ const ManagerCreateEvent: React.FC = () => {
                                 className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                 isInvalid={!!formErrors.address}
                                 required
-                                disabled={isProfileIncomplete}
+                                disabled={isFormDisabled}
                             />
                             {formErrors.address && <p className="text-red-400 text-xs mt-1">{formErrors.address}</p>}
                         </div>
@@ -324,7 +337,7 @@ const ManagerCreateEvent: React.FC = () => {
                                 className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 min-h-[100px]"
                                 isInvalid={!!formErrors.description}
                                 required
-                                disabled={isProfileIncomplete}
+                                disabled={isFormDisabled}
                             />
                             {formErrors.description && <p className="text-red-400 text-xs mt-1">{formErrors.description}</p>}
                         </div>
@@ -337,7 +350,7 @@ const ManagerCreateEvent: React.FC = () => {
                                     userId={userId}
                                     currentImageUrl={formData.image_url}
                                     onImageUpload={handleImageUpload}
-                                    disabled={isLoading || isProfileIncomplete}
+                                    disabled={isLoading || isFormDisabled}
                                     width={550}
                                     height={380}
                                     placeholderText="Nenhuma imagem de banner selecionada."
@@ -356,7 +369,7 @@ const ManagerCreateEvent: React.FC = () => {
                                     setDate={handleDateChange}
                                     placeholder="DD/MM/AAAA ou Selecione"
                                     isInvalid={!!formErrors.date}
-                                    disabled={isProfileIncomplete}
+                                    disabled={isFormDisabled}
                                 />
                                 {formErrors.date && <p className="text-red-400 text-xs mt-1">{formErrors.date}</p>}
                             </div>
@@ -370,13 +383,13 @@ const ManagerCreateEvent: React.FC = () => {
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                     isInvalid={!!formErrors.time}
                                     required
-                                    disabled={isProfileIncomplete}
+                                    disabled={isFormDisabled}
                                 />
                                 {formErrors.time && <p className="text-red-400 text-xs mt-1">{formErrors.time}</p>}
                             </div>
                             <div>
                                 <label htmlFor="category" className="block text-sm font-medium text-white mb-2">Categoria *</label>
-                                <Select onValueChange={handleSelectChange} value={formData.category} disabled={isProfileIncomplete}>
+                                <Select onValueChange={handleSelectChange} value={formData.category} disabled={isFormDisabled}>
                                     <SelectTrigger 
                                         className="w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500"
                                         isInvalid={!!formErrors.category}
@@ -409,7 +422,7 @@ const ManagerCreateEvent: React.FC = () => {
                                     isInvalid={!!formErrors.capacity}
                                     min="1"
                                     required
-                                    disabled={isProfileIncomplete}
+                                    disabled={isFormDisabled}
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Número máximo de pessoas permitidas.</p>
                                 {formErrors.capacity && <p className="text-red-400 text-xs mt-1">{formErrors.capacity}</p>}
@@ -425,7 +438,7 @@ const ManagerCreateEvent: React.FC = () => {
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                     isInvalid={!!formErrors.duration}
                                     required
-                                    disabled={isProfileIncomplete}
+                                    disabled={isFormDisabled}
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Duração estimada do evento.</p>
                                 {formErrors.duration && <p className="text-red-400 text-xs mt-1">{formErrors.duration}</p>}
@@ -442,7 +455,7 @@ const ManagerCreateEvent: React.FC = () => {
                                     isInvalid={!!formErrors.min_age}
                                     min="0"
                                     required
-                                    disabled={isProfileIncomplete}
+                                    disabled={isFormDisabled}
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Defina 0 para classificação livre.</p>
                                 {formErrors.min_age && <p className="text-red-400 text-xs mt-1">{formErrors.min_age}</p>}
@@ -451,7 +464,7 @@ const ManagerCreateEvent: React.FC = () => {
 
                         <Button
                             type="submit"
-                            disabled={isLoading || !userId || isProfileIncomplete}
+                            disabled={isLoading || !userId || isFormDisabled}
                             className="w-full bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
                         >
                             {isLoading ? (

@@ -15,7 +15,7 @@ import { DatePicker } from '@/components/DatePicker';
 import ImageUploadPicker from '@/components/ImageUploadPicker';
 import { useProfileStatus } from '@/hooks/use-profile-status';
 import { useProfile } from '@/hooks/use-profile';
-import { useManagerCompany } from '@/hooks/use-manager-company'; // Mantendo o import, mas a lógica interna foi simplificada
+import { useManagerCompany } from '@/hooks/use-manager-company';
 
 // Define the structure for the form data
 interface EventFormData {
@@ -59,6 +59,13 @@ const ManagerEditEvent: React.FC = () => {
 
     const isProfileIncomplete = needsPersonalProfileCompletion;
     const isPageLoading = isLoadingProfile || isLoadingProfileStatus || isFetchingEvent || isLoadingCompany || !userId; 
+    
+    // Verifica se o gestor é PJ e ainda não cadastrou a empresa
+    const isPJManager = profile?.tipo_usuario_id === 2;
+    const needsCompanyProfile = isPJManager && !company;
+    
+    const isFormDisabled = isProfileIncomplete || needsCompanyProfile;
+
 
     useEffect(() => {
         const fetchEventAndUser = async () => {
@@ -73,6 +80,7 @@ const ManagerEditEvent: React.FC = () => {
             }
 
             // Fetch event data
+            // A RLS garante que apenas eventos da empresa do gestor sejam retornados
             const { data: eventData, error: fetchError } = await supabase
                 .from('events')
                 .select('*')
@@ -82,13 +90,6 @@ const ManagerEditEvent: React.FC = () => {
             if (fetchError || !eventData) {
                 console.error("Erro ao buscar evento:", fetchError);
                 showError("Evento não encontrado ou você não tem permissão para editá-lo.");
-                navigate('/manager/events');
-                return;
-            }
-
-            // Basic check to ensure the user owns the event (RLS should handle this, but good practice)
-            if (eventData.user_id !== userId) {
-                showError("Você não tem permissão para editar este evento.");
                 navigate('/manager/events');
                 return;
             }
@@ -194,8 +195,8 @@ const ManagerEditEvent: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (isProfileIncomplete) {
-            showError("Por favor, complete seu perfil para editar eventos.");
+        if (isFormDisabled) {
+            showError("Por favor, complete seu perfil e/ou cadastre sua empresa para editar eventos.");
             return;
         }
 
@@ -211,6 +212,7 @@ const ManagerEditEvent: React.FC = () => {
         const toastId = showLoading("Atualizando evento...");
 
         try {
+            // A RLS garante que apenas o gestor da empresa associada possa atualizar
             const { error } = await supabase
                 .from('events')
                 .update({
@@ -226,8 +228,7 @@ const ManagerEditEvent: React.FC = () => {
                     capacity: Number(formData.capacity),
                     duration: formData.duration,
                 })
-                .eq('id', id)
-                .eq('user_id', userId);
+                .eq('id', id); // Não precisamos mais do eq('user_id', userId) graças à RLS
 
             if (error) {
                 throw error;
@@ -269,13 +270,16 @@ const ManagerEditEvent: React.FC = () => {
                 </Button>
             </div>
 
-            {isProfileIncomplete && (
+            {isFormDisabled && (
                 <Alert className="bg-red-500/20 border border-red-500/50 text-red-400 mb-8 animate-fadeInUp">
                     <AlertTriangle className="h-5 w-5" />
-                    <AlertTitle className="text-white">Perfil Incompleto!</AlertTitle>
+                    <AlertTitle className="text-white">Ação Bloqueada</AlertTitle>
                     <AlertDescription className="text-gray-300">
                         {needsPersonalProfileCompletion && (
                             <p className="mb-2">Seu perfil pessoal está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/profile')}>complete-o aqui</Button> para editar eventos.</p>
+                        )}
+                        {needsCompanyProfile && (
+                            <p className="mb-2">Você é um Gestor PJ. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/manager/settings/company-profile')}>cadastre sua empresa aqui</Button> para editar eventos.</p>
                         )}
                         <p className="mt-2 text-sm text-white font-semibold">O formulário de edição de evento está desabilitado.</p>
                     </AlertDescription>
@@ -300,7 +304,7 @@ const ManagerEditEvent: React.FC = () => {
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                     isInvalid={!!formErrors.title}
                                     required
-                                    disabled={isProfileIncomplete}
+                                    disabled={isFormDisabled}
                                 />
                                 {formErrors.title && <p className="text-red-400 text-xs mt-1">{formErrors.title}</p>}
                             </div>
@@ -314,7 +318,7 @@ const ManagerEditEvent: React.FC = () => {
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                     isInvalid={!!formErrors.location}
                                     required
-                                    disabled={isProfileIncomplete}
+                                    disabled={isFormDisabled}
                                 />
                                 {formErrors.location && <p className="text-red-400 text-xs mt-1">{formErrors.location}</p>}
                             </div>
@@ -331,7 +335,7 @@ const ManagerEditEvent: React.FC = () => {
                                 className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                 isInvalid={!!formErrors.address}
                                 required
-                                disabled={isProfileIncomplete}
+                                disabled={isFormDisabled}
                             />
                             {formErrors.address && <p className="text-red-400 text-xs mt-1">{formErrors.address}</p>}
                         </div>
@@ -347,7 +351,7 @@ const ManagerEditEvent: React.FC = () => {
                                 className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 min-h-[100px]"
                                 isInvalid={!!formErrors.description}
                                 required
-                                disabled={isProfileIncomplete}
+                                disabled={isFormDisabled}
                             />
                             {formErrors.description && <p className="text-red-400 text-xs mt-1">{formErrors.description}</p>}
                         </div>
@@ -360,7 +364,7 @@ const ManagerEditEvent: React.FC = () => {
                                     userId={userId}
                                     currentImageUrl={formData.image_url}
                                     onImageUpload={handleImageUpload}
-                                    disabled={isLoading || isProfileIncomplete}
+                                    disabled={isLoading || isFormDisabled}
                                     width={550}
                                     height={380}
                                     placeholderText="Nenhuma imagem de banner selecionada."
@@ -379,7 +383,7 @@ const ManagerEditEvent: React.FC = () => {
                                     setDate={handleDateChange}
                                     placeholder="DD/MM/AAAA ou Selecione"
                                     isInvalid={!!formErrors.date}
-                                    disabled={isProfileIncomplete}
+                                    disabled={isFormDisabled}
                                 />
                                 {formErrors.date && <p className="text-red-400 text-xs mt-1">{formErrors.date}</p>}
                             </div>
@@ -393,13 +397,13 @@ const ManagerEditEvent: React.FC = () => {
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                     isInvalid={!!formErrors.time}
                                     required
-                                    disabled={isProfileIncomplete}
+                                    disabled={isFormDisabled}
                                 />
                                 {formErrors.time && <p className="text-red-400 text-xs mt-1">{formErrors.time}</p>}
                             </div>
                             <div>
                                 <label htmlFor="category" className="block text-sm font-medium text-white mb-2">Categoria *</label>
-                                <Select onValueChange={handleSelectChange} value={formData.category} disabled={isProfileIncomplete}>
+                                <Select onValueChange={handleSelectChange} value={formData.category} disabled={isFormDisabled}>
                                     <SelectTrigger 
                                         className="w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500"
                                         isInvalid={!!formErrors.category}
@@ -432,7 +436,7 @@ const ManagerEditEvent: React.FC = () => {
                                     isInvalid={!!formErrors.capacity}
                                     min="1"
                                     required
-                                    disabled={isProfileIncomplete}
+                                    disabled={isFormDisabled}
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Número máximo de pessoas permitidas.</p>
                                 {formErrors.capacity && <p className="text-red-400 text-xs mt-1">{formErrors.capacity}</p>}
@@ -448,7 +452,7 @@ const ManagerEditEvent: React.FC = () => {
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                     isInvalid={!!formErrors.duration}
                                     required
-                                    disabled={isProfileIncomplete}
+                                    disabled={isFormDisabled}
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Duração estimada do evento.</p>
                                 {formErrors.duration && <p className="text-red-400 text-xs mt-1">{formErrors.duration}</p>}
@@ -465,7 +469,7 @@ const ManagerEditEvent: React.FC = () => {
                                     isInvalid={!!formErrors.min_age}
                                     min="0"
                                     required
-                                    disabled={isProfileIncomplete}
+                                    disabled={isFormDisabled}
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Defina 0 para classificação livre.</p>
                                 {formErrors.min_age && <p className="text-red-400 text-xs mt-1">{formErrors.min_age}</p>}
@@ -475,7 +479,7 @@ const ManagerEditEvent: React.FC = () => {
                         <div className="flex items-center space-x-4 pt-4">
                             <Button
                                 type="submit"
-                                disabled={isLoading || !userId || isProfileIncomplete}
+                                disabled={isLoading || !userId || isFormDisabled}
                                 className="bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50 flex-1"
                             >
                                 {isLoading ? (
