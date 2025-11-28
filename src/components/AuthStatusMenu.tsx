@@ -121,7 +121,7 @@ const AuthStatusMenu: React.FC = () => {
                         )}
                         {isClient && ( // Reintroduzido: Botão "Criar Evento" para clientes
                             <DropdownMenuItem 
-                                onClick={() => navigate('/manager/events/create')} 
+                                onClick={() => navigate('/manager/register-flow')} {/* ATUALIZADO AQUI */}
                                 className="cursor-pointer hover:bg-yellow-500/10 text-yellow-500"
                             >
                                 <PlusCircle className="mr-2 h-4 w-4" />

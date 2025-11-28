@@ -147,12 +147,14 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
         );
     }
 
+    const editorTitle = termsType === 'general' ? 'Termos e Condições Gerais' : 'Termos de Registro de Gestor';
+
     if (isErrorTerms || !termsData) {
         // Se não houver termos para o tipo, e for Admin Master, permite editar para criar
         if (isAdminMaster && !isEditing) {
             return (
                 <div className="bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 p-6 rounded-xl space-y-4">
-                    <h3 className="text-white text-xl">Termos de Uso ({termsType === 'general' ? 'Gerais' : 'Registro de Gestor'}) não encontrados.</h3>
+                    <h3 className="text-white text-xl">{editorTitle} não encontrados.</h3>
                     <p className="text-gray-300 text-sm">Clique em "Editar Termos" para criar o conteúdo inicial.</p>
                     <Button 
                         onClick={() => setIsEditing(true)}
@@ -173,8 +175,6 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
             );
         }
     }
-
-    const editorTitle = termsType === 'general' ? 'Termos e Condições Gerais' : 'Termos de Registro de Gestor';
 
     return (
         <div className="space-y-6">

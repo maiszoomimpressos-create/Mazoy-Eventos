@@ -31,6 +31,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import FinalizarCompra from "./pages/FinalizarCompra";
 import ScrollToTop from "./components/ScrollToTop";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import ManagerRegistrationPage from "./pages/ManagerRegistrationPage"; // Importando a nova página
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,8 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/tickets" element={<MyTickets />} />
             <Route path="/finalizar-compra" element={<FinalizarCompra />} />
+            {/* Nova rota para o fluxo de registro de gestor */}
+            <Route path="/manager/register-flow" element={<ManagerRegistrationPage />} />
           </Route>
           
           {/* Auth Routes (No layout/Full screen) */}

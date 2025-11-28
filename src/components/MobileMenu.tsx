@@ -127,7 +127,7 @@ const MobileMenu: React.FC = () => {
                             )}
                             {isClient && ( // Reintroduzido: Botão "Criar Evento" para clientes
                                 <Button 
-                                    onClick={() => handleNavigation('/manager/events/create')}
+                                    onClick={() => handleNavigation('/manager/register-flow')} {/* ATUALIZADO AQUI */}
                                     variant="ghost"
                                     className="w-full justify-start text-lg py-6 text-yellow-500 hover:bg-yellow-500/10"
                                 >
