@@ -76,7 +76,7 @@ const ManagerLayout: React.FC = () => {
         }
     }
     
-    const navItems = [
+    const allNavItems = [
         { path: '/', label: 'Home', icon: <User className="mr-2 h-4 w-4" /> }, // Ícone genérico para Home
         { path: '/manager/dashboard', label: 'Dashboard PRO', icon: <Crown className="mr-2 h-4 w-4" /> },
         { path: '/manager/events', label: 'Eventos', icon: <CalendarDays className="mr-2 h-4 w-4" /> },
@@ -87,8 +87,11 @@ const ManagerLayout: React.FC = () => {
     
     // Add Admin Dashboard link if the user is an Admin Master
     if (isAdminMaster) {
-        navItems.splice(1, 0, { path: '/admin/dashboard', label: 'Dashboard Admin', icon: <Crown className="mr-2 h-4 w-4" /> });
+        allNavItems.splice(1, 0, { path: '/admin/dashboard', label: 'Dashboard Admin', icon: <Crown className="mr-2 h-4 w-4" /> });
     }
+    
+    // FILTRAGEM: Remove o item cuja rota é a rota atual
+    const navItems = allNavItems.filter(item => item.path !== location.pathname);
     
     const dashboardTitle = isAdminMaster && location.pathname.startsWith('/admin') ? 'ADMIN' : 'PRO';
     
@@ -121,7 +124,7 @@ const ManagerLayout: React.FC = () => {
                             <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-xs text-white">3</span>
                         </button>
                         
-                        {/* NOVO: Dropdown Menu para Gestor/Admin */}
+                        {/* Dropdown Menu para Gestor/Admin */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
@@ -142,35 +145,16 @@ const ManagerLayout: React.FC = () => {
                                     {userRoleDisplay}
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator className="bg-yellow-500/20" />
-                                {navItems.map(item => {
-                                    const isActive = location.pathname === item.path;
-                                    
-                                    // Se for a rota ativa, desabilita e muda o estilo
-                                    if (isActive) {
-                                        return (
-                                            <DropdownMenuItem 
-                                                key={item.path}
-                                                disabled
-                                                className="cursor-default bg-yellow-500/20 text-yellow-500 font-semibold opacity-100"
-                                            >
-                                                {item.icon}
-                                                {item.label}
-                                            </DropdownMenuItem>
-                                        );
-                                    }
-
-                                    // Se não for a rota ativa, permite a navegação normal
-                                    return (
-                                        <DropdownMenuItem 
-                                            key={item.path}
-                                            onClick={() => navigate(item.path)}
-                                            className="cursor-pointer hover:bg-yellow-500/10"
-                                        >
-                                            {item.icon}
-                                            {item.label}
-                                        </DropdownMenuItem>
-                                    );
-                                })}
+                                {navItems.map(item => (
+                                    <DropdownMenuItem 
+                                        key={item.path}
+                                        onClick={() => navigate(item.path)}
+                                        className="cursor-pointer hover:bg-yellow-500/10"
+                                    >
+                                        {item.icon}
+                                        {item.label}
+                                    </DropdownMenuItem>
+                                ))}
                                 <DropdownMenuSeparator className="bg-yellow-500/20" />
                                 <DropdownMenuItem 
                                     onClick={handleLogout} 
@@ -205,25 +189,16 @@ const ManagerLayout: React.FC = () => {
                                     </div>
                                     {/* Reutilizando navItems para o menu mobile */}
                                     <nav className="flex flex-col space-y-2">
-                                        {navItems.map(item => {
-                                            const isActive = location.pathname === item.path;
-                                            
-                                            return (
-                                                <button 
-                                                    key={item.path}
-                                                    onClick={() => navigate(item.path)} 
-                                                    disabled={isActive}
-                                                    className={`flex items-center p-3 rounded-xl transition-colors duration-200 text-lg ${
-                                                        isActive 
-                                                            ? 'bg-yellow-500/20 text-yellow-500 font-semibold cursor-default' 
-                                                            : 'text-white hover:bg-yellow-500/10'
-                                                    }`}
-                                                >
-                                                    {item.icon}
-                                                    {item.label}
-                                                </button>
-                                            );
-                                        })}
+                                        {navItems.map(item => (
+                                            <button 
+                                                key={item.path}
+                                                onClick={() => navigate(item.path)} 
+                                                className="flex items-center p-3 rounded-xl text-white hover:bg-yellow-500/10 transition-colors duration-200 text-lg"
+                                            >
+                                                {item.icon}
+                                                {item.label}
+                                            </button>
+                                        ))}
                                     </nav>
                                     <div className="border-t border-yellow-500/20 pt-4">
                                         <Button
