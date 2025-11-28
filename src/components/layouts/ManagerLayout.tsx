@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/use-profile';
 import { useUserType } from '@/hooks/use-user-type';
 import { showError } from '@/utils/toast';
+import { useManagerCompany } from '@/hooks/use-manager-company'; // Importando hook da empresa
 
 const ADMIN_USER_TYPE_ID = 1;
 const MANAGER_USER_TYPE_ID = 2;
@@ -27,18 +28,10 @@ const ManagerLayout: React.FC = () => {
 
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
     const { userTypeName, isLoadingUserType } = useUserType(profile?.tipo_usuario_id);
-
-    const handleLogout = async () => {
-        const { error } = await supabase.auth.signOut();
-        if (error) {
-            showError("Erro ao sair: " + error.message);
-        } else {
-            navigate('/');
-        }
-    };
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId); // Buscando dados da empresa
 
     // Redirect unauthenticated users to login
-    if (loadingSession || isLoadingProfile || isLoadingUserType) {
+    if (loadingSession || isLoadingProfile || isLoadingUserType || isLoadingCompany) {
         if (!userId && !loadingSession) {
             // Only redirect if trying to access a manager/admin route
             if (location.pathname.startsWith('/manager') || location.pathname.startsWith('/admin')) {
@@ -84,7 +77,15 @@ const ManagerLayout: React.FC = () => {
     
     const userName = profile?.first_name || 'Gestor';
     const userRole = userTypeName;
-
+    
+    // Determina o tipo de cadastro (PJ se for Gestor PRO e tiver empresa, PF se for Gestor PRO e não tiver empresa)
+    let registrationType = '';
+    if (userType === MANAGER_USER_TYPE_ID) {
+        registrationType = company ? 'PJ' : 'PF';
+    } else if (userType === ADMIN_USER_TYPE_ID) {
+        registrationType = 'MASTER';
+    }
+    
     const NavLinks: React.FC<{ onClick?: () => void }> = ({ onClick }) => (
         <nav className="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0">
             {navItems.map(item => {
@@ -128,8 +129,6 @@ const ManagerLayout: React.FC = () => {
                             Mazoy
                             <span className="ml-2 sm:ml-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black px-2 sm:px-3 py-0.5 rounded-lg text-xs sm:text-sm font-bold">{dashboardTitle}</span>
                         </Link>
-                        
-                        {/* O DropdownMenu de 'Ações Rápidas' foi removido daqui */}
                     </div>
                     <div className="flex items-center space-x-3 sm:space-x-4">
                         <button className="relative p-2 text-yellow-500 hover:bg-yellow-500/10 rounded-lg transition-colors cursor-pointer hidden sm:block">
@@ -186,10 +185,13 @@ const ManagerLayout: React.FC = () => {
                             </DropdownMenu>
                         )}
 
-                        {/* Informações do Usuário (Nome e Cargo) */}
-                        <div className="text-right hidden lg:block">
+                        {/* Informações do Usuário (Nome e Cargo) - AJUSTADO */}
+                        <div className="text-center hidden lg:block">
                             <div className="text-white font-semibold text-sm">{userName}</div>
-                            <div className="text-gray-400 text-xs">{userRole}</div>
+                            <div className="text-gray-400 text-xs">
+                                {userRole} 
+                                {registrationType && <span className="ml-1 text-yellow-500 font-bold">({registrationType})</span>}
+                            </div>
                         </div>
 
                         {/* Logout Button */}
@@ -218,7 +220,10 @@ const ManagerLayout: React.FC = () => {
                                         </div>
                                         <div>
                                             <div className="text-white font-semibold">{userName}</div>
-                                            <div className="text-gray-400 text-sm">{userRole}</div>
+                                            <div className="text-gray-400 text-sm">
+                                                {userRole}
+                                                {registrationType && <span className="ml-1 text-yellow-500 font-bold">({registrationType})</span>}
+                                            </div>
                                         </div>
                                     </div>
                                     <NavLinks onClick={() => {}} />
