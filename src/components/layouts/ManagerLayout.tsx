@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Menu, X, Loader2, Crown, LogOut, User, Settings, QrCode, BarChart3, CalendarDays } from 'lucide-react'; // Adicionado CalendarDays para Eventos
+import { Menu, X, Loader2, Crown, LogOut, User, Settings, QrCode, BarChart3, CalendarDays, ChevronDown } from 'lucide-react'; // Adicionado ChevronDown
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"; // Importado DropdownMenu
 import { supabase } from '@/integrations/supabase/client';
@@ -90,40 +90,6 @@ const ManagerLayout: React.FC = () => {
     const userName = profile?.first_name || 'Gestor';
     const userRole = userTypeName; // Usando o valor do hook useUserType
 
-    // Removendo NavLinks para desktop, pois será substituído pelo DropdownMenu
-    // const NavLinks: React.FC<{ onClick?: () => void }> = ({ onClick }) => (
-    //     <nav className="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0">
-    //         {navItems.map(item => {
-    //             let isActive = false;
-    //             if (item.path === '/') {
-    //                 isActive = location.pathname === '/';
-    //             } else if (item.path !== '#') {
-    //                 isActive = location.pathname.startsWith(item.path);
-    //             }
-    //             const isManagerDashboardActive = location.pathname === '/manager/dashboard' && item.path === '/manager/dashboard';
-    //             const isAdminDashboardActive = location.pathname === '/admin/dashboard' && item.path === '/admin/dashboard';
-    //             const isLinkActive = isActive || isManagerDashboardActive || isAdminDashboardActive;
-
-    //             return (
-    //                 <button 
-    //                     key={item.path}
-    //                     onClick={() => {
-    //                         if (item.path !== '#') navigate(item.path);
-    //                         if (onClick) onClick();
-    //                     }} 
-    //                     className={`transition-colors duration-300 cursor-pointer py-2 md:py-0 md:pb-1 text-left ${
-    //                         isLinkActive
-    //                         ? 'text-yellow-500 md:border-b-2 border-yellow-500 font-semibold' 
-    //                         : 'text-white hover:text-yellow-500'
-    //                     }`}
-    //                 >
-    //                     {item.label}
-    //                 </button>
-    //             );
-    //         })}
-    //     </nav>
-    // );
-
     return (
         <div className="min-h-screen bg-black text-white">
             <header className="fixed top-0 left-0 right-0 z-[100] bg-black/90 backdrop-blur-md border-b border-yellow-500/20">
@@ -136,7 +102,6 @@ const ManagerLayout: React.FC = () => {
                             Mazoy
                             <span className="ml-2 sm:ml-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black px-2 sm:px-3 py-0.5 rounded-lg text-xs sm:text-sm font-bold">{dashboardTitle}</span>
                         </div>
-                        {/* Removido NavLinks para desktop */}
                     </div>
                     <div className="flex items-center space-x-3 sm:space-x-4">
                         <button className="relative p-2 text-yellow-500 hover:bg-yellow-500/10 rounded-lg transition-colors cursor-pointer hidden sm:block">
