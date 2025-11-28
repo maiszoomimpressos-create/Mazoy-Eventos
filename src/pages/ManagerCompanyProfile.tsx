@@ -244,6 +244,11 @@ const ManagerCompanyProfile: React.FC = () => {
     const handleAddPartner = () => {
         alert("Funcionalidade de Adicionar Sócio em desenvolvimento. Será implementado um sistema de convite por e-mail.");
     };
+    
+    const handleAddCompany = () => {
+        // Redireciona para a tela de registro de empresa, indicando que é um novo cadastro
+        navigate('/manager/register/company', { state: { isNewCompany: true } });
+    };
 
     if (isFetchingUser || isLoadingProfile || isLoadingCompany) {
         return (
@@ -344,14 +349,24 @@ const ManagerCompanyProfile: React.FC = () => {
                                         <User className="h-5 w-5 mr-2 text-yellow-500" />
                                         Sócios Cadastrados
                                     </h3>
-                                    <Button 
-                                        onClick={handleAddPartner}
-                                        className="bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 text-sm h-9 px-4"
-                                        disabled={!company} // Desabilita se a empresa ainda não foi salva
-                                    >
-                                        <PlusCircle className="mr-2 h-4 w-4" />
-                                        Adicionar Sócio
-                                    </Button>
+                                    <div className="flex space-x-3">
+                                        <Button 
+                                            onClick={handleAddPartner}
+                                            className="bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 text-sm h-9 px-4"
+                                            disabled={!company} // Desabilita se a empresa ainda não foi salva
+                                        >
+                                            <PlusCircle className="mr-2 h-4 w-4" />
+                                            Adicionar Sócio
+                                        </Button>
+                                        <Button 
+                                            onClick={handleAddCompany}
+                                            variant="outline"
+                                            className="bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 text-sm h-9 px-4"
+                                        >
+                                            <Building className="mr-2 h-4 w-4" />
+                                            Adicionar Empresa
+                                        </Button>
+                                    </div>
                                 </div>
                                 
                                 {/* Lista de Sócios (Placeholder) */}
