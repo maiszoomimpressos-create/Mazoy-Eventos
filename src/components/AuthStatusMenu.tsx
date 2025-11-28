@@ -8,7 +8,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { useProfileStatus } from '@/hooks/use-profile-status';
 import { useProfile, ProfileData } from '@/hooks/use-profile';
 import NotificationBell from './NotificationBell';
-import { Shield, UserPlus, Crown, PlusCircle } from 'lucide-react'; // Adicionando PlusCircle de volta
+import { Shield, UserPlus, Crown, PlusCircle } from 'lucide-react';
 import { useUserType } from '@/hooks/use-user-type';
 
 const AuthStatusMenu: React.FC = () => {
@@ -57,7 +57,7 @@ const AuthStatusMenu: React.FC = () => {
         const initials = profile.first_name ? profile.first_name.charAt(0).toUpperCase() : 'U';
         const isManager = profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2;
         const isAdmin = profile.tipo_usuario_id === 1;
-        const isClient = profile.tipo_usuario_id === 3; // Reintroduzido: Verifica se é cliente
+        const isClient = profile.tipo_usuario_id === 3;
         
         const fullName = profile.first_name + (profile.last_name ? ` ${profile.last_name}` : '');
 
@@ -119,9 +119,9 @@ const AuthStatusMenu: React.FC = () => {
                                 </DropdownMenuItem>
                             </>
                         )}
-                        {isClient && ( // Reintroduzido: Botão "Criar Evento" para clientes
+                        {isClient && (
                             <DropdownMenuItem 
-                                onClick={() => navigate('/manager/register-flow')} {/* ATUALIZADO AQUI */}
+                                onClick={() => navigate('/manager/register-flow')}
                                 className="cursor-pointer hover:bg-yellow-500/10 text-yellow-500"
                             >
                                 <PlusCircle className="mr-2 h-4 w-4" />
