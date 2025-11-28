@@ -135,7 +135,10 @@ const ManagerLayout: React.FC = () => {
             <header className="fixed top-0 left-0 right-0 z-[100] bg-black/90 backdrop-blur-md border-b border-yellow-500/20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center space-x-4 sm:space-x-6">
-                        <div className="text-xl sm:text-2xl font-serif text-yellow-500 font-bold flex items-center">
+                        <div 
+                            className="text-xl sm:text-2xl font-serif text-yellow-500 font-bold flex items-center cursor-pointer"
+                            onClick={() => navigate('/')} // Adicionado onClick para navegar para a home
+                        >
                             Mazoy
                             <span className="ml-2 sm:ml-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black px-2 sm:px-3 py-0.5 rounded-lg text-xs sm:text-sm font-bold">{dashboardTitle}</span>
                         </div>

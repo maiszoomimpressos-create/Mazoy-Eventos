@@ -17,7 +17,10 @@ const ManagerIndividualRegister: React.FC = () => {
             </div>
             <div className="relative z-10 w-full max-w-sm sm:max-w-md">
                 <div className="text-center mb-6 sm:mb-8">
-                    <div className="text-3xl font-serif text-yellow-500 font-bold mb-2">
+                    <div 
+                        className="text-3xl font-serif text-yellow-500 font-bold mb-2 cursor-pointer"
+                        onClick={() => navigate('/')} // Adicionado onClick para navegar para a home
+                    >
                         Mazoy PRO
                     </div>
                     <h1 className="text-xl sm:text-2xl font-semibold text-white mb-2">Cadastro de Gestor (Pessoa Física)</h1>

@@ -16,7 +16,10 @@ const ManagerLogin: React.FC = () => {
             </div>
             <div className="relative z-10 w-full max-w-md">
                 <div className="text-center mb-8">
-                    <div className="text-3xl font-serif text-yellow-500 font-bold mb-2 flex items-center justify-center">
+                    <div 
+                        className="text-3xl font-serif text-yellow-500 font-bold mb-2 flex items-center justify-center cursor-pointer"
+                        onClick={() => navigate('/')} // Adicionado onClick para navegar para a home
+                    >
                         Mazoy
                         <span className="ml-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black px-3 py-1 rounded-lg text-sm font-bold">PRO</span>
                     </div>

@@ -174,7 +174,10 @@ const ManagerCompanyRegister: React.FC = () => {
         <div className="min-h-screen bg-black text-white flex items-center justify-center px-4 sm:px-6 py-12">
             <div className="relative z-10 w-full max-w-4xl">
                 <div className="text-center mb-6 sm:mb-8">
-                    <div className="text-3xl font-serif text-yellow-500 font-bold mb-2">
+                    <div 
+                        className="text-3xl font-serif text-yellow-500 font-bold mb-2 cursor-pointer"
+                        onClick={() => navigate('/')} // Adicionado onClick para navegar para a home
+                    >
                         Mazoy PRO
                     </div>
                     <h1 className="text-xl sm:text-2xl font-semibold text-white mb-2">Cadastro de Gestor (Pessoa Jurídica)</h1>
