@@ -395,7 +395,7 @@ const ManagerManageWristband: React.FC = () => {
                             {/* Aviso de Ação em Massa */}
                             {details.status === 'active' && (newStatus === 'lost' || newStatus === 'cancelled') && (
                                 <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-xs text-gray-300 flex items-start space-x-2">
-                                    <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0 text-red-400" />
+                                    <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                                     <p>
                                         Atenção: Mudar o status de uma pulseira ATIVA para {newStatus === 'lost' ? 'PERDIDA' : 'CANCELADA'} 
                                         resultará na desativação de TODAS as pulseiras deste evento, se nenhuma tiver sido vendida.
