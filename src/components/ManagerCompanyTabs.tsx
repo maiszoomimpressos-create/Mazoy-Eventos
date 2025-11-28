@@ -3,7 +3,7 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { User, Building, Mail, Phone, MapPin, Calendar } from 'lucide-react';
+import { User, Building, Mail, Phone, MapPin, Calendar, Plus } from 'lucide-react';
 import { ProfileData } from '@/hooks/use-profile';
 import { CompanyFormData } from './CompanyForm'; // Reutilizando o tipo de dados da empresa
 import { Button } from '@/components/ui/button';
@@ -119,14 +119,24 @@ const ManagerCompanyTabs: React.FC<ManagerCompanyTabsProps> = ({
                             </div>
                         </div>
 
-                        <Button
-                            onClick={() => navigate('/profile')}
-                            variant="outline"
-                            className="w-full bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer"
-                        >
-                            <User className="mr-2 h-5 w-5" />
-                            Editar Meus Dados Pessoais
-                        </Button>
+                        {/* Botões de Ação (Atualizados) */}
+                        <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 pt-4 border-t border-yellow-500/10">
+                            <Button
+                                onClick={() => navigate('/profile')}
+                                variant="outline"
+                                className="flex-1 bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 text-base font-semibold transition-all duration-300 cursor-pointer"
+                            >
+                                <User className="mr-2 h-5 w-5" />
+                                Editar Meus Dados Pessoais
+                            </Button>
+                            <Button
+                                onClick={() => alert('Funcionalidade de adicionar usuário em desenvolvimento.')}
+                                className="flex-1 bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-base font-semibold transition-all duration-300 cursor-pointer"
+                            >
+                                <Plus className="mr-2 h-5 w-5" />
+                                Adicionar Usuário
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
             </TabsContent>
