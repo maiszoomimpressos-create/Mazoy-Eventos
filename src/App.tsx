@@ -1,6 +1,5 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@tanstack/react-query";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
@@ -35,6 +34,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import ManagerRegister from "./pages/ManagerRegister";
 import ManagerIndividualRegister from "./pages/ManagerIndividualRegister";
 import ManagerCompanyRegister from "./pages/ManagerCompanyRegister";
+import { TooltipProvider } from "@/components/ui/tooltip"; // Importação corrigida
 
 const queryClient = new QueryClient();
 
