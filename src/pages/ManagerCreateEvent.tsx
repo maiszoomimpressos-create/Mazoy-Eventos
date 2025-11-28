@@ -18,10 +18,13 @@ import {
 import { categories } from '@/data/events';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, ArrowLeft, ImageOff } from 'lucide-react';
+import { Plus, ArrowLeft, ImageOff, Loader2, AlertTriangle } from 'lucide-react'; // Importando AlertTriangle e Loader2
 import { format } from 'date-fns';
 import { DatePicker } from '@/components/DatePicker';
 import ImageUploadPicker from '@/components/ImageUploadPicker'; // Importando o novo componente
+import { useProfileStatus } from '@/hooks/use-profile-status'; // Importando useProfileStatus
+import { useProfile } from '@/hooks/use-profile'; // Importando useProfile
+import { useManagerCompany } from '@/hooks/use-manager-company'; // Importando useManagerCompany
 
 // Define the structure for the form data
 interface EventFormData {
@@ -61,8 +64,8 @@ const ManagerCreateEvent: React.FC = () => {
     const [showWristbandModal, setShowWristbandModal] = useState(false);
     const [newEventId, setNewEventId] = useState<string | null>(null);
 
+    // Fetch current user ID
     useEffect(() => {
-        // Fetch current user ID
         supabase.auth.getUser().then(({ data: { user } }) => {
             if (user) {
                 setUserId(user.id);
@@ -73,6 +76,13 @@ const ManagerCreateEvent: React.FC = () => {
             }
         });
     }, [navigate]);
+
+    const { profile, isLoading: isLoadingProfile } = useProfile(userId);
+    const { needsPersonalProfileCompletion, needsCompanyProfile, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile);
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId);
+
+    const isProfileIncomplete = needsPersonalProfileCompletion || needsCompanyProfile;
+    const isPageLoading = isLoadingProfile || isLoadingProfileStatus || isLoadingCompany || !userId;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value, type } = e.target;
@@ -143,6 +153,11 @@ const ManagerCreateEvent: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isProfileIncomplete) {
+            showError("Por favor, complete seu perfil para criar eventos.");
+            return;
+        }
+
         const validationResult = validateForm();
         setFormErrors(validationResult.errors); // Atualiza o estado de erros
 
@@ -151,8 +166,8 @@ const ManagerCreateEvent: React.FC = () => {
             return;
         }
 
-        const toastId = showLoading("Publicando evento...");
         setIsLoading(true);
+        const toastId = showLoading("Publicando evento...");
 
         try {
             const { data, error } = await supabase
@@ -206,6 +221,15 @@ const ManagerCreateEvent: React.FC = () => {
         navigate('/manager/dashboard');
     };
 
+    if (isPageLoading) {
+        return (
+            <div className="max-w-4xl mx-auto px-4 sm:px-0 text-center py-20">
+                <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
+                <p className="text-gray-400">Carregando dados do gestor...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="max-w-4xl mx-auto px-4 sm:px-0">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
@@ -219,6 +243,24 @@ const ManagerCreateEvent: React.FC = () => {
                     Voltar ao Dashboard
                 </Button>
             </div>
+
+            {isProfileIncomplete && (
+                <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-xl mb-8 flex items-start space-x-3 animate-fadeInUp">
+                    <AlertTriangle className="h-5 w-5 mt-1 flex-shrink-0" />
+                    <div>
+                        <h3 className="font-semibold text-white mb-1">Perfil Incompleto!</h3>
+                        <p className="text-sm text-gray-300">
+                            {needsPersonalProfileCompletion && (
+                                <p className="mb-2">Seu perfil pessoal está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/profile')}>complete-o aqui</Button> para criar eventos.</p>
+                            )}
+                            {needsCompanyProfile && (
+                                <p>Seu perfil de empresa não está cadastrado. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/manager/settings/company-profile')}>preencha os dados da sua empresa</Button> para criar eventos.</p>
+                            )}
+                        </p>
+                        <p className="mt-2 text-sm text-white font-semibold">O formulário de criação de evento está desabilitado.</p>
+                    </div>
+                </div>
+            )}
 
             <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
                 <CardHeader>
@@ -238,6 +280,7 @@ const ManagerCreateEvent: React.FC = () => {
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                     isInvalid={!!formErrors.title} // Passa a prop de erro
                                     required
+                                    disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
                                 />
                                 {formErrors.title && <p className="text-red-400 text-xs mt-1">{formErrors.title}</p>}
                             </div>
@@ -251,6 +294,7 @@ const ManagerCreateEvent: React.FC = () => {
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                     isInvalid={!!formErrors.location} // Passa a prop de erro
                                     required
+                                    disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
                                 />
                                 {formErrors.location && <p className="text-red-400 text-xs mt-1">{formErrors.location}</p>}
                             </div>
@@ -267,6 +311,7 @@ const ManagerCreateEvent: React.FC = () => {
                                 className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                 isInvalid={!!formErrors.address} // Passa a prop de erro
                                 required
+                                disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
                             />
                             {formErrors.address && <p className="text-red-400 text-xs mt-1">{formErrors.address}</p>}
                         </div>
@@ -282,6 +327,7 @@ const ManagerCreateEvent: React.FC = () => {
                                 className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 min-h-[100px]"
                                 isInvalid={!!formErrors.description} // Passa a prop de erro
                                 required
+                                disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
                             />
                             {formErrors.description && <p className="text-red-400 text-xs mt-1">{formErrors.description}</p>}
                         </div>
@@ -294,7 +340,7 @@ const ManagerCreateEvent: React.FC = () => {
                                     userId={userId}
                                     currentImageUrl={formData.image_url}
                                     onImageUpload={handleImageUpload}
-                                    disabled={isLoading}
+                                    disabled={isLoading || isProfileIncomplete} // Desabilita se o perfil estiver incompleto
                                     width={550}
                                     height={380}
                                     placeholderText="Nenhuma imagem de banner selecionada."
@@ -313,6 +359,7 @@ const ManagerCreateEvent: React.FC = () => {
                                     setDate={handleDateChange}
                                     placeholder="DD/MM/AAAA ou Selecione"
                                     isInvalid={!!formErrors.date} // Passa a prop de erro
+                                    disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
                                 />
                                 {formErrors.date && <p className="text-red-400 text-xs mt-1">{formErrors.date}</p>}
                             </div>
@@ -326,12 +373,13 @@ const ManagerCreateEvent: React.FC = () => {
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                     isInvalid={!!formErrors.time} // Passa a prop de erro
                                     required
+                                    disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
                                 />
                                 {formErrors.time && <p className="text-red-400 text-xs mt-1">{formErrors.time}</p>}
                             </div>
                             <div>
                                 <label htmlFor="category" className="block text-sm font-medium text-white mb-2">Categoria *</label>
-                                <Select onValueChange={handleSelectChange} value={formData.category}>
+                                <Select onValueChange={handleSelectChange} value={formData.category} disabled={isProfileIncomplete}> {/* Desabilita se o perfil estiver incompleto */}
                                     <SelectTrigger 
                                         className="w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500"
                                         isInvalid={!!formErrors.category} // Passa a prop de erro
@@ -364,6 +412,7 @@ const ManagerCreateEvent: React.FC = () => {
                                     isInvalid={!!formErrors.capacity} // Passa a prop de erro
                                     min="1"
                                     required
+                                    disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Número máximo de pessoas permitidas.</p>
                                 {formErrors.capacity && <p className="text-red-400 text-xs mt-1">{formErrors.capacity}</p>}
@@ -379,6 +428,7 @@ const ManagerCreateEvent: React.FC = () => {
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                     isInvalid={!!formErrors.duration} // Passa a prop de erro
                                     required
+                                    disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Duração estimada do evento.</p>
                                 {formErrors.duration && <p className="text-red-400 text-xs mt-1">{formErrors.duration}</p>}
@@ -395,6 +445,7 @@ const ManagerCreateEvent: React.FC = () => {
                                     isInvalid={!!formErrors.min_age} // Passa a prop de erro
                                     min="0"
                                     required
+                                    disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Defina 0 para classificação livre.</p>
                                 {formErrors.min_age && <p className="text-red-400 text-xs mt-1">{formErrors.min_age}</p>}
@@ -403,7 +454,7 @@ const ManagerCreateEvent: React.FC = () => {
 
                         <Button
                             type="submit"
-                            disabled={isLoading || !userId}
+                            disabled={isLoading || !userId || isProfileIncomplete} // Desabilita se o perfil estiver incompleto
                             className="w-full bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
                         >
                             {isLoading ? (
