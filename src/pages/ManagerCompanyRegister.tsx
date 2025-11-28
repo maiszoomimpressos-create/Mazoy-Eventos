@@ -114,12 +114,6 @@ const ManagerCompanyRegister: React.FC = () => {
             return;
         }
         
-        // Validação do perfil do sócio antes de prosseguir
-        if (!profile || !isProfileComplete(profile)) {
-            showError("Seu perfil pessoal está incompleto. Por favor, preencha todos os dados essenciais do seu perfil antes de registrar a empresa.");
-            return;
-        }
-
         setIsSaving(true);
         const toastId = showLoading("Registrando empresa...");
 
@@ -141,38 +135,73 @@ const ManagerCompanyRegister: React.FC = () => {
         };
 
         try {
-            // 1. Insert new company profile
-            const { data: companyData, error: insertError } = await supabase
-                .from('companies')
-                .insert([dataToSave])
-                .select('id') // Select the newly created company ID
+            // 1. Insert new company profile (or update if migrating from PF)
+            let companyId: string;
+            
+            // Tenta buscar se já existe uma empresa associada (caso o usuário tenha vindo de /manager/settings)
+            const { data: existingCompanyAssociation } = await supabase
+                .from('user_companies')
+                .select('company_id')
+                .eq('user_id', userId)
+                .limit(1)
                 .single();
+                
+            if (existingCompanyAssociation) {
+                // Se já existe uma associação, atualiza a empresa existente
+                companyId = existingCompanyAssociation.company_id;
+                const { error: updateError } = await supabase
+                    .from('companies')
+                    .update(dataToSave)
+                    .eq('id', companyId);
+                
+                if (updateError) throw updateError;
+                
+            } else {
+                // Se não existe, insere uma nova empresa
+                const { data: companyData, error: insertError } = await supabase
+                    .from('companies')
+                    .insert([dataToSave])
+                    .select('id')
+                    .single();
 
-            if (insertError) {
-                if (insertError.code === '23505' && insertError.message.includes('cnpj')) {
-                    throw new Error("Este CNPJ já está cadastrado em outra conta.");
+                if (insertError) {
+                    if (insertError.code === '23505' && insertError.message.includes('cnpj')) {
+                        throw new Error("Este CNPJ já está cadastrado em outra conta.");
+                    }
+                    throw insertError;
                 }
-                throw insertError;
+                
+                companyId = companyData.id;
+
+                // 2. Associate the user as the primary owner in user_companies
+                const { error: associateError } = await supabase
+                    .from('user_companies')
+                    .insert({
+                        user_id: userId,
+                        company_id: companyId,
+                        role: 'owner',
+                        is_primary: true,
+                    });
+                    
+                if (associateError) {
+                    console.error("CRITICAL: Failed to associate user with company in user_companies:", associateError);
+                    throw new Error("Falha ao associar usuário à empresa. Tente novamente.");
+                }
             }
             
-            const newCompanyId = companyData.id;
+            // 3. Verificar se o perfil pessoal está completo
+            const profileIsComplete = profile && isProfileComplete(profile);
 
-            // 2. Associate the user as the primary owner in user_companies
-            const { error: associateError } = await supabase
-                .from('user_companies')
-                .insert({
-                    user_id: userId,
-                    company_id: newCompanyId,
-                    role: 'owner',
-                    is_primary: true,
-                });
+            if (!profileIsComplete) {
+                dismissToast(toastId);
+                showError("Empresa salva! Mas seu perfil pessoal (sócio) está incompleto. Complete-o para ativar sua conta PRO.");
                 
-            if (associateError) {
-                console.error("CRITICAL: Failed to associate user with company in user_companies:", associateError);
-                throw new Error("Falha ao associar usuário à empresa. Tente novamente.");
+                // Redireciona para o perfil pessoal para forçar a conclusão
+                navigate('/profile');
+                return;
             }
 
-            // 3. Update user's profile to set tipo_usuario_id to 2 (Gestor PRO)
+            // 4. Se o perfil estiver completo, finaliza o registro PRO
             const { error: updateProfileError } = await supabase
                 .from('profiles')
                 .update({ tipo_usuario_id: 2 })
@@ -180,11 +209,12 @@ const ManagerCompanyRegister: React.FC = () => {
 
             if (updateProfileError) {
                 console.error("Erro ao atualizar tipo de usuário no perfil:", updateProfileError);
-                // We proceed even if this fails, as the company is created and associated.
+                // Continua, mas avisa
+                showError("Aviso: Falha ao atualizar seu tipo de usuário. Recarregue a página.");
             }
 
             dismissToast(toastId);
-            showSuccess("Empresa registrada e perfil de gestor atualizado com sucesso!");
+            showSuccess("Empresa registrada e perfil de gestor ativado com sucesso!");
             navigate('/manager/dashboard');
 
         } catch (e: any) {
@@ -215,6 +245,8 @@ const ManagerCompanyRegister: React.FC = () => {
             </div>
         );
     }
+    
+    const profileIsCompleteStatus = profile && isProfileComplete(profile);
 
     return (
         <div className="max-w-4xl mx-auto px-4 sm:px-0 py-12">
@@ -257,13 +289,13 @@ const ManagerCompanyRegister: React.FC = () => {
                                     <User className="h-5 w-5 mr-2 text-yellow-500" />
                                     Dados do Sócio (Você)
                                 </h3>
-                                {!isProfileComplete(profile) && (
+                                {!profileIsCompleteStatus && (
                                     <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-xl flex items-start space-x-3 mb-4">
                                         <AlertTriangle className="h-5 w-5 mt-1 flex-shrink-0" />
                                         <div>
                                             <h4 className="font-semibold text-white mb-1">Perfil Pessoal Incompleto</h4>
                                             <p className="text-sm text-gray-300">
-                                                Para registrar sua empresa, seu perfil pessoal deve estar completo. Por favor, preencha todos os campos essenciais do seu perfil antes de registrar a empresa.
+                                                Seu perfil pessoal deve estar completo para finalizar o registro PRO. Por favor, preencha todos os campos essenciais do seu perfil.
                                             </p>
                                             <Button 
                                                 variant="link" 
@@ -302,18 +334,18 @@ const ManagerCompanyRegister: React.FC = () => {
                             <div className="pt-4 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                                 <Button
                                     type="submit"
-                                    disabled={isSaving || !isProfileComplete(profile)}
+                                    disabled={isSaving} // Permite salvar mesmo se o perfil estiver incompleto
                                     className="flex-1 bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
                                 >
                                     {isSaving ? (
                                         <div className="flex items-center justify-center">
                                             <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                                            Registrando...
+                                            Salvando Empresa...
                                         </div>
                                     ) : (
                                         <>
                                             <Building className="w-5 h-5 mr-2" />
-                                            Registrar Empresa
+                                            {profileIsCompleteStatus ? 'Finalizar Registro PRO' : 'Salvar Dados da Empresa'}
                                         </>
                                     )}
                                 </Button>
