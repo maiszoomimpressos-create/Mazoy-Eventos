@@ -45,7 +45,7 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
         staleTime: 1000 * 60 * 60, // Cache por 1 hora
         onError: (error) => {
             console.error(`Erro ao carregar termos e condições (${termsType}):`, error);
-            showError(`Erro ao carregar os termos e condições (${termsType}). Tente recarregar a página.`);
+            // Não exibe um toast de erro aqui, pois a UI já lida com isErrorTerms
         }
     });
 
@@ -149,8 +149,18 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
 
     const editorTitle = termsType === 'general' ? 'Termos e Condições Gerais' : 'Termos de Registro de Gestor';
 
-    if (isErrorTerms || !termsData) {
-        // Se não houver termos para o tipo, e for Admin Master, permite editar para criar
+    // Se ocorreu um erro real durante o fetch (não apenas 'no rows found')
+    if (isErrorTerms) {
+        return (
+            <div className="bg-red-500/20 border border-red-500/30 text-red-400 p-6 rounded-xl">
+                <h3 className="text-red-400 text-xl">Erro ao Carregar Termos</h3>
+                <p className="text-gray-400 text-sm">Não foi possível carregar os termos e condições devido a um erro. Por favor, tente novamente mais tarde.</p>
+            </div>
+        );
+    }
+
+    // Se não há dados de termos (e não houve erro de fetch)
+    if (!termsData) {
         if (isAdminMaster && !isEditing) {
             return (
                 <div className="bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 p-6 rounded-xl space-y-4">
@@ -166,11 +176,11 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
                     </Button>
                 </div>
             );
-        } else if (!isAdminMaster) {
+        } else { // Para usuários não-administradores quando os termos não são encontrados
             return (
-                <div className="bg-red-500/20 border border-red-500/30 text-red-400 p-6 rounded-xl">
-                    <h3 className="text-red-400 text-xl">Erro ao Carregar Termos</h3>
-                    <p className="text-gray-400 text-sm">Não foi possível carregar os termos e condições. Por favor, tente novamente mais tarde.</p>
+                <div className="bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 p-6 rounded-xl">
+                    <h3 className="text-white text-xl">{editorTitle} Pendente de Configuração</h3>
+                    <p className="text-gray-300 text-sm">Os termos e condições para este tipo de registro ainda não foram configurados por um administrador. Por favor, tente novamente mais tarde.</p>
                 </div>
             );
         }
@@ -202,7 +212,7 @@ const MultiLineEditor: React.FC<MultiLineEditorProps> = ({ onAgree, initialAgree
                             <>
                                 <Edit className="mr-2 h-4 w-4" />
                                 Editar Termos
-                            </>
+                            </F>
                         )}
                     </Button>
                 )}
