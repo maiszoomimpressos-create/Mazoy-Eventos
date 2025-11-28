@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Menu, X, Loader2, Crown } from 'lucide-react';
+import { Menu, X, Loader2, Crown, LogOut, User, Settings, QrCode, BarChart3, CalendarDays } from 'lucide-react'; // Adicionado CalendarDays para Eventos
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"; // Importado DropdownMenu
 import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/use-profile';
 import { useUserType } from '@/hooks/use-user-type';
@@ -71,64 +72,57 @@ const ManagerLayout: React.FC = () => {
     }
     
     const navItems = [
-        { path: '/', label: 'Home' },
-        { path: '/manager/dashboard', label: 'Dashboard PRO' },
-        { path: '/manager/events', label: 'Eventos' },
-        { path: '/manager/wristbands', label: 'Pulseiras' },
-        { path: '/manager/reports', label: 'Relatórios' },
-        { path: '/manager/settings', label: 'Configurações' },
+        { path: '/', label: 'Home', icon: <User className="mr-2 h-4 w-4" /> }, // Ícone genérico para Home
+        { path: '/manager/dashboard', label: 'Dashboard PRO', icon: <Crown className="mr-2 h-4 w-4" /> },
+        { path: '/manager/events', label: 'Eventos', icon: <CalendarDays className="mr-2 h-4 w-4" /> },
+        { path: '/manager/wristbands', label: 'Pulseiras', icon: <QrCode className="mr-2 h-4 w-4" /> },
+        { path: '/manager/reports', label: 'Relatórios', icon: <BarChart3 className="mr-2 h-4 w-4" /> },
+        { path: '/manager/settings', label: 'Configurações', icon: <Settings className="mr-2 h-4 w-4" /> },
     ];
     
     // Add Admin Dashboard link if the user is an Admin Master
     if (isAdminMaster) {
-        navItems.splice(1, 0, { path: '/admin/dashboard', label: 'Dashboard Admin' });
+        navItems.splice(1, 0, { path: '/admin/dashboard', label: 'Dashboard Admin', icon: <Crown className="mr-2 h-4 w-4" /> });
     }
     
     const dashboardTitle = isAdminMaster && location.pathname.startsWith('/admin') ? 'ADMIN' : 'PRO';
     
-    // Removendo a declaração duplicada de userRole
     const userName = profile?.first_name || 'Gestor';
     const userRole = userTypeName; // Usando o valor do hook useUserType
 
-    const NavLinks: React.FC<{ onClick?: () => void }> = ({ onClick }) => (
-        <nav className="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0">
-            {navItems.map(item => {
-                // Determine if the link is active based on the current path
-                let isActive = false;
-                
-                if (item.path === '/') {
-                    // Home is active only if the path is exactly '/'
-                    isActive = location.pathname === '/';
-                } else if (item.path !== '#') {
-                    // Other paths are active if the current path starts with them
-                    isActive = location.pathname.startsWith(item.path);
-                }
-                
-                // Special handling for Dashboard links to ensure only one is highlighted
-                const isManagerDashboardActive = location.pathname === '/manager/dashboard' && item.path === '/manager/dashboard';
-                const isAdminDashboardActive = location.pathname === '/admin/dashboard' && item.path === '/admin/dashboard';
-                
-                const isLinkActive = isActive || isManagerDashboardActive || isAdminDashboardActive;
+    // Removendo NavLinks para desktop, pois será substituído pelo DropdownMenu
+    // const NavLinks: React.FC<{ onClick?: () => void }> = ({ onClick }) => (
+    //     <nav className="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0">
+    //         {navItems.map(item => {
+    //             let isActive = false;
+    //             if (item.path === '/') {
+    //                 isActive = location.pathname === '/';
+    //             } else if (item.path !== '#') {
+    //                 isActive = location.pathname.startsWith(item.path);
+    //             }
+    //             const isManagerDashboardActive = location.pathname === '/manager/dashboard' && item.path === '/manager/dashboard';
+    //             const isAdminDashboardActive = location.pathname === '/admin/dashboard' && item.path === '/admin/dashboard';
+    //             const isLinkActive = isActive || isManagerDashboardActive || isAdminDashboardActive;
 
-                return (
-                    <button 
-                        key={item.path}
-                        onClick={() => {
-                            if (item.path !== '#') navigate(item.path);
-                            if (onClick) onClick();
-                        }} 
-                        className={`transition-colors duration-300 cursor-pointer py-2 md:py-0 md:pb-1 text-left ${
-                            isLinkActive
-                            ? 'text-yellow-500 md:border-b-2 border-yellow-500 font-semibold' 
-                            : 'text-white hover:text-yellow-500'
-                        }`}
-                    >
-                        {item.label}
-                    </button>
-                );
-            })}
-        </nav>
-    );
+    //             return (
+    //                 <button 
+    //                     key={item.path}
+    //                     onClick={() => {
+    //                         if (item.path !== '#') navigate(item.path);
+    //                         if (onClick) onClick();
+    //                     }} 
+    //                     className={`transition-colors duration-300 cursor-pointer py-2 md:py-0 md:pb-1 text-left ${
+    //                         isLinkActive
+    //                         ? 'text-yellow-500 md:border-b-2 border-yellow-500 font-semibold' 
+    //                         : 'text-white hover:text-yellow-500'
+    //                     }`}
+    //                 >
+    //                     {item.label}
+    //                 </button>
+    //             );
+    //         })}
+    //     </nav>
+    // );
 
     return (
         <div className="min-h-screen bg-black text-white">
@@ -137,35 +131,60 @@ const ManagerLayout: React.FC = () => {
                     <div className="flex items-center space-x-4 sm:space-x-6">
                         <div 
                             className="text-xl sm:text-2xl font-serif text-yellow-500 font-bold flex items-center cursor-pointer"
-                            onClick={() => navigate('/')} // Adicionado onClick para navegar para a home
+                            onClick={() => navigate('/')}
                         >
                             Mazoy
                             <span className="ml-2 sm:ml-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black px-2 sm:px-3 py-0.5 rounded-lg text-xs sm:text-sm font-bold">{dashboardTitle}</span>
                         </div>
-                        <div className="hidden md:block">
-                            <NavLinks />
-                        </div>
+                        {/* Removido NavLinks para desktop */}
                     </div>
                     <div className="flex items-center space-x-3 sm:space-x-4">
                         <button className="relative p-2 text-yellow-500 hover:bg-yellow-500/10 rounded-lg transition-colors cursor-pointer hidden sm:block">
                             <i className="fas fa-bell text-lg"></i>
                             <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-xs text-white">3</span>
                         </button>
-                        <div className="flex items-center space-x-3 hidden sm:flex">
-                            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center text-black font-bold text-sm">
-                                <Crown className="h-5 w-5" />
-                            </div>
-                            <div className="text-right hidden lg:block">
-                                <div className="text-white font-semibold text-sm">{userName}</div>
-                                <div className="text-gray-400 text-xs">{userRole}</div>
-                            </div>
-                        </div>
-                        <Button
-                            onClick={handleLogout}
-                            className="bg-transparent border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 transition-all duration-300 cursor-pointer px-3 py-1 h-8 text-sm hidden sm:block"
-                        >
-                            Sair
-                        </Button>
+                        
+                        {/* NOVO: Dropdown Menu para Gestor/Admin */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className="hidden md:flex items-center bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 transition-all duration-300 cursor-pointer px-4 py-2 h-10"
+                                >
+                                    <Crown className="h-5 w-5 mr-2" />
+                                    <span className="font-semibold">{userName}</span>
+                                    <span className="text-gray-400 text-xs ml-2 hidden lg:block">{userRole}</span>
+                                    <ChevronDown className="ml-2 h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56 bg-black/90 border border-yellow-500/30 text-white">
+                                <DropdownMenuLabel className="text-yellow-500 truncate max-w-[200px]">
+                                    {userName}
+                                </DropdownMenuLabel>
+                                <DropdownMenuLabel className="text-gray-400 text-xs pt-0">
+                                    {userRole}
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator className="bg-yellow-500/20" />
+                                {navItems.map(item => (
+                                    <DropdownMenuItem 
+                                        key={item.path}
+                                        onClick={() => navigate(item.path)}
+                                        className="cursor-pointer hover:bg-yellow-500/10"
+                                    >
+                                        {item.icon}
+                                        {item.label}
+                                    </DropdownMenuItem>
+                                ))}
+                                <DropdownMenuSeparator className="bg-yellow-500/20" />
+                                <DropdownMenuItem 
+                                    onClick={handleLogout} 
+                                    className="cursor-pointer hover:bg-red-500/10 text-red-400"
+                                >
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    Sair
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
 
                         {/* Mobile Menu Trigger */}
                         <Sheet>
@@ -188,13 +207,25 @@ const ManagerLayout: React.FC = () => {
                                             <div className="text-gray-400 text-sm">{userRole}</div>
                                         </div>
                                     </div>
-                                    <NavLinks onClick={() => {}} />
+                                    {/* Reutilizando navItems para o menu mobile */}
+                                    <nav className="flex flex-col space-y-2">
+                                        {navItems.map(item => (
+                                            <button 
+                                                key={item.path}
+                                                onClick={() => navigate(item.path)} 
+                                                className="flex items-center p-3 rounded-xl text-white hover:bg-yellow-500/10 transition-colors duration-200 text-lg"
+                                            >
+                                                {item.icon}
+                                                {item.label}
+                                            </button>
+                                        ))}
+                                    </nav>
                                     <div className="border-t border-yellow-500/20 pt-4">
                                         <Button
                                             onClick={handleLogout}
                                             className="w-full justify-start bg-transparent border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 transition-all duration-300 cursor-pointer"
                                         >
-                                            <i className="fas fa-sign-out-alt mr-2"></i>
+                                            <LogOut className="mr-2 h-5 w-5" />
                                             Sair
                                         </Button>
                                     </div>
