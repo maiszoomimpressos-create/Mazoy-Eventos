@@ -6,6 +6,7 @@ import MobileMenu from '@/components/MobileMenu';
 import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/use-profile';
 import { Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils'; // Importando cn para classes condicionais
 
 const MIN_LOADING_TIME_MS = 1000; // Tempo mínimo em milissegundos para exibir o loader
 
@@ -74,7 +75,7 @@ const ClientLayout: React.FC = () => {
                     </div>
                 </div>
             </header>
-            <main className="pt-20">
+            <main className={cn("pt-20", !showDelayedLoader && "animate-fadeIn")}>
                 <Outlet />
             </main>
         </div>

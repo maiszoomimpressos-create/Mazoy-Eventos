@@ -10,6 +10,7 @@ import { useUserType } from '@/hooks/use-user-type';
 import { showError } from '@/utils/toast';
 import { useProfileStatus } from '@/hooks/use-profile-status'; // Import useProfileStatus
 import { useManagerCompany } from '@/hooks/use-manager-company'; // Import useManagerCompany
+import { cn } from '@/lib/utils'; // Importando cn para classes condicionais
 
 const ADMIN_USER_TYPE_ID = 1;
 const MANAGER_PRO_USER_TYPE_ID = 2;
@@ -104,6 +105,7 @@ const ManagerLayout: React.FC = () => {
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
             </div>
         );
+    );
     }
     
     const navItems = [
@@ -268,7 +270,7 @@ const ManagerLayout: React.FC = () => {
                     </div>
                 </div>
             </header>
-            <main className="pt-20 p-4 sm:p-6">
+            <main className={cn("pt-20 p-4 sm:p-6", !showDelayedLoader && "animate-fadeIn")}>
                 <Outlet />
             </main>
         </div>
