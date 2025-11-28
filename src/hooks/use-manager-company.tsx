@@ -11,18 +11,29 @@ interface CompanyData {
 const fetchCompanyId = async (userId: string): Promise<CompanyData | null> => {
     if (!userId) return null;
 
+    // Busca a empresa associada ao usuário logado através da tabela user_companies
+    // Assumimos que o gestor PRO (tipo 2) está associado a uma empresa principal (is_primary = true)
     const { data, error } = await supabase
-        .from('companies')
-        .select('id, cnpj, corporate_name')
+        .from('user_companies')
+        .select(`
+            company_id,
+            companies (id, cnpj, corporate_name)
+        `)
         .eq('user_id', userId)
+        .eq('is_primary', true) // Foca na empresa principal do gestor
+        .limit(1)
         .single();
 
     if (error && error.code !== 'PGRST116') { // PGRST116 = No rows found
-        console.error("Error fetching company ID:", error);
+        console.error("Error fetching company ID via user_companies:", error);
         throw new Error(error.message);
     }
     
-    return data as CompanyData;
+    if (data && data.companies) {
+        return data.companies as CompanyData;
+    }
+    
+    return null;
 };
 
 export const useManagerCompany = (userId: string | undefined) => {
@@ -33,7 +44,7 @@ export const useManagerCompany = (userId: string | undefined) => {
         staleTime: 1000 * 60 * 5, // 5 minutes
         onError: (error) => {
             console.error("Query Error: Failed to load company data.", error);
-            showError("Erro ao carregar dados da empresa. Verifique se o Perfil da Empresa está cadastrado.");
+            // Removido o toast de erro aqui, pois a ausência de empresa é um estado esperado para PF
         }
     });
 
