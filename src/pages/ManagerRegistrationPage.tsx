@@ -77,10 +77,14 @@ const ManagerRegistrationPage: React.FC = () => {
         const toastId = showLoading("Atualizando seu perfil para Gestor PRO...");
 
         let newTipoUsuarioId: number;
+        let redirectToPath: string;
+
         if (selectedType === 'individual') {
             newTipoUsuarioId = MANAGER_PRO_USER_TYPE_ID;
-        } else {
+            redirectToPath = '/manager/events/create';
+        } else { // 'legal_entity'
             newTipoUsuarioId = MANAGER_LEGAL_ENTITY_USER_TYPE_ID;
+            redirectToPath = '/manager/settings/company-profile'; // Redireciona para o perfil da empresa
         }
 
         try {
@@ -99,7 +103,7 @@ const ManagerRegistrationPage: React.FC = () => {
             // Invalida a query do perfil para que o useProfile recarregue com o novo tipo de usuário
             queryClient.invalidateQueries({ queryKey: ['profile', userId] });
             
-            navigate('/manager/events/create', { replace: true });
+            navigate(redirectToPath, { replace: true });
 
         } catch (e: any) {
             dismissToast(toastId);
