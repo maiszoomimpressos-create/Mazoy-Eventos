@@ -96,7 +96,7 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
         if (isLoading) return;
 
         if (!profile) {
-            // If no profile, it's not a manager or not logged in, so no special status needed.
+            console.log("[ProfileStatus] No profile data available. Assuming complete for non-logged-in/non-manager.");
             setStatus({ isComplete: true, hasPendingNotifications: false, loading: false, needsCompanyProfile: false, needsPersonalProfileCompletion: false });
             return;
         }
@@ -107,19 +107,22 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
             let needsCompanyProfile = false;
             let needsPersonalProfileCompletion = false;
 
+            console.log(`[ProfileStatus] Checking profile for user ${profile.id}, type: ${profile.tipo_usuario_id}`);
+
             // Check personal profile completeness for ALL users (clients and managers)
             for (const field of ESSENTIAL_PERSONAL_PROFILE_FIELDS) {
                 const value = profile[field as keyof ProfileData];
                 if (isValueEmpty(value)) {
                     isComplete = false;
                     needsPersonalProfileCompletion = true;
-                    console.log(`[ProfileStatus] Personal profile incomplete: Missing field '${field}'`);
+                    console.log(`[ProfileStatus] Personal profile incomplete: Missing field '${field}' (Value: '${value}')`);
                     break;
                 }
             }
 
             // If it's a Manager PRO (tipo_usuario_id = 2), also check for company profile
             if (profile.tipo_usuario_id === 2) {
+                console.log("[ProfileStatus] User is Manager PRO. Checking company profile...");
                 const { data: companyData, error: companyError } = await supabase
                     .from('companies')
                     .select('*')
@@ -129,10 +132,11 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
                 if (companyError && companyError.code !== 'PGRST116') {
                     console.error("[ProfileStatus] Error fetching company data:", companyError);
                     isComplete = false; // Treat as incomplete if there's an error fetching company data
+                    needsCompanyProfile = true; // Assume company profile is needed due to fetch error
                 } else if (!companyData || companyData.length === 0) {
                     needsCompanyProfile = true;
                     isComplete = false;
-                    console.log("[ProfileStatus] Manager PRO needs to create company profile.");
+                    console.log("[ProfileStatus] Manager PRO needs to create company profile (no company found).");
                 } else {
                     // Check company profile fields if company exists
                     const companyProfile = companyData[0];
@@ -140,26 +144,43 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
                         const value = companyProfile[field as keyof typeof companyProfile];
                         if (isValueEmpty(value)) {
                             isComplete = false;
-                            console.log(`[ProfileStatus] Manager company profile incomplete: Missing field '${field}'`);
+                            needsCompanyProfile = true; // Mark as needing company profile completion
+                            console.log(`[ProfileStatus] Manager company profile incomplete: Missing field '${field}' (Value: '${value}')`);
                             break;
                         }
+                    }
+                    if (!needsCompanyProfile) {
+                        console.log("[ProfileStatus] Manager company profile is complete.");
                     }
                 }
             }
             // For Admin Master (tipo_usuario_id = 1), personal profile is checked above.
             // Company profile is optional for Admin Master, so no additional check here.
+            else if (profile.tipo_usuario_id === 1) {
+                console.log("[ProfileStatus] User is Admin Master. Company profile is optional.");
+            }
+
 
             // Check for manager system notifications (independent of profile completeness)
             if (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2) {
                 hasPendingNotifications = await checkManagerSystemNotifications(profile.id);
+                if (hasPendingNotifications) {
+                    console.log("[ProfileStatus] Manager has system notifications.");
+                }
             }
             
             // If personal profile is incomplete, always set hasPendingNotifications to true
+            // This ensures the bell icon shows up and prompts the user to complete the profile
             if (needsPersonalProfileCompletion || needsCompanyProfile) {
                 hasPendingNotifications = true;
+                console.log("[ProfileStatus] Setting hasPendingNotifications to TRUE due to incomplete profile.");
             }
 
-            console.log(`[ProfileStatus] Final State - Profile Complete: ${isComplete}. Needs Personal: ${needsPersonalProfileCompletion}. Needs Company: ${needsCompanyProfile}. Notifications Active: ${hasPendingNotifications}`);
+            console.log(`[ProfileStatus] Final State - User ID: ${profile.id}, Type: ${profile.tipo_usuario_id}`);
+            console.log(`[ProfileStatus]   isComplete: ${isComplete}`);
+            console.log(`[ProfileStatus]   needsPersonalProfileCompletion: ${needsPersonalProfileCompletion}`);
+            console.log(`[ProfileStatus]   needsCompanyProfile: ${needsCompanyProfile}`);
+            console.log(`[ProfileStatus]   hasPendingNotifications: ${hasPendingNotifications}`);
 
             setStatus({
                 isComplete: isComplete,
