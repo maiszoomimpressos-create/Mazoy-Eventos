@@ -174,19 +174,14 @@ const Profile: React.FC = () => {
         // Só executa se todos os dados de carregamento estiverem prontos e o perfil estiver disponível
         if (!loading && !statusLoading && profile) {
             // Se o perfil pessoal está completo e não há notificações pendentes
-            if (!hasPendingNotifications) { // needsCompanyProfile sempre será falso agora
+            if (!hasPendingNotifications) { 
+                // Se o perfil está completo, apenas garante que não estamos no modo de edição
                 if (isEditing) {
                     setIsEditing(false);
                 }
-                showSuccess("Seu perfil está completo!");
-                // Redireciona com base no tipo de usuário
-                if (profile.tipo_usuario_id === 3) { // Cliente
-                    navigate('/', { replace: true });
-                } else if (profile.tipo_usuario_id === 2) { // Gestor PRO
-                    navigate('/manager/dashboard', { replace: true });
-                } else if (profile.tipo_usuario_id === 1) { // Admin Master
-                    navigate('/admin/dashboard', { replace: true });
-                }
+                // showSuccess("Seu perfil está completo!"); // Removido para evitar spam de toast
+                // Removido: Redirecionamento automático quando o perfil está completo
+                // O usuário pode querer ver ou editar o perfil completo.
                 return;
             }
 
@@ -194,7 +189,6 @@ const Profile: React.FC = () => {
             if (needsPersonalProfileCompletion && !isEditing) {
                 setIsEditing(true);
             }
-            // Removido: Lógica de redirecionamento para perfil da empresa incompleto
         }
     }, [loading, statusLoading, profile, isEditing, hasPendingNotifications, needsPersonalProfileCompletion, navigate]);
 
@@ -237,7 +231,7 @@ const Profile: React.FC = () => {
     // Funções de formatação no input
     const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const formattedCpf = formatCPF(e.target.value);
-        form.setValue('cpf', formattedCpf, { shouldValidate: true });
+        form.setValue('cpf', formattedCpc, { shouldValidate: true });
     };
 
     const handleRgChange = (e: React.ChangeEvent<HTMLInputElement>) => {
