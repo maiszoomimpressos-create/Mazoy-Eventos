@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Loader2, QrCode, Tag, AlertTriangle, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useManagerWristbands, WristbandData } from '@/hooks/use-manager-wristbands';
+import { useManagerCompany } from '@/hooks/use-manager-company'; // Importando o hook da empresa
 
 const ManagerWristbandsList: React.FC = () => {
     const navigate = useNavigate();
@@ -18,8 +19,14 @@ const ManagerWristbandsList: React.FC = () => {
             setUserId(user?.id);
         });
     }, []);
+    
+    // 1. Obter o ID da empresa do gestor
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId);
 
-    const { wristbands, isLoading, isError, invalidateWristbands } = useManagerWristbands(userId);
+    // 2. Usar o ID da empresa para buscar as pulseiras
+    const { wristbands, isLoading: isLoadingWristbands, isError, invalidateWristbands } = useManagerWristbands(company?.id);
+
+    const isLoading = isLoadingCompany || isLoadingWristbands;
 
     const filteredWristbands = wristbands.filter(wristband =>
         wristband.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -60,6 +67,24 @@ const ManagerWristbandsList: React.FC = () => {
             <div className="max-w-7xl mx-auto text-center py-20">
                 <Loader2 className="h-8 w-8 animate-spin text-yellow-500 mx-auto mb-4" />
                 <p className="text-gray-400">Verificando autenticação...</p>
+            </div>
+        );
+    }
+    
+    if (!company && !isLoading) {
+        return (
+            <div className="max-w-7xl mx-auto px-4 sm:px-0 text-center py-20">
+                <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-6 rounded-xl mb-8">
+                    <i className="fas fa-exclamation-triangle text-2xl mb-3"></i>
+                    <h3 className="font-semibold text-white mb-2">Perfil da Empresa Necessário</h3>
+                    <p className="text-sm">Você precisa cadastrar o Perfil da Empresa antes de gerenciar pulseiras.</p>
+                    <Button 
+                        onClick={() => navigate('/manager/settings/company-profile')}
+                        className="mt-4 bg-yellow-500 text-black hover:bg-yellow-600"
+                    >
+                        Ir para Perfil da Empresa
+                    </Button>
+                </div>
             </div>
         );
     }

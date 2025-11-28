@@ -16,14 +16,14 @@ export interface WristbandData {
     } | null;
 }
 
-const fetchManagerWristbands = async (userId: string): Promise<WristbandData[]> => {
-    if (!userId) {
-        console.warn("Attempted to fetch wristbands without a userId.");
+const fetchManagerWristbands = async (companyId: string): Promise<WristbandData[]> => {
+    if (!companyId) {
+        console.warn("Attempted to fetch wristbands without a companyId.");
         return [];
     }
 
     // A RLS garante que apenas as pulseiras da empresa do gestor logado serão retornadas.
-    // Fazemos um join com a tabela 'events' para obter o título do evento.
+    // Adicionamos um filtro explícito por company_id para maior segurança e clareza.
     const { data, error } = await supabase
         .from('wristbands')
         .select(`
@@ -35,6 +35,7 @@ const fetchManagerWristbands = async (userId: string): Promise<WristbandData[]> 
             event_id,
             events (title)
         `)
+        .eq('company_id', companyId) // FILTRO ADICIONADO AQUI
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -45,23 +46,23 @@ const fetchManagerWristbands = async (userId: string): Promise<WristbandData[]> 
     return data as WristbandData[];
 };
 
-export const useManagerWristbands = (userId: string | undefined) => {
+export const useManagerWristbands = (companyId: string | undefined) => {
     const queryClient = useQueryClient();
 
     const query = useQuery({
-        queryKey: ['managerWristbands', userId],
-        queryFn: () => fetchManagerWristbands(userId!),
-        enabled: !!userId,
+        queryKey: ['managerWristbands', companyId],
+        queryFn: () => fetchManagerWristbands(companyId!),
+        enabled: !!companyId, // Só executa se tiver o companyId
         staleTime: 1000 * 30, // 30 seconds
         onError: (error) => {
             console.error("Query Error:", error);
-            showError("Erro ao carregar lista de pulseiras. Tente recarregar a página.");
+            showError("Erro ao carregar lista de pulseiras. Verifique se o Perfil da Empresa está cadastrado.");
         }
     });
 
     return {
         ...query,
         wristbands: query.data || [],
-        invalidateWristbands: () => queryClient.invalidateQueries({ queryKey: ['managerWristbands', userId] }),
+        invalidateWristbands: () => queryClient.invalidateQueries({ queryKey: ['managerWristbands', companyId] }),
     };
 };
