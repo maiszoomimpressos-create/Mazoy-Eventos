@@ -105,7 +105,6 @@ const ManagerLayout: React.FC = () => {
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
             </div>
         );
-    );
     }
     
     const navItems = [
