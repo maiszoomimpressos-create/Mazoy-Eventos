@@ -10,6 +10,7 @@ import { useProfile, ProfileData } from '@/hooks/use-profile';
 import NotificationBell from './NotificationBell';
 import { Shield } from 'lucide-react'; // Importando ícone para Admin
 import { useUserType } from '@/hooks/use-user-type'; // Importando novo hook
+import { useManagerCompany } from '@/hooks/use-manager-company'; // NOVO: Importando hook da empresa
 
 const AuthStatusMenu: React.FC = () => {
     const navigate = useNavigate();
@@ -37,8 +38,12 @@ const AuthStatusMenu: React.FC = () => {
     
     const { hasPendingNotifications, loading: statusLoading } = useProfileStatus(profile, isLoadingProfile);
     
-    // Novo: Obtém o nome do tipo de usuário
-    const { userTypeName, isLoadingUserType } = useUserType(profile?.tipo_usuario_id);
+    // Obtém o nome base do tipo de usuário
+    const { userTypeName: baseUserTypeName, isLoadingUserType } = useUserType(profile?.tipo_usuario_id);
+    
+    // NOVO: Busca dados da empresa se for Gestor PRO (tipo 2)
+    const isManagerPro = profile?.tipo_usuario_id === 2;
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(isManagerPro ? userId : undefined);
 
     const handleLogout = async () => {
         const { error } = await supabase.auth.signOut();
@@ -50,7 +55,7 @@ const AuthStatusMenu: React.FC = () => {
         }
     };
 
-    if (loadingSession || isLoadingProfile || statusLoading || isLoadingUserType) {
+    if (loadingSession || isLoadingProfile || statusLoading || isLoadingUserType || (isManagerPro && isLoadingCompany)) {
         // Pode retornar um Skeleton ou null durante o carregamento inicial
         return <div className="w-10 h-10 bg-yellow-500/20 rounded-full animate-pulse"></div>;
     }
@@ -58,11 +63,17 @@ const AuthStatusMenu: React.FC = () => {
     if (session && profile) {
         const initials = profile.first_name ? profile.first_name.charAt(0).toUpperCase() : 'U';
         const isManager = profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2;
-        const isClient = profile.tipo_usuario_id === 3; // Novo: Verifica se é Cliente
+        const isClient = profile.tipo_usuario_id === 3;
         const isAdmin = profile.tipo_usuario_id === 1; 
         
-        // Combina primeiro e último nome (se disponível)
         const fullName = profile.first_name + (profile.last_name ? ` ${profile.last_name}` : '');
+        
+        let userRoleDisplay = baseUserTypeName;
+        if (isManagerPro) {
+            // Se for Gestor PRO (tipo 2), verifica se tem empresa
+            userRoleDisplay = company?.id ? `${baseUserTypeName} (PJ)` : `${baseUserTypeName} (PF)`;
+        }
+
 
         return (
             <div className="flex items-center space-x-4">
@@ -87,7 +98,7 @@ const AuthStatusMenu: React.FC = () => {
                             {fullName}
                         </DropdownMenuLabel>
                         <DropdownMenuLabel className="text-gray-400 text-xs pt-0">
-                            {userTypeName}
+                            {userRoleDisplay}
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator className="bg-yellow-500/20" />
                         <DropdownMenuItem 

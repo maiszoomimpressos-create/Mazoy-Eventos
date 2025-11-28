@@ -8,6 +8,9 @@ import { useProfileStatus } from '@/hooks/use-profile-status';
 import { useProfile } from '@/hooks/use-profile';
 import { useUserType } from '@/hooks/use-user-type'; // Importando novo hook
 import { showSuccess, showError } from '@/utils/toast';
+import { useManagerCompany } from '@/hooks/use-manager-company'; // NOVO: Importando hook da empresa
+
+const MANAGER_USER_TYPE_ID = 2;
 
 const MobileMenu: React.FC = () => {
     const navigate = useNavigate();
@@ -34,7 +37,14 @@ const MobileMenu: React.FC = () => {
     const userId = session?.user?.id;
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
     const { hasPendingNotifications, loading: statusLoading } = useProfileStatus(profile, isLoadingProfile);
-    const { userTypeName, isLoadingUserType } = useUserType(profile?.tipo_usuario_id); // Novo: Obtém o nome do tipo de usuário
+    
+    // Obtém o nome base do tipo de usuário
+    const { userTypeName: baseUserTypeName, isLoadingUserType } = useUserType(profile?.tipo_usuario_id); 
+    
+    // NOVO: Busca dados da empresa se for Gestor PRO (tipo 2)
+    const isManagerPro = profile?.tipo_usuario_id === MANAGER_USER_TYPE_ID;
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(isManagerPro ? userId : undefined);
+
 
     const handleNavigation = (path: string) => {
         setIsOpen(false);
@@ -58,11 +68,17 @@ const MobileMenu: React.FC = () => {
         { path: '/#contato', label: 'Contato', icon: 'fas fa-envelope' },
     ];
 
-    const isUserLoading = loadingSession || isLoadingProfile || statusLoading || isLoadingUserType;
+    const isUserLoading = loadingSession || isLoadingProfile || statusLoading || isLoadingUserType || (isManagerPro && isLoadingCompany);
     const isLoggedIn = session && profile;
     const isManager = isLoggedIn && (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2);
     
     const fullName = profile?.first_name + (profile?.last_name ? ` ${profile.last_name}` : '');
+    
+    let userRoleDisplay = baseUserTypeName;
+    if (isManagerPro) {
+        userRoleDisplay = company?.id ? `${baseUserTypeName} (PJ)` : `${baseUserTypeName} (PF)`;
+    }
+
 
     return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -93,7 +109,7 @@ const MobileMenu: React.FC = () => {
                                 </div>
                                 <div className="min-w-0">
                                     <div className="text-white font-semibold truncate">{fullName || 'Usuário'}</div>
-                                    <div className="text-gray-400 text-sm truncate">{userTypeName}</div>
+                                    <div className="text-gray-400 text-sm truncate">{userRoleDisplay}</div>
                                 </div>
                             </div>
 

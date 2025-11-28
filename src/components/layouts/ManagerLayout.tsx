@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Menu, X, Loader2, Crown, LogOut, User, Settings, QrCode, BarChart3, CalendarDays, ChevronDown } from 'lucide-react'; // Adicionado ChevronDown
+import { Menu, X, Loader2, Crown, LogOut, User, Settings, QrCode, BarChart3, CalendarDays, ChevronDown } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"; // Importado DropdownMenu
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/use-profile';
 import { useUserType } from '@/hooks/use-user-type';
 import { showError } from '@/utils/toast';
+import { useManagerCompany } from '@/hooks/use-manager-company'; // NOVO: Importando hook da empresa
 
 const ADMIN_USER_TYPE_ID = 1;
 const MANAGER_USER_TYPE_ID = 2;
@@ -26,7 +27,12 @@ const ManagerLayout: React.FC = () => {
     }, []);
 
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
-    const { userTypeName, isLoadingUserType } = useUserType(profile?.tipo_usuario_id);
+    const { userTypeName: baseUserTypeName, isLoadingUserType } = useUserType(profile?.tipo_usuario_id);
+    
+    // NOVO: Busca dados da empresa se for Gestor PRO (tipo 2)
+    const isManagerPro = profile?.tipo_usuario_id === MANAGER_USER_TYPE_ID;
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(isManagerPro ? userId : undefined);
+
 
     const handleLogout = async () => {
         const { error } = await supabase.auth.signOut();
@@ -38,7 +44,7 @@ const ManagerLayout: React.FC = () => {
     };
 
     // Redirect unauthenticated users to login
-    if (loadingSession || isLoadingProfile || isLoadingUserType) {
+    if (loadingSession || isLoadingProfile || isLoadingUserType || (isManagerPro && isLoadingCompany)) {
         if (!userId && !loadingSession) {
             // Only redirect if trying to access a manager/admin route
             if (location.pathname.startsWith('/manager') || location.pathname.startsWith('/admin')) {
@@ -88,7 +94,14 @@ const ManagerLayout: React.FC = () => {
     const dashboardTitle = isAdminMaster && location.pathname.startsWith('/admin') ? 'ADMIN' : 'PRO';
     
     const userName = profile?.first_name || 'Gestor';
-    const userRole = userTypeName; // Usando o valor do hook useUserType
+    
+    let userRoleDisplay = baseUserTypeName;
+    if (isManagerPro) {
+        userRoleDisplay = company?.id ? `${baseUserTypeName} (PJ)` : `${baseUserTypeName} (PF)`;
+    } else {
+        userRoleDisplay = baseUserTypeName;
+    }
+
 
     return (
         <div className="min-h-screen bg-black text-white">
@@ -118,7 +131,7 @@ const ManagerLayout: React.FC = () => {
                                 >
                                     <Crown className="h-5 w-5 mr-2" />
                                     <span className="font-semibold">{userName}</span>
-                                    <span className="text-gray-400 text-xs ml-2 hidden lg:block">{userRole}</span>
+                                    <span className="text-gray-400 text-xs ml-2 hidden lg:block">{userRoleDisplay}</span>
                                     <ChevronDown className="ml-2 h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
@@ -127,7 +140,7 @@ const ManagerLayout: React.FC = () => {
                                     {userName}
                                 </DropdownMenuLabel>
                                 <DropdownMenuLabel className="text-gray-400 text-xs pt-0">
-                                    {userRole}
+                                    {userRoleDisplay}
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator className="bg-yellow-500/20" />
                                 {navItems.map(item => (
@@ -169,7 +182,7 @@ const ManagerLayout: React.FC = () => {
                                         </div>
                                         <div>
                                             <div className="text-white font-semibold">{userName}</div>
-                                            <div className="text-gray-400 text-sm">{userRole}</div>
+                                            <div className="text-gray-400 text-sm">{userRoleDisplay}</div>
                                         </div>
                                     </div>
                                     {/* Reutilizando navItems para o menu mobile */}
