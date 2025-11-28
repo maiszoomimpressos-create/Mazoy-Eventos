@@ -13,7 +13,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import AuthStatusMenu from '@/components/AuthStatusMenu';
 import AvatarUpload from '@/components/AvatarUpload';
-import { useProfileStatus, isValueEmpty } from '@/hooks/use-profile-status';
+import { useProfileStatus, isValueEmpty, ESSENTIAL_PERSONAL_PROFILE_FIELDS } from '@/hooks/use-profile-status'; // Importando ESSENTIAL_PERSONAL_PROFILE_FIELDS
 import { useProfile, ProfileData } from '@/hooks/use-profile';
 import { useQueryClient } from '@tanstack/react-query';
 import TermsAndConditionsDialog from '@/components/TermsAndConditionsDialog';
@@ -169,6 +169,13 @@ const Profile: React.FC = () => {
         }
     }, [profile, form]);
 
+    // Ativa o modo de edição automaticamente se o perfil estiver incompleto
+    useEffect(() => {
+        if (!loading && hasPendingNotifications && profile) {
+            setIsEditing(true);
+        }
+    }, [loading, hasPendingNotifications, profile]);
+
 
     // Função para buscar endereço via ViaCEP
     const fetchAddressByCep = async (cep: string) => {
@@ -316,10 +323,40 @@ const Profile: React.FC = () => {
     };
 
     // Helper para verificar se um campo está faltando para a notificação de perfil incompleto
-    const isFieldMissingForNotification = (fieldName: keyof ProfileData) => {
-        if (!profile || !hasPendingNotifications) return false;
-        const value = profile[fieldName];
-        return isValueEmpty(value);
+    const getMissingFieldsMessage = () => {
+        if (!profile || !hasPendingNotifications) return '';
+
+        const missingFields: string[] = [];
+        const fieldLabels: { [key: string]: string } = {
+            first_name: 'Nome',
+            last_name: 'Sobrenome',
+            birth_date: 'Data de Nascimento',
+            gender: 'Gênero',
+            cpf: 'CPF',
+            cep: 'CEP',
+            rua: 'Rua',
+            bairro: 'Bairro',
+            cidade: 'Cidade',
+            estado: 'Estado',
+            numero: 'Número',
+            complemento: 'Complemento',
+        };
+
+        for (const fieldName of ESSENTIAL_PERSONAL_PROFILE_FIELDS) {
+            const value = profile[fieldName as keyof ProfileData];
+            if (isValueEmpty(value)) {
+                missingFields.push(fieldLabels[fieldName] || fieldName);
+            }
+        }
+
+        if (missingFields.length === 0) {
+            return '';
+        } else if (missingFields.length === 1) {
+            return `O campo "${missingFields[0]}" está faltando.`;
+        } else {
+            const lastField = missingFields.pop();
+            return `Os campos "${missingFields.join('", "')}" e "${lastField}" estão faltando.`;
+        }
     };
 
     if (loading) {
@@ -356,6 +393,7 @@ const Profile: React.FC = () => {
     }
 
     const initials = profile?.first_name ? profile.first_name.charAt(0).toUpperCase() : 'U';
+    const missingFieldsMessage = getMissingFieldsMessage();
 
     return (
         <div className="min-h-screen bg-black text-white">
@@ -396,7 +434,7 @@ const Profile: React.FC = () => {
                             <div>
                                 <h3 className="font-semibold text-white mb-1">Atenção: Perfil Incompleto</h3>
                                 <p className="text-sm">
-                                    Por favor, preencha todos os campos essenciais do seu perfil para liberar todas as funcionalidades.
+                                    {missingFieldsMessage || "Por favor, preencha todos os campos essenciais do seu perfil para liberar todas as funcionalidades."}
                                 </p>
                             </div>
                         </div>
@@ -434,7 +472,7 @@ const Profile: React.FC = () => {
                                                                     placeholder="Seu nome" 
                                                                     {...field} 
                                                                     disabled={!isEditing} 
-                                                                    isInvalid={!!form.formState.errors.first_name || (isEditing && isFieldMissingForNotification('first_name'))}
+                                                                    isInvalid={!!form.formState.errors.first_name || (isEditing && isValueEmpty(profile?.first_name))}
                                                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
                                                                 />
                                                             </FormControl>
@@ -453,7 +491,7 @@ const Profile: React.FC = () => {
                                                                     placeholder="Seu sobrenome" 
                                                                     {...field} 
                                                                     disabled={!isEditing} 
-                                                                    isInvalid={!!form.formState.errors.last_name || (isEditing && isFieldMissingForNotification('last_name'))}
+                                                                    isInvalid={!!form.formState.errors.last_name || (isEditing && isValueEmpty(profile?.last_name))}
                                                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
                                                                 />
                                                             </FormControl>
@@ -486,7 +524,7 @@ const Profile: React.FC = () => {
                                                                     {...field} 
                                                                     onChange={handleCpfChange}
                                                                     disabled={!isEditing} 
-                                                                    isInvalid={!!form.formState.errors.cpf || (isEditing && isFieldMissingForNotification('cpf'))}
+                                                                    isInvalid={!!form.formState.errors.cpf || (isEditing && isValueEmpty(profile?.cpf))}
                                                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
                                                                     maxLength={14}
                                                                 />
@@ -507,7 +545,7 @@ const Profile: React.FC = () => {
                                                                     {...field} 
                                                                     onChange={handleRgChange}
                                                                     disabled={!isEditing} 
-                                                                    isInvalid={!!form.formState.errors.rg || (isEditing && isFieldMissingForNotification('rg'))}
+                                                                    isInvalid={!!form.formState.errors.rg || (isEditing && isValueEmpty(profile?.rg))}
                                                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
                                                                     maxLength={12}
                                                                 />
@@ -530,7 +568,7 @@ const Profile: React.FC = () => {
                                                                     type="date" 
                                                                     {...field} 
                                                                     disabled={!isEditing} 
-                                                                    isInvalid={!!form.formState.errors.birth_date || (isEditing && isFieldMissingForNotification('birth_date'))}
+                                                                    isInvalid={!!form.formState.errors.birth_date || (isEditing && isValueEmpty(profile?.birth_date))}
                                                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
                                                                 />
                                                             </FormControl>
@@ -551,7 +589,7 @@ const Profile: React.FC = () => {
                                                             >
                                                                 <FormControl>
                                                                     <SelectTrigger 
-                                                                        isInvalid={!!form.formState.errors.gender || (isEditing && isFieldMissingForNotification('gender'))}
+                                                                        isInvalid={!!form.formState.errors.gender || (isEditing && isValueEmpty(profile?.gender))}
                                                                         className="w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed"
                                                                     >
                                                                         <SelectValue placeholder="Selecione seu gênero" />
@@ -590,7 +628,7 @@ const Profile: React.FC = () => {
                                                                         {...field} 
                                                                         onChange={handleCepChange}
                                                                         disabled={!isEditing || isCepLoading} 
-                                                                        isInvalid={!!form.formState.errors.cep || (isEditing && isFieldMissingForNotification('cep'))}
+                                                                        isInvalid={!!form.formState.errors.cep || (isEditing && isValueEmpty(profile?.cep))}
                                                                         className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed pr-10" 
                                                                         maxLength={9}
                                                                     />
@@ -621,7 +659,7 @@ const Profile: React.FC = () => {
                                                                         placeholder="Ex: Av. Paulista" 
                                                                         {...field} 
                                                                         disabled={!isEditing || isCepLoading} 
-                                                                        isInvalid={!!form.formState.errors.rua || (isEditing && isFieldMissingForNotification('rua'))}
+                                                                        isInvalid={!!form.formState.errors.rua || (isEditing && isValueEmpty(profile?.rua))}
                                                                         className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
                                                                     />
                                                                 </FormControl>
@@ -642,7 +680,7 @@ const Profile: React.FC = () => {
                                                                     placeholder="123" 
                                                                     {...field} 
                                                                     disabled={!isEditing || isCepLoading} 
-                                                                    isInvalid={!!form.formState.errors.numero || (isEditing && isFieldMissingForNotification('numero'))}
+                                                                    isInvalid={!!form.formState.errors.numero || (isEditing && isValueEmpty(profile?.numero))}
                                                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
                                                                 />
                                                             </FormControl>
@@ -663,7 +701,7 @@ const Profile: React.FC = () => {
                                                                 placeholder="Apto 101, Bloco B" 
                                                                 {...field} 
                                                                 disabled={!isEditing || isCepLoading} 
-                                                                isInvalid={!!form.formState.errors.complemento || (isEditing && isFieldMissingForNotification('complemento'))}
+                                                                isInvalid={!!form.formState.errors.complemento || (isEditing && isValueEmpty(profile?.complemento))}
                                                                 className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
                                                             />
                                                         </FormControl>
@@ -685,7 +723,7 @@ const Profile: React.FC = () => {
                                                                         placeholder="Jardim Paulista" 
                                                                         {...field} 
                                                                         disabled={!isEditing || isCepLoading} 
-                                                                        isInvalid={!!form.formState.errors.bairro || (isEditing && isFieldMissingForNotification('bairro'))}
+                                                                        isInvalid={!!form.formState.errors.bairro || (isEditing && isValueEmpty(profile?.bairro))}
                                                                         className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
                                                                     />
                                                                 </FormControl>
@@ -705,7 +743,7 @@ const Profile: React.FC = () => {
                                                                     placeholder="São Paulo" 
                                                                     {...field} 
                                                                     disabled={!isEditing || isCepLoading} 
-                                                                    isInvalid={!!form.formState.errors.cidade || (isEditing && isFieldMissingForNotification('cidade'))}
+                                                                    isInvalid={!!form.formState.errors.cidade || (isEditing && isValueEmpty(profile?.cidade))}
                                                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
                                                                 />
                                                             </FormControl>
@@ -724,7 +762,7 @@ const Profile: React.FC = () => {
                                                                     placeholder="SP" 
                                                                     {...field} 
                                                                     disabled={!isEditing || isCepLoading} 
-                                                                    isInvalid={!!form.formState.errors.estado || (isEditing && isFieldMissingForNotification('estado'))}
+                                                                    isInvalid={!!form.formState.errors.estado || (isEditing && isValueEmpty(profile?.estado))}
                                                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
                                                                 />
                                                             </FormControl>
