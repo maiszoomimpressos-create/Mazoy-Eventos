@@ -25,7 +25,7 @@ export const isValueEmpty = (value: any): boolean => {
 };
 
 // Essential fields for ANY user's personal profile (client or manager)
-const ESSENTIAL_PERSONAL_PROFILE_FIELDS = [
+export const ESSENTIAL_PERSONAL_PROFILE_FIELDS = [
     'first_name', 'last_name', 'cpf', 'birth_date', 'gender',
     'cep', 'rua', 'bairro', 'cidade', 'estado', 'numero', 'complemento' // RG é opcional
 ];
