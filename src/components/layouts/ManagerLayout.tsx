@@ -1,23 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Outlet, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Menu, X, Loader2, Crown, LayoutDashboard, CalendarCheck, PlusCircle, QrCode, Settings, LogOut } from 'lucide-react'; // Importando LogOut
+import { Menu, X, Loader2, Crown, LayoutDashboard, CalendarCheck, PlusCircle, QrCode, Settings, LogOut } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/use-profile';
 import { useUserType } from '@/hooks/use-user-type';
-import { showError, showSuccess } from '@/utils/toast'; // Importando showSuccess
-import { useManagerCompany } from '@/hooks/use-manager-company'; // Importando hook da empresa
+import { showError } from '@/utils/toast';
+import { useProfileStatus } from '@/hooks/use-profile-status';
+import { useManagerCompany } from '@/hooks/use-manager-company';
+import { cn } from '@/lib/utils';
 
 const ADMIN_USER_TYPE_ID = 1;
-const MANAGER_USER_TYPE_ID = 2;
+const MANAGER_PRO_USER_TYPE_ID = 2;
+const MIN_LOADING_TIME_MS = 1000;
 
 const ManagerLayout: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [userId, setUserId] = useState<string | undefined>(undefined);
     const [loadingSession, setLoadingSession] = useState(true);
+    const [showDelayedLoader, setShowDelayedLoader] = useState(true);
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
@@ -28,45 +32,65 @@ const ManagerLayout: React.FC = () => {
 
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
     const { userTypeName, isLoadingUserType } = useUserType(profile?.tipo_usuario_id);
-    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId); // Buscando dados da empresa
+    const { isComplete: isProfileFullyComplete, loading: isLoadingProfileStatus, needsPersonalProfileCompletion, needsCompanyProfile } = useProfileStatus(profile, isLoadingProfile); 
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId, profile?.tipo_usuario_id);
 
     const handleLogout = async () => {
         const { error } = await supabase.auth.signOut();
         if (error) {
             showError("Erro ao sair: " + error.message);
         } else {
-            showSuccess("Sessão encerrada com sucesso.");
             navigate('/');
         }
     };
 
-    // Redirect unauthenticated users to login
-    if (loadingSession || isLoadingProfile || isLoadingUserType || isLoadingCompany) {
-        if (!userId && !loadingSession) {
-            // Only redirect if trying to access a manager/admin route
-            if (location.pathname.startsWith('/manager') || location.pathname.startsWith('/admin')) {
-                navigate('/manager/login');
-            }
+    const isLoadingCombined = loadingSession || isLoadingProfile || isLoadingUserType || isLoadingProfileStatus || isLoadingCompany;
+
+    useEffect(() => {
+        if (isLoadingCombined) {
+            setShowDelayedLoader(true);
+        } else {
+            const timer = setTimeout(() => {
+                setShowDelayedLoader(false);
+            }, MIN_LOADING_TIME_MS);
+            return () => clearTimeout(timer);
         }
-        // If loading, show spinner
+    }, [isLoadingCombined]);
+
+
+    const userType = profile?.tipo_usuario_id;
+    const isManager = userType === ADMIN_USER_TYPE_ID || userType === MANAGER_PRO_USER_TYPE_ID;
+    const isAdminMaster = userType === ADMIN_USER_TYPE_ID;
+
+    // Pages where profile completion is allowed/expected
+    const isProfileCompletionPage = location.pathname === '/profile'; 
+
+    useEffect(() => {
+        if (isLoadingCombined) return;
+
+        if (!userId) {
+            if (location.pathname.startsWith('/manager') || location.pathname.startsWith('/admin')) {
+                navigate('/manager/login', { replace: true });
+            }
+            return;
+        }
+
+        if (!isManager) {
+            if (location.pathname.startsWith('/manager') || location.pathname.startsWith('/admin')) {
+                navigate('/', { replace: true });
+            }
+            return;
+        }
+        
+    }, [isLoadingCombined, userId, isManager, userType, navigate, location.pathname]);
+
+
+    if (isLoadingCombined || showDelayedLoader) {
         return (
             <div className="min-h-screen bg-black text-white flex items-center justify-center">
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
             </div>
         );
-    }
-    
-    // Check if user is authorized (Admin or Manager)
-    const userType = profile?.tipo_usuario_id;
-    const isManager = userType === ADMIN_USER_TYPE_ID || userType === MANAGER_USER_TYPE_ID;
-    const isAdminMaster = userType === ADMIN_USER_TYPE_ID;
-
-    if (!isManager) {
-        // If the user is logged in but not a manager/admin (e.g., client type 3), redirect them
-        if (location.pathname.startsWith('/manager') || location.pathname.startsWith('/admin')) {
-            navigate('/');
-            return null;
-        }
     }
     
     const navItems = [
@@ -78,7 +102,6 @@ const ManagerLayout: React.FC = () => {
         { path: '/manager/settings', label: 'Configurações' },
     ];
     
-    // Add Admin Dashboard link if the user is an Admin Master
     if (isAdminMaster) {
         navItems.splice(1, 0, { path: '/admin/dashboard', label: 'Dashboard Admin' });
     }
@@ -87,22 +110,12 @@ const ManagerLayout: React.FC = () => {
     
     const userName = profile?.first_name || 'Gestor';
     const userRole = userTypeName;
-    
-    // Determina o tipo de cadastro (PJ se for Gestor PRO e tiver empresa, PF se for Gestor PRO e não tiver empresa)
-    let registrationType = '';
-    if (userType === MANAGER_USER_TYPE_ID) {
-        registrationType = company ? 'PJ' : 'PF';
-    } else if (userType === ADMIN_USER_TYPE_ID) {
-        registrationType = 'MASTER';
-    }
-    
+
     const NavLinks: React.FC<{ onClick?: () => void }> = ({ onClick }) => (
         <nav className="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0">
             {navItems.map(item => {
-                // Verifica se o caminho atual começa com o caminho do item para considerar ativo
                 const isLinkActive = location.pathname.startsWith(item.path) && (item.path !== '/' || location.pathname === '/');
 
-                // Se o link for para a página atual, não renderiza o botão
                 if (isLinkActive) {
                     return (
                         <span 
@@ -146,7 +159,6 @@ const ManagerLayout: React.FC = () => {
                             <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-xs text-white">3</span>
                         </button>
                         
-                        {/* NOVO: Botão 'Gestor PRO' agora é um DropdownMenu */}
                         {isManager && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -195,16 +207,11 @@ const ManagerLayout: React.FC = () => {
                             </DropdownMenu>
                         )}
 
-                        {/* Informações do Usuário (Nome e Cargo) - AJUSTADO */}
-                        <div className="text-center hidden lg:block">
+                        <div className="text-right hidden lg:block">
                             <div className="text-white font-semibold text-sm">{userName}</div>
-                            <div className="text-gray-400 text-xs">
-                                {userRole} 
-                                {registrationType && <span className="ml-1 text-yellow-500 font-bold">({registrationType})</span>}
-                            </div>
+                            <div className="text-gray-400 text-xs">{userRole}</div>
                         </div>
 
-                        {/* Logout Button */}
                         <Button
                             onClick={handleLogout}
                             className="bg-transparent border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 transition-all duration-300 cursor-pointer px-3 py-1 h-8 text-sm hidden sm:block"
@@ -212,7 +219,6 @@ const ManagerLayout: React.FC = () => {
                             Sair
                         </Button>
 
-                        {/* Mobile Menu Trigger */}
                         <Sheet>
                             <SheetTrigger asChild>
                                 <Button variant="ghost" size="icon" className="md:hidden text-yellow-500 hover:bg-yellow-500/10">
@@ -230,10 +236,7 @@ const ManagerLayout: React.FC = () => {
                                         </div>
                                         <div>
                                             <div className="text-white font-semibold">{userName}</div>
-                                            <div className="text-gray-400 text-sm">
-                                                {userRole}
-                                                {registrationType && <span className="ml-1 text-yellow-500 font-bold">({registrationType})</span>}
-                                            </div>
+                                            <div className="text-gray-400 text-sm">{userRole}</div>
                                         </div>
                                     </div>
                                     <NavLinks onClick={() => {}} />
@@ -252,7 +255,7 @@ const ManagerLayout: React.FC = () => {
                     </div>
                 </div>
             </header>
-            <main className="pt-20 p-4 sm:p-6">
+            <main className={cn("pt-20 p-4 sm:p-6", !showDelayedLoader && "animate-fadeIn")}>
                 <Outlet />
             </main>
         </div>

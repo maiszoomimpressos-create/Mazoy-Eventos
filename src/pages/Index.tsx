@@ -64,9 +64,9 @@ const Index: React.FC = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const totalPages = Math.ceil(filteredEventsBySearch.length / EVENTS_PER_PAGE);
 
-    // CORRIGIDO: Redireciona para a tela de detalhes do evento
+    // CORRIGIDO: Redireciona para a tela de finalização de compra
     const handleEventClick = (event: PublicEvent) => {
-        navigate(`/events/${event.id}`);
+        navigate(`/finalizar-compra`, { state: { eventId: event.uuid } }); // Usando o UUID do evento
     };
     
     const handleApplyFilters = () => {
@@ -342,6 +342,7 @@ const Index: React.FC = () => {
                                                             </span>
                                                         </div>
                                                         <Button
+                                                            onClick={(e) => { e.stopPropagation(); handleEventClick(event); }}
                                                             className="bg-yellow-500 text-black hover:bg-yellow-600 transition-all duration-300 cursor-pointer px-4 sm:px-6"
                                                         >
                                                             Ver Detalhes
@@ -474,8 +475,7 @@ const Index: React.FC = () => {
                                 </a>
                                 <a href="#" className="text-yellow-500 hover:text-yellow-600 transition-colors cursor-pointer">
                                     <i className="fab fa-linkedin text-xl sm:text-2xl"></i>
-                                </a
-                            >
+                                </a>
                             </div>
                         </div>
                     </div>

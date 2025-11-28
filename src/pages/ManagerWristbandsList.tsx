@@ -73,7 +73,7 @@ const ManagerWristbandsList: React.FC = () => {
         return (
             <div className="text-red-400 text-center py-10 flex flex-col items-center">
                 <AlertTriangle className="h-10 w-10 mb-4" />
-                Erro ao carregar pulseiras. Verifique se o Perfil da Empresa está cadastrado corretamente.
+                Erro ao carregar pulseiras. Tente recarregar a página.
             </div>
         );
     }

@@ -2,11 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Settings, User, CreditCard, Bell, Loader2, Building } from 'lucide-react';
+import { Settings, User, CreditCard, Bell, Loader2, Building2 } from 'lucide-react'; 
 import { useProfile } from '@/hooks/use-profile';
 import { supabase } from '@/integrations/supabase/client';
 import { useManagerCompany } from '@/hooks/use-manager-company';
-import ManagerProfileEditDialog from '@/components/ManagerProfileEditDialog'; // Importando o novo modal
 
 const ADMIN_MASTER_USER_TYPE_ID = 1;
 const MANAGER_PRO_USER_TYPE_ID = 2;
@@ -15,65 +14,39 @@ const ManagerSettings: React.FC = () => {
     const navigate = useNavigate();
     const [userId, setUserId] = useState<string | undefined>(undefined);
     const [loadingSession, setLoadingSession] = useState(true);
-    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false); // Novo estado para o modal PF
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
             setUserId(user?.id);
-            setLoadingSession(false); // Define como falso após tentar obter o usuário
+            setLoadingSession(false);
         });
     }, []);
 
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
-    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId);
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId, profile?.tipo_usuario_id);
 
-    // Combinando todos os estados de carregamento
     const isLoadingCombined = loadingSession || isLoadingProfile || isLoadingCompany;
 
     const isAdminMaster = profile?.tipo_usuario_id === ADMIN_MASTER_USER_TYPE_ID;
     const isManagerPro = profile?.tipo_usuario_id === MANAGER_PRO_USER_TYPE_ID;
-    
-    // Determina se o gestor PRO é PF (Tipo 2 e sem empresa associada)
-    const isManagerPF = isManagerPro && !company;
-
-    let profileSettingsOption = null;
-    if (isManagerPF) {
-        profileSettingsOption = { 
-            icon: <User className="h-6 w-6 text-yellow-500" />, 
-            title: "Perfil do Gestor (PF)", 
-            description: "Atualize seus dados pessoais como gestor individual.", 
-            action: () => setIsProfileModalOpen(true) // Abre o modal
-        };
-    } else if (isManagerPro && company) {
-        profileSettingsOption = { 
-            icon: <Building className="h-6 w-6 text-yellow-500" />, 
-            title: "Perfil da Empresa", 
-            description: "Atualize informações de contato e dados corporativos.", 
-            path: "/manager/settings/company-profile" 
-        };
-    } else if (isAdminMaster) {
-        // Admin Master pode ter uma empresa, mas o foco principal é o perfil da empresa se existir
-        if (company) {
-            profileSettingsOption = { 
-                icon: <Building className="h-6 w-6 text-yellow-500" />, 
-                title: "Perfil da Empresa", 
-                description: "Atualize informações de contato e dados corporativos.", 
-                path: "/manager/settings/company-profile" 
-            };
-        } else {
-            // Se Admin Master não tiver empresa, ele pode editar o perfil pessoal
-            profileSettingsOption = { 
-                icon: <User className="h-6 w-6 text-yellow-500" />, 
-                title: "Perfil Pessoal (Admin)", 
-                description: "Atualize seus dados pessoais.", 
-                action: () => navigate('/profile') // Redireciona para a tela de perfil padrão
-            };
-        }
-    }
 
     const settingsOptions = [];
-    if (profileSettingsOption) {
-        settingsOptions.push(profileSettingsOption);
+    
+    settingsOptions.push({ 
+        icon: <User className="h-6 w-6 text-yellow-500" />, 
+        title: "Perfil Pessoal", 
+        description: "Atualize seus dados pessoais e informações de contato.", 
+        path: "/profile" 
+    });
+    
+    // Adiciona Perfil da Empresa para todos os gestores (tipo 1 e 2)
+    if (isAdminMaster || isManagerPro) {
+        settingsOptions.push({ 
+            icon: <Building2 className="h-6 w-6 text-yellow-500" />, 
+            title: "Perfil da Empresa (PJ)", 
+            description: "Gerencie CNPJ, Razão Social e endereço corporativo.", 
+            path: "/manager/settings/company-profile" 
+        });
     }
     
     settingsOptions.push(
@@ -85,7 +58,7 @@ const ManagerSettings: React.FC = () => {
         settingsOptions.push({ icon: <Settings className="h-6 w-6 text-yellow-500" />, title: "Configurações Avançadas", description: "Ajustes de sistema, segurança e integrações.", path: "/manager/settings/advanced" });
     }
 
-    if (isLoadingCombined) { // Usando a variável combinada
+    if (isLoadingCombined) {
         return (
             <div className="max-w-7xl mx-auto text-center py-20">
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
@@ -93,14 +66,6 @@ const ManagerSettings: React.FC = () => {
             </div>
         );
     }
-    
-    const handleCardClick = (option: typeof settingsOptions[0]) => {
-        if (option.path) {
-            navigate(option.path);
-        } else if (option.action) {
-            option.action();
-        }
-    };
 
     return (
         <div className="max-w-7xl mx-auto pt-8">
@@ -114,7 +79,7 @@ const ManagerSettings: React.FC = () => {
                     <Card 
                         key={index}
                         className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6 hover:border-yellow-500/60 hover:shadow-2xl hover:shadow-yellow-500/20 transition-all duration-300 cursor-pointer"
-                        onClick={() => handleCardClick(option)}
+                        onClick={() => option.path !== '#' ? navigate(option.path) : alert(`Funcionalidade ${option.title} em desenvolvimento.`)}
                     >
                         <CardHeader className="p-0 mb-4">
                             <div className="flex items-center space-x-4">
@@ -153,16 +118,6 @@ const ManagerSettings: React.FC = () => {
                     </Button>
                 </div>
             </div>
-            
-            {/* Modal de Edição de Perfil PF */}
-            {isManagerPF && (
-                <ManagerProfileEditDialog
-                    isOpen={isProfileModalOpen}
-                    onClose={() => setIsProfileModalOpen(false)}
-                    profile={profile}
-                    userId={userId}
-                />
-            )}
         </div>
     );
 };
