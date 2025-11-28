@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Form } from '@/components/ui/form';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
-import { Loader2, Building, ArrowLeft, User, AlertTriangle } from 'lucide-react';
+import { Loader2, Building, ArrowLeft, User, AlertTriangle, PlusCircle } from 'lucide-react';
 import CompanyForm, { companySchema, CompanyFormData } from '@/components/CompanyForm';
 import { useProfile } from '@/hooks/use-profile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -240,6 +240,10 @@ const ManagerCompanyProfile: React.FC = () => {
             setIsSaving(false);
         }
     };
+    
+    const handleAddPartner = () => {
+        alert("Funcionalidade de Adicionar Sócio em desenvolvimento. Será implementado um sistema de convite por e-mail.");
+    };
 
     if (isFetchingUser || isLoadingProfile || isLoadingCompany) {
         return (
@@ -335,17 +339,58 @@ const ManagerCompanyProfile: React.FC = () => {
                         </TabsContent>
                         <TabsContent value="partners" className="mt-6">
                             <div className="space-y-6">
-                                <h3 className="text-xl font-semibold text-white border-b border-yellow-500/10 pb-2 flex items-center">
-                                    <User className="h-5 w-5 mr-2 text-yellow-500" />
-                                    Dados do Sócio Principal (Você)
-                                </h3>
+                                <div className="flex justify-between items-center border-b border-yellow-500/10 pb-2">
+                                    <h3 className="text-xl font-semibold text-white flex items-center">
+                                        <User className="h-5 w-5 mr-2 text-yellow-500" />
+                                        Sócios Cadastrados
+                                    </h3>
+                                    <Button 
+                                        onClick={handleAddPartner}
+                                        className="bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 text-sm h-9 px-4"
+                                        disabled={!company} // Desabilita se a empresa ainda não foi salva
+                                    >
+                                        <PlusCircle className="mr-2 h-4 w-4" />
+                                        Adicionar Sócio
+                                    </Button>
+                                </div>
+                                
+                                {/* Lista de Sócios (Placeholder) */}
+                                <div className="space-y-4">
+                                    {/* Sócio Principal (Você) */}
+                                    {profile ? (
+                                        <div className="bg-black/60 border border-yellow-500/20 rounded-xl p-4 flex items-center justify-between">
+                                            <div className="flex items-center space-x-3">
+                                                <User className="h-5 w-5 text-yellow-500" />
+                                                <div>
+                                                    <p className="text-white font-semibold">{profile.first_name} {profile.last_name} (Você)</p>
+                                                    <p className="text-gray-400 text-xs">{userEmail}</p>
+                                                </div>
+                                            </div>
+                                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-400">
+                                                Proprietário
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-4 text-gray-400">
+                                            <Loader2 className="h-6 w-6 animate-spin text-yellow-500 mx-auto mb-2" />
+                                            Carregando dados do sócio principal...
+                                        </div>
+                                    )}
+                                    
+                                    {/* Placeholder para outros sócios */}
+                                    <div className="bg-black/40 border border-yellow-500/10 rounded-xl p-4 text-center text-gray-500 text-sm">
+                                        Nenhum outro sócio adicionado.
+                                    </div>
+                                </div>
+
+                                {/* Aviso de Perfil Incompleto */}
                                 {!isProfileComplete(profile) && (
-                                    <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-xl flex items-start space-x-3 mb-4">
+                                    <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-xl flex items-start space-x-3 mt-6">
                                         <AlertTriangle className="h-5 w-5 mt-1 flex-shrink-0" />
                                         <div>
                                             <h4 className="font-semibold text-white mb-1">Perfil Pessoal Incompleto</h4>
                                             <p className="text-sm text-gray-300">
-                                                Seu perfil pessoal está incompleto. Por favor, preencha todos os campos essenciais do seu perfil para garantir a correta associação como sócio.
+                                                Seu perfil pessoal deve estar completo para garantir a correta associação como sócio e ativar a conta PRO.
                                             </p>
                                             <Button 
                                                 variant="link" 
@@ -357,28 +402,33 @@ const ManagerCompanyProfile: React.FC = () => {
                                         </div>
                                     </div>
                                 )}
-                                {profile ? (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
-                                        <div>
-                                            <p><span className="font-medium text-white">Nome:</span> {profile.first_name} {profile.last_name}</p>
-                                            <p><span className="font-medium text-white">CPF:</span> {formatCPFDisplay(profile.cpf)}</p>
-                                            <p><span className="font-medium text-white">RG:</span> {formatRGDisplay(profile.rg)}</p>
+                                
+                                {/* Detalhes do Sócio Principal (Movido para cima, mas mantendo a estrutura de dados) */}
+                                <div className="pt-4 border-t border-yellow-500/10">
+                                    <h3 className="text-lg font-semibold text-white mb-4">Detalhes do Sócio Principal</h3>
+                                    {profile ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
+                                            <div>
+                                                <p><span className="font-medium text-white">Nome:</span> {profile.first_name} {profile.last_name}</p>
+                                                <p><span className="font-medium text-white">CPF:</span> {formatCPFDisplay(profile.cpf)}</p>
+                                                <p><span className="font-medium text-white">RG:</span> {formatRGDisplay(profile.rg)}</p>
+                                            </div>
+                                            <div>
+                                                <p><span className="font-medium text-white">Nascimento:</span> {profile.birth_date ? new Date(profile.birth_date).toLocaleDateString('pt-BR') : 'N/A'}</p>
+                                                <p><span className="font-medium text-white">Gênero:</span> {profile.gender || 'N/A'}</p>
+                                                <p><span className="font-medium text-white">E-mail:</span> {userEmail || 'N/A'}</p>
+                                            </div>
+                                            <div className="md:col-span-2 text-xs text-gray-500 pt-2 border-t border-yellow-500/10">
+                                                <p>Estes dados são do seu perfil de usuário e estão associados à empresa como sócio principal.</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p><span className="font-medium text-white">Nascimento:</span> {profile.birth_date ? new Date(profile.birth_date).toLocaleDateString('pt-BR') : 'N/A'}</p>
-                                            <p><span className="font-medium text-white">Gênero:</span> {profile.gender || 'N/A'}</p>
-                                            <p><span className="font-medium text-white">E-mail:</span> {userEmail || 'N/A'}</p>
+                                    ) : (
+                                        <div className="text-center py-4 text-gray-400">
+                                            <Loader2 className="h-6 w-6 animate-spin text-yellow-500 mx-auto mb-2" />
+                                            Carregando dados do seu perfil...
                                         </div>
-                                        <div className="md:col-span-2 text-xs text-gray-500 pt-2 border-t border-yellow-500/10">
-                                            <p>Estes dados são do seu perfil de usuário e estão associados à empresa como sócio principal.</p>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-4 text-gray-400">
-                                        <Loader2 className="h-6 w-6 animate-spin text-yellow-500 mx-auto mb-2" />
-                                        Carregando dados do seu perfil...
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
                         </TabsContent>
                     </Tabs>
