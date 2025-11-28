@@ -38,7 +38,7 @@ const ManagerRegistrationPage: React.FC = () => {
     useEffect(() => {
         if (!isLoadingCombined && profile) {
             if (profile.tipo_usuario_id === ADMIN_MASTER_USER_TYPE_ID || profile.tipo_usuario_id === MANAGER_PRO_USER_TYPE_ID) {
-                showSuccess("Você já é um gestor. Redirecionando para a criação de eventos.");
+                // Se já é gestor, redireciona para a criação de eventos (ou dashboard)
                 navigate('/manager/events/create', { replace: true });
             } else if (profile.tipo_usuario_id !== CLIENT_USER_TYPE_ID) {
                 // Caso seja um tipo de usuário inesperado, redireciona para a home
@@ -83,17 +83,19 @@ const ManagerRegistrationPage: React.FC = () => {
                 throw error;
             }
 
-            dismissToast(toastId);
-            showSuccess(`Parabéns! Seu perfil foi atualizado para Gestor PRO (${type}).`);
-            
             // 2. Invalida a query do perfil para que o useProfile recarregue com o novo tipo de usuário
+            // Isso é importante para que o ManagerLayout funcione corretamente no próximo carregamento.
             queryClient.invalidateQueries({ queryKey: ['profile', userId] });
             
-            // 3. Redirecionamento baseado na escolha
+            // 3. Redirecionamento imediato baseado na escolha
             if (type === 'PF') {
+                dismissToast(toastId);
+                showSuccess(`Parabéns! Seu perfil foi atualizado para Gestor PRO (PF).`);
                 // PF: Vai direto para a criação de eventos (não precisa de perfil de empresa)
                 navigate('/manager/events/create', { replace: true });
             } else { // PJ
+                dismissToast(toastId);
+                showSuccess(`Parabéns! Seu perfil foi atualizado para Gestor PRO (PJ). Agora, cadastre sua empresa.`);
                 // PJ: Vai para o cadastro do perfil da empresa
                 navigate('/manager/settings/company-profile', { replace: true });
             }
