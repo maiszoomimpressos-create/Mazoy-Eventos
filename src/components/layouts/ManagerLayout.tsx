@@ -29,6 +29,7 @@ const ManagerLayout: React.FC = () => {
 
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
     const { userTypeName, isLoadingUserType } = useUserType(profile?.tipo_usuario_id);
+    // Mantemos o useProfileStatus para que as páginas internas possam usá-lo
     const { isComplete: isProfileFullyComplete, loading: isLoadingProfileStatus, needsCompanyProfile, needsPersonalProfileCompletion } = useProfileStatus(profile, isLoadingProfile);
     const { company, isLoading: isLoadingCompany } = useManagerCompany(userId); // Fetch company data
 
@@ -56,7 +57,7 @@ const ManagerLayout: React.FC = () => {
                                    location.pathname === '/manager/register/company' ||
                                    location.pathname === '/admin/register-manager'; 
 
-    // Effect for redirection logic
+    // Effect for redirection logic (ONLY for unauthenticated or non-manager users)
     useEffect(() => {
         if (isLoadingCombined) return; // Wait for all data to load
 
@@ -75,25 +76,11 @@ const ManagerLayout: React.FC = () => {
             }
             return;
         }
+        
+        // REMOVIDO: A lógica de redirecionamento para perfis incompletos foi removida daqui.
+        // Agora, o dashboard e as páginas de ação serão responsáveis por exibir avisos e desabilitar funcionalidades.
 
-        // 3. Redirect managers with incomplete profiles
-        if (isManager && !isProfileFullyComplete && !isProfileCompletionPage) {
-            if (needsCompanyProfile) {
-                showError("Seu perfil de empresa não está cadastrado. Por favor, preencha os dados da sua empresa para acessar o Dashboard PRO.");
-                navigate('/manager/settings/company-profile', { replace: true });
-                return;
-            }
-            if (needsPersonalProfileCompletion) {
-                showError("Seu perfil pessoal está incompleto. Por favor, preencha todos os dados essenciais para acessar o Dashboard PRO.");
-                navigate('/profile', { replace: true });
-                return;
-            }
-            // Fallback for any other incomplete state not explicitly handled
-            showError("Seu perfil de gestor está incompleto. Por favor, complete seu cadastro.");
-            navigate('/profile', { replace: true }); // Default to personal profile completion
-            return;
-        }
-    }, [isLoadingCombined, userId, isManager, isProfileFullyComplete, isProfileCompletionPage, userType, company, navigate, location.pathname, needsCompanyProfile, needsPersonalProfileCompletion]);
+    }, [isLoadingCombined, userId, isManager, userType, navigate, location.pathname]);
 
 
     if (isLoadingCombined) {

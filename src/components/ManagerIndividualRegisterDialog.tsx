@@ -77,7 +77,7 @@ const managerIndividualProfileSchema = z.object({
     first_name: z.string().min(1, "Nome é obrigatório."),
     last_name: z.string().min(1, "Sobrenome é obrigatório."),
     birth_date: z.string().min(1, "Data de nascimento é obrigatória."),
-    gender: z.string().min(1, "Gênero é obrigatório.").nullable(), 
+    gender: z.string().min(1, "Gênero é obrigatório."), // Removido .nullable()
     
     cpf: z.string().min(1, "CPF é obrigatório.").refine(validateCPF, { message: "CPF inválido." }),
     rg: z.string().min(1, "RG é obrigatório.").refine(validateRG, { message: "RG inválido." }),
@@ -88,7 +88,7 @@ const managerIndividualProfileSchema = z.object({
     cidade: z.string().min(1, "Cidade é obrigatória."),
     estado: z.string().min(1, "Estado é obrigatório."),
     numero: z.string().min(1, "Número é obrigatório."),
-    complemento: z.string().optional().nullable(), 
+    complemento: z.string().min(1, "Complemento é obrigatório."), // Removido .optional().nullable()
 });
 
 type ManagerIndividualProfileData = z.infer<typeof managerIndividualProfileSchema>;
@@ -403,7 +403,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                             <FormLabel className="text-white">Gênero *</FormLabel>
                                             <Select 
                                                 onValueChange={field.onChange} 
-                                                value={field.value || ""} 
+                                                value={field.value} // Removido || ""
                                             >
                                                 <FormControl>
                                                     <SelectTrigger 
@@ -511,7 +511,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                 name="complemento"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-white">Complemento (Opcional)</FormLabel>
+                                        <FormLabel className="text-white">Complemento *</FormLabel>
                                         <FormControl>
                                             <Input 
                                                 placeholder="Apto 101, Bloco B" 

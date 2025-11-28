@@ -24,16 +24,16 @@ export const isValueEmpty = (value: any): boolean => {
     return false;
 };
 
-// Essential fields for a manager's personal profile (Admin Master or Manager PRO)
-const ESSENTIAL_MANAGER_PERSONAL_PROFILE_FIELDS = [
-    'first_name', 'last_name', 'cpf', 'rg', 'birth_date', 'gender',
-    'cep', 'rua', 'bairro', 'cidade', 'estado', 'numero'
+// Essential fields for ANY user's personal profile (client or manager)
+export const ESSENTIAL_PERSONAL_PROFILE_FIELDS = [
+    'first_name', 'last_name', 'cpf', 'birth_date', 'gender',
+    'cep', 'rua', 'bairro', 'cidade', 'estado', 'numero', 'complemento' // RG é opcional
 ];
 
 // Essential fields for a company profile (for Manager PRO - PJ)
 const ESSENTIAL_COMPANY_PROFILE_FIELDS = [
     'cnpj', 'corporate_name', 'phone', 'email',
-    'cep', 'street', 'neighborhood', 'city', 'state', 'number'
+    'cep', 'street', 'neighborhood', 'city', 'state', 'number', 'complement'
 ];
 
 // Simulação de verificação de notificações de sistema para Gestores
@@ -95,9 +95,24 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
 
         if (isLoading) return;
 
+        // Se o perfil é nulo, mas há um userId (usuário logado), significa que o perfil está faltando no DB
+        // ou ainda não foi carregado. Para um gestor, isso significa que o perfil está incompleto.
         if (!profile) {
-            // If no profile, it's not a manager or not logged in, so no special status needed.
-            setStatus({ isComplete: true, hasPendingNotifications: false, loading: false, needsCompanyProfile: false, needsPersonalProfileCompletion: false });
+            // Verifica se há um usuário logado (userId) e se não estamos mais carregando
+            if (supabase.auth.getUser() && !isLoading) { 
+                console.log("[ProfileStatus] Usuário logado, mas dados de perfil nulos. Marcando como incompleto.");
+                setStatus({ 
+                    isComplete: false, 
+                    hasPendingNotifications: true, // Precisa de atenção
+                    loading: false, 
+                    needsCompanyProfile: false, // Não podemos determinar o tipo de usuário sem o perfil
+                    needsPersonalProfileCompletion: true, // Definitivamente precisa do perfil pessoal
+                });
+            } else {
+                // Se não há userId ou ainda está carregando, assume-se completo para acesso público
+                console.log("[ProfileStatus] Sem sessão de usuário ativa ou dados de perfil. Assumindo completo para acesso público.");
+                setStatus({ isComplete: true, hasPendingNotifications: false, loading: false, needsCompanyProfile: false, needsPersonalProfileCompletion: false });
+            }
             return;
         }
 
@@ -107,58 +122,80 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
             let needsCompanyProfile = false;
             let needsPersonalProfileCompletion = false;
 
-            // Check personal profile completeness for managers (Admin Master or Manager PRO)
-            if (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2) {
-                for (const field of ESSENTIAL_MANAGER_PERSONAL_PROFILE_FIELDS) {
-                    const value = profile[field as keyof ProfileData];
-                    if (isValueEmpty(value)) {
-                        isComplete = false;
-                        needsPersonalProfileCompletion = true;
-                        console.log(`[ProfileStatus] Manager personal profile incomplete: Missing field '${field}'`);
-                        break;
-                    }
+            console.log(`[ProfileStatus] Verificando perfil para o usuário ${profile.id}, tipo: ${profile.tipo_usuario_id}`);
+
+            // Verifica a completude do perfil pessoal para TODOS os usuários (clientes e gestores)
+            for (const field of ESSENTIAL_PERSONAL_PROFILE_FIELDS) {
+                const value = profile[field as keyof ProfileData];
+                if (isValueEmpty(value)) {
+                    isComplete = false;
+                    needsPersonalProfileCompletion = true;
+                    console.log(`[ProfileStatus] Perfil pessoal incompleto: Campo '${field}' faltando (Valor: '${value}')`);
+                    break;
                 }
+            }
 
-                // If it's a Manager PRO (tipo_usuario_id = 2), also check for company profile
-                if (profile.tipo_usuario_id === 2) {
-                    const { data: companyData, error: companyError } = await supabase
-                        .from('companies')
-                        .select('*')
-                        .eq('user_id', profile.id)
-                        .limit(1);
+            // Se for um Gestor PRO (tipo_usuario_id = 2), também verifica o perfil da empresa
+            if (profile.tipo_usuario_id === 2) {
+                console.log("[ProfileStatus] Usuário é Gestor PRO. Verificando perfil da empresa...");
+                const { data: companyData, error: companyError } = await supabase
+                    .from('companies')
+                    .select('*')
+                    .eq('user_id', profile.id)
+                    .limit(1);
 
-                    if (companyError && companyError.code !== 'PGRST116') {
-                        console.error("[ProfileStatus] Error fetching company data:", companyError);
-                        isComplete = false; // Treat as incomplete if there's an error fetching company data
-                    } else if (!companyData || companyData.length === 0) {
-                        needsCompanyProfile = true;
-                        isComplete = false;
-                        console.log("[ProfileStatus] Manager PRO needs to create company profile.");
-                    } else {
-                        // Check company profile fields if company exists
-                        const companyProfile = companyData[0];
-                        for (const field of ESSENTIAL_COMPANY_PROFILE_FIELDS) {
-                            const value = companyProfile[field as keyof typeof companyProfile];
-                            if (isValueEmpty(value)) {
-                                isComplete = false;
-                                console.log(`[ProfileStatus] Manager company profile incomplete: Missing field '${field}'`);
-                                break;
-                            }
+                if (companyError && companyError.code !== 'PGRST116') {
+                    console.error("[ProfileStatus] Erro ao buscar dados da empresa:", companyError);
+                    isComplete = false; // Considera incompleto se houver erro ao buscar dados da empresa
+                    needsCompanyProfile = true; // Assume que o perfil da empresa é necessário devido ao erro
+                } else if (!companyData || companyData.length === 0) {
+                    needsCompanyProfile = true;
+                    isComplete = false;
+                    console.log("[ProfileStatus] Gestor PRO precisa criar perfil da empresa (nenhuma empresa encontrada).");
+                } else {
+                    // Verifica os campos do perfil da empresa se a empresa existir
+                    const companyProfile = companyData[0];
+                    for (const field of ESSENTIAL_COMPANY_PROFILE_FIELDS) {
+                        const value = companyProfile[field as keyof typeof companyProfile];
+                        if (isValueEmpty(value)) {
+                            isComplete = false;
+                            needsCompanyProfile = true; // Marca como precisando completar o perfil da empresa
+                            console.log(`[ProfileStatus] Perfil da empresa do gestor incompleto: Campo '${field}' faltando (Valor: '${value}')`);
+                            break;
                         }
                     }
+                    if (!needsCompanyProfile) {
+                        console.log("[ProfileStatus] Perfil da empresa do gestor está completo.");
+                    }
                 }
             }
-            // For clients (tipo_usuario_id = 3), profile is always considered complete
-            else if (profile.tipo_usuario_id === 3) {
-                isComplete = true;
+            // Para Admin Master (tipo_usuario_id = 1), o perfil pessoal é verificado acima.
+            // O perfil da empresa é opcional para Admin Master, então não há verificação adicional aqui.
+            else if (profile.tipo_usuario_id === 1) {
+                console.log("[ProfileStatus] Usuário é Admin Master. Perfil da empresa é opcional.");
             }
 
-            // Check for manager system notifications (independent of profile completeness)
+
+            // Verifica notificações de sistema para gestores (independente da completude do perfil)
             if (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2) {
                 hasPendingNotifications = await checkManagerSystemNotifications(profile.id);
+                if (hasPendingNotifications) {
+                    console.log("[ProfileStatus] Gestor tem notificações de sistema.");
+                }
+            }
+            
+            // Se o perfil pessoal ou da empresa estiver incompleto, sempre define hasPendingNotifications como true
+            // Isso garante que o ícone de sino apareça e solicite ao usuário que complete o perfil
+            if (needsPersonalProfileCompletion || needsCompanyProfile) {
+                hasPendingNotifications = true;
+                console.log("[ProfileStatus] Definindo hasPendingNotifications como TRUE devido ao perfil incompleto.");
             }
 
-            console.log(`[ProfileStatus] Final State - Profile Complete: ${isComplete}. Needs Personal: ${needsPersonalProfileCompletion}. Needs Company: ${needsCompanyProfile}. Notifications Active: ${hasPendingNotifications}`);
+            console.log(`[ProfileStatus] Estado Final - User ID: ${profile.id}, Tipo: ${profile.tipo_usuario_id}`);
+            console.log(`[ProfileStatus]   isComplete: ${isComplete}`);
+            console.log(`[ProfileStatus]   needsPersonalProfileCompletion: ${needsPersonalProfileCompletion}`);
+            console.log(`[ProfileStatus]   needsCompanyProfile: ${needsCompanyProfile}`);
+            console.log(`[ProfileStatus]   hasPendingNotifications: ${hasPendingNotifications}`);
 
             setStatus({
                 isComplete: isComplete,

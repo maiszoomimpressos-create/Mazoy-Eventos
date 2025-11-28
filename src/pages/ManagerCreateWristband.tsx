@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Loader2, QrCode, Tag, User, Calendar, Hash, DollarSign } from 'lucide-react';
+import { ArrowLeft, Loader2, QrCode, Tag, User, Calendar, Hash, DollarSign, AlertTriangle } from 'lucide-react'; // Importando AlertTriangle
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useManagerCompany } from '@/hooks/use-manager-company';
 import { useManagerEvents, ManagerEvent } from '@/hooks/use-manager-events';
+import { useProfileStatus } from '@/hooks/use-profile-status'; // Importando useProfileStatus
+import { useProfile } from '@/hooks/use-profile'; // Importando useProfile
 
 interface WristbandFormData {
     eventId: string;
@@ -74,9 +76,12 @@ const ManagerCreateWristband: React.FC = () => {
         });
     }, []);
 
-    // Fetch manager's company ID and events
+    const { profile, isLoading: isLoadingProfile } = useProfile(userId);
+    const { needsPersonalProfileCompletion, needsCompanyProfile, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile);
     const { company, isLoading: isLoadingCompany } = useManagerCompany(userId || undefined);
-    const { events, isLoading: isLoadingEvents } = useManagerEvents(userId || undefined);
+    
+    const isProfileIncomplete = needsPersonalProfileCompletion || needsCompanyProfile;
+    const isPageLoading = isLoadingProfile || isLoadingProfileStatus || isLoadingCompany || !userId;
 
     const isLoading = isLoadingCompany || isLoadingEvents || !userId;
 
@@ -124,6 +129,10 @@ const ManagerCreateWristband: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (isProfileIncomplete) {
+            showError("Por favor, complete seu perfil para gerar pulseiras.");
+            return;
+        }
         
         const priceNumeric = parsePriceToNumeric(formData.price);
         if (!validateForm(priceNumeric) || !company?.id || !userId) return;
@@ -176,7 +185,7 @@ const ManagerCreateWristband: React.FC = () => {
         }
     };
 
-    if (isLoading) {
+    if (isPageLoading) {
         return (
             <div className="max-w-4xl mx-auto px-4 sm:px-0 text-center py-20">
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
@@ -220,6 +229,24 @@ const ManagerCreateWristband: React.FC = () => {
                 </Button>
             </div>
 
+            {isProfileIncomplete && (
+                <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-xl mb-8 flex items-start space-x-3 animate-fadeInUp">
+                    <AlertTriangle className="h-5 w-5 mt-1 flex-shrink-0" />
+                    <div>
+                        <h3 className="font-semibold text-white mb-1">Perfil Incompleto!</h3>
+                        <p className="text-sm text-gray-300">
+                            {needsPersonalProfileCompletion && (
+                                <p className="mb-2">Seu perfil pessoal está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/profile')}>complete-o aqui</Button> para gerar pulseiras.</p>
+                            )}
+                            {needsCompanyProfile && (
+                                <p>Seu perfil de empresa não está cadastrado. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/manager/settings/company-profile')}>preencha os dados da sua empresa</Button> para gerar pulseiras.</p>
+                            )}
+                        </p>
+                        <p className="mt-2 text-sm text-white font-semibold">O formulário de geração de pulseiras está desabilitado.</p>
+                    </div>
+                </div>
+            )}
+
             <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
                 <CardHeader>
                     <CardTitle className="text-white text-xl sm:text-2xl font-semibold">Detalhes da Pulseira</CardTitle>
@@ -236,7 +263,7 @@ const ManagerCreateWristband: React.FC = () => {
                                 <Calendar className="h-4 w-4 mr-2 text-yellow-500" />
                                 Evento Associado *
                             </label>
-                            <Select onValueChange={(value) => handleSelectChange('eventId', value)} value={formData.eventId}>
+                            <Select onValueChange={(value) => handleSelectChange('eventId', value)} value={formData.eventId} disabled={isProfileIncomplete}> {/* Desabilita se o perfil estiver incompleto */}
                                 <SelectTrigger className="w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500">
                                     <SelectValue placeholder="Selecione o Evento" />
                                 </SelectTrigger>
@@ -268,6 +295,7 @@ const ManagerCreateWristband: React.FC = () => {
                                     placeholder="Ex: CONCERTO-VIP-A1"
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                     required
+                                    disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Este será o código único da pulseira.</p>
                             </div>
@@ -286,6 +314,7 @@ const ManagerCreateWristband: React.FC = () => {
                                     min={1}
                                     // REMOVIDO: max={100}
                                     required
+                                    disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
                                 />
                                 <p className="text-xs text-gray-500 mt-1">O número de registros de 'criação' no histórico será igual a esta quantidade.</p>
                             </div>
@@ -294,7 +323,7 @@ const ManagerCreateWristband: React.FC = () => {
                                     <Tag className="h-4 w-4 mr-2 text-yellow-500" />
                                     Tipo de Acesso *
                                 </label>
-                                <Select onValueChange={(value) => handleSelectChange('accessType', value)} value={formData.accessType}>
+                                <Select onValueChange={(value) => handleSelectChange('accessType', value)} value={formData.accessType} disabled={isProfileIncomplete}> {/* Desabilita se o perfil estiver incompleto */}
                                     <SelectTrigger className="w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500">
                                         <SelectValue placeholder="Selecione o Tipo" />
                                     </SelectTrigger>
@@ -323,6 +352,7 @@ const ManagerCreateWristband: React.FC = () => {
                                 placeholder="0,00"
                                 className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                                 required
+                                disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
                             />
                             <p className="text-xs text-gray-500 mt-1">O valor de venda ou custo desta pulseira.</p>
                         </div>
@@ -344,7 +374,7 @@ const ManagerCreateWristband: React.FC = () => {
                         <div className="pt-4 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                             <Button
                                 type="submit"
-                                disabled={isSaving || isLoading || !company}
+                                disabled={isSaving || isLoading || !company || isProfileIncomplete} // Desabilita se o perfil estiver incompleto
                                 className="flex-1 bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
                             >
                                 {isSaving ? (

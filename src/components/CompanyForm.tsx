@@ -96,6 +96,7 @@ export const createCompanySchema = (isManager: boolean) => {
         return baseSchema.extend({
             corporate_name: z.string().min(1, "Razão Social é obrigatória."),
             cnpj: z.string().min(1, "CNPJ é obrigatório.").refine(validateCNPJ, { message: "CNPJ inválido. Verifique os dígitos." }),
+            trade_name: z.string().min(1, "Nome Fantasia é obrigatório."), // Tornando obrigatório
             phone: z.string().min(1, "Telefone é obrigatório."),
             email: z.string().email({ message: "E-mail inválido." }).min(1, "E-mail é obrigatório."),
             cep: z.string().min(1, "CEP é obrigatório.").refine((val) => val.replace(/\D/g, '').length === 8, { message: "CEP inválido (8 dígitos)." }),
@@ -104,6 +105,7 @@ export const createCompanySchema = (isManager: boolean) => {
             city: z.string().min(1, "Cidade é obrigatória."),
             state: z.string().min(1, "Estado é obrigatório."),
             number: z.string().min(1, "Número é obrigatório."),
+            complement: z.string().min(1, "Complemento é obrigatório."), // Tornando obrigatório
         });
     }
     return baseSchema;
@@ -195,7 +197,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ isSaving, isCepLoading, fetch
                         name="trade_name"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="text-white">Nome Fantasia</FormLabel>
+                                <FormLabel className="text-white">Nome Fantasia {isManagerContext && '*'}</FormLabel>
                                 <FormControl>
                                     <Input 
                                         placeholder="Nome Comercial"
@@ -336,7 +338,7 @@ const CompanyForm: React.FC<CompanyFormProps> = ({ isSaving, isCepLoading, fetch
                     name="complement"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-white">Complemento (Opcional)</FormLabel>
+                            <FormLabel className="text-white">Complemento {isManagerContext && '*'}</FormLabel> {/* Adicionado * */}
                             <FormControl>
                                 <Input 
                                     placeholder="Apto 101, Bloco B" 
