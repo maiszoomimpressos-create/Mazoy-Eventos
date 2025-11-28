@@ -135,7 +135,6 @@ const ManagerCompanyRegister: React.FC = () => {
         };
 
         try {
-            // 1. Insert new company profile (or update if migrating from PF)
             let companyId: string;
             
             // Tenta buscar se já existe uma empresa associada (caso o usuário tenha vindo de /manager/settings)
@@ -146,8 +145,11 @@ const ManagerCompanyRegister: React.FC = () => {
                 .limit(1)
                 .single();
                 
-            if (existingCompanyAssociation) {
-                // Se já existe uma associação, atualiza a empresa existente
+            // Verifica se é uma nova empresa (se veio do botão "Adicionar Empresa" ou se não tem associação)
+            const isNewCompanyRegistration = location.state?.isNewCompany || !existingCompanyAssociation;
+
+            if (!isNewCompanyRegistration && existingCompanyAssociation) {
+                // Se não é um novo cadastro de empresa e já existe uma associação, atualiza a empresa existente
                 companyId = existingCompanyAssociation.company_id;
                 const { error: updateError } = await supabase
                     .from('companies')
@@ -157,7 +159,7 @@ const ManagerCompanyRegister: React.FC = () => {
                 if (updateError) throw updateError;
                 
             } else {
-                // Se não existe, insere uma nova empresa
+                // Se é um novo cadastro de empresa (ou o primeiro cadastro)
                 const { data: companyData, error: insertError } = await supabase
                     .from('companies')
                     .insert([dataToSave])
@@ -201,21 +203,30 @@ const ManagerCompanyRegister: React.FC = () => {
                 return;
             }
 
-            // 4. Se o perfil estiver completo, finaliza o registro PRO
-            const { error: updateProfileError } = await supabase
-                .from('profiles')
-                .update({ tipo_usuario_id: 2 })
-                .eq('id', userId);
+            // 4. Se o perfil estiver completo, finaliza o registro PRO (apenas se o usuário ainda for Cliente - tipo 3)
+            if (profile?.tipo_usuario_id === 3) {
+                const { error: updateProfileError } = await supabase
+                    .from('profiles')
+                    .update({ tipo_usuario_id: 2 })
+                    .eq('id', userId);
 
-            if (updateProfileError) {
-                console.error("Erro ao atualizar tipo de usuário no perfil:", updateProfileError);
-                // Continua, mas avisa
-                showError("Aviso: Falha ao atualizar seu tipo de usuário. Recarregue a página.");
+                if (updateProfileError) {
+                    console.error("Erro ao atualizar tipo de usuário no perfil:", updateProfileError);
+                    showError("Aviso: Falha ao atualizar seu tipo de usuário. Recarregue a página.");
+                }
             }
 
             dismissToast(toastId);
             showSuccess("Empresa registrada e perfil de gestor ativado com sucesso!");
-            navigate('/manager/dashboard');
+            
+            // Se veio da tela de perfil da empresa (para adicionar uma nova), volta para lá.
+            if (location.state?.isNewCompany) {
+                navigate('/manager/settings/company-profile');
+            } else {
+                // Caso contrário, vai para o dashboard
+                navigate('/manager/dashboard');
+            }
+
 
         } catch (e: any) {
             dismissToast(toastId);
@@ -228,8 +239,12 @@ const ManagerCompanyRegister: React.FC = () => {
     
     // Determina a rota de retorno
     const handleGoBack = () => {
+        // Se o usuário veio da tela de perfil da empresa (para adicionar uma nova), volta para lá.
+        if (location.state?.isNewCompany) {
+            navigate('/manager/settings/company-profile');
+        } 
         // Se o usuário veio de /manager/settings (migração de PF para PJ), volta para settings
-        if (location.state?.from === '/manager/settings') {
+        else if (location.state?.from === '/manager/settings') {
             navigate('/manager/settings');
         } else {
             // Caso contrário (veio de /manager/register), volta para a seleção de tipo
