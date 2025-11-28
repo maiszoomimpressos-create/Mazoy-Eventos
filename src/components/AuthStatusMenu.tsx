@@ -8,7 +8,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { useProfileStatus } from '@/hooks/use-profile-status';
 import { useProfile, ProfileData } from '@/hooks/use-profile';
 import NotificationBell from './NotificationBell';
-import { Shield, UserPlus, Crown } from 'lucide-react'; // Removendo PlusCircle
+import { Shield, UserPlus, Crown, PlusCircle } from 'lucide-react'; // Adicionando PlusCircle de volta
 import { useUserType } from '@/hooks/use-user-type';
 
 const AuthStatusMenu: React.FC = () => {
@@ -57,7 +57,7 @@ const AuthStatusMenu: React.FC = () => {
         const initials = profile.first_name ? profile.first_name.charAt(0).toUpperCase() : 'U';
         const isManager = profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2;
         const isAdmin = profile.tipo_usuario_id === 1;
-        // const isClient = profile.tipo_usuario_id === 3; // Removido: Não é mais necessário para o link "Criar Evento"
+        const isClient = profile.tipo_usuario_id === 3; // Reintroduzido: Verifica se é cliente
         
         const fullName = profile.first_name + (profile.last_name ? ` ${profile.last_name}` : '');
 
@@ -117,10 +117,17 @@ const AuthStatusMenu: React.FC = () => {
                                     <Shield className="mr-2 h-4 w-4" />
                                     Dashboard Admin
                                 </DropdownMenuItem>
-                                {/* Removido: Novo link para Admin Master registrar gestor */}
                             </>
                         )}
-                        {/* Removido: Botão "Criar Evento" visível apenas para clientes */}
+                        {isClient && ( // Reintroduzido: Botão "Criar Evento" para clientes
+                            <DropdownMenuItem 
+                                onClick={() => navigate('/manager/events/create')} 
+                                className="cursor-pointer hover:bg-yellow-500/10 text-yellow-500"
+                            >
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Cadastrar Evento
+                            </DropdownMenuItem>
+                        )}
                         <DropdownMenuSeparator className="bg-yellow-500/20" />
                         <DropdownMenuItem 
                             onClick={handleLogout} 
