@@ -4,8 +4,7 @@ import { showError } from '@/utils/toast';
 
 // Estrutura de dados do Evento (simplificada)
 export interface EventData {
-    id: string; // UUID original
-    id_url: number; // ID numérico para URL
+    id: string;
     title: string;
     description: string;
     date: string;
@@ -17,7 +16,8 @@ export interface EventData {
     category: string;
     capacity: number; // Adicionando capacidade
     duration: string; // Adicionando duração
-    company_id: string | null; // Adicionando company_id
+    min_price: number | null; // NOVO: Preço mínimo calculado
+    min_price_wristband_id: string | null; // NOVO: ID da pulseira mais barata
     
     // Dados do Organizador (JOIN)
     companies: {
@@ -40,93 +40,90 @@ export interface EventDetailsData {
     ticketTypes: TicketType[];
 }
 
-const fetchEventDetails = async (idUrl: string): Promise<EventDetailsData | null> => {
-    if (!idUrl) return null;
-    
-    const numericId = parseInt(idUrl);
-    if (isNaN(numericId)) {
-        console.error("[EventDetails] ID de URL inválido:", idUrl);
-        return null;
-    }
-    
-    console.log(`[EventDetails] Buscando evento com id_url: ${numericId}`);
+const fetchEventDetails = async (eventId: string): Promise<EventDetailsData | null> => {
+    if (!eventId) return null;
 
-    // 1. Buscar detalhes do Evento usando id_url, incluindo JOIN com companies
-    const { data: eventData, error: eventError } = await supabase
+    // 1. Buscar detalhes do Evento, incluindo capacidade, duração e o nome da empresa organizadora
+    const { data: eventDataRaw, error: eventError } = await supabase
         .from('events')
         .select(`
-            id, id_url, title, description, date, time, location, address, image_url, min_age, category, capacity, duration, company_id,
+            id, title, description, date, time, location, address, image_url, min_age, category, capacity, duration,
             companies (corporate_name)
         `)
-        .eq('id_url', numericId) // BUSCANDO PELO NOVO CAMPO id_url
+        .eq('id', eventId)
         .single();
 
-    // Tratamento de erro: PGRST116 (No rows found)
     if (eventError) {
-        if (eventError.code === 'PGRST116') { 
-            console.warn(`[EventDetails] Evento com id_url ${numericId} não encontrado (PGRST116).`);
+        if (eventError.code === 'PGRST116') { // No rows found
             return null;
         }
-        
-        console.error(`[EventDetails] ERRO CRÍTICO na busca do evento ${numericId}:`, eventError);
+        console.error("Error fetching event details:", eventError);
         throw new Error(eventError.message);
     }
-    
-    if (!eventData) {
-        console.warn(`[EventDetails] Evento com id_url ${numericId} não encontrado (data nula).`);
-        return null;
-    }
-    
-    const eventUUID = eventData.id; // Usamos o UUID para buscar pulseiras
-    
-    // A tipagem agora é EventData
-    const eventDetailsWithCompany = eventData as EventData;
     
     // 2. Buscar Tipos de Pulseira (Wristbands) associados a este evento
     const { data: wristbandsData, error: wristbandsError } = await supabase
         .from('wristbands')
         .select('id, access_type, price, status')
-        .eq('event_id', eventUUID)
-        .eq('status', 'active'); // Apenas pulseiras ativas estão 'disponíveis'
+        .eq('event_id', eventId);
 
     if (wristbandsError) {
-        console.warn("[EventDetails] Aviso: Falha ao buscar pulseiras (RLS provável). Exibindo evento sem ingressos.", wristbandsError);
-        return {
-            event: eventDetailsWithCompany,
-            ticketTypes: [],
-        };
+        console.error("Error fetching wristbands for event:", wristbandsError);
+        throw new Error(wristbandsError.message);
     }
     
-    // 3. Agrupar e formatar os tipos de ingresso
+    // 3. Agrupar, formatar e calcular preço mínimo/disponibilidade
+    let minPrice: number | null = null;
+    let minPriceWristbandId: string | null = null;
+    
     const groupedTickets = wristbandsData.reduce((acc, wristband) => {
-        const key = `${wristband.access_type}-${wristband.price}-${wristband.id}`; 
+        const price = parseFloat(wristband.price as unknown as string) || 0;
         
-        if (!acc[key]) {
-            acc[key] = {
-                id: wristband.id, // ID da pulseira (wristband_id)
-                name: wristband.access_type,
-                price: parseFloat(wristband.price as unknown as string) || 0,
-                available: 0,
-                description: `Acesso ${wristband.access_type} para o evento.`,
-            };
+        // Apenas consideramos pulseiras ativas para venda e preço mínimo
+        if (wristband.status === 'active') {
+            const key = `${wristband.access_type}-${price}`;
+            
+            if (!acc[key]) {
+                acc[key] = {
+                    id: wristband.id, // Usamos o ID da primeira pulseira como ID do tipo (simplificação)
+                    name: wristband.access_type,
+                    price: price,
+                    available: 0,
+                    description: `Acesso ${wristband.access_type} para o evento.`,
+                };
+            }
+            acc[key].available += 1;
+
+            // Atualiza o preço mínimo
+            if (minPrice === null || price < minPrice) {
+                minPrice = price;
+                minPriceWristbandId = wristband.id;
+            }
         }
-        acc[key].available += 1;
         return acc;
     }, {} as { [key: string]: TicketType });
 
     const ticketTypes = Object.values(groupedTickets).sort((a, b) => a.price - b.price);
+    
+    // 4. Combinar dados
+    const event: EventData = {
+        ...eventDataRaw,
+        min_price: minPrice,
+        min_price_wristband_id: minPriceWristbandId,
+    } as EventData;
+
 
     return {
-        event: eventDetailsWithCompany,
+        event: event,
         ticketTypes: ticketTypes,
     };
 };
 
-export const useEventDetails = (idUrl: string | undefined) => {
+export const useEventDetails = (eventId: string | undefined) => {
     const query = useQuery({
-        queryKey: ['eventDetails', idUrl],
-        queryFn: () => fetchEventDetails(idUrl!),
-        enabled: !!idUrl,
+        queryKey: ['eventDetails', eventId],
+        queryFn: () => fetchEventDetails(eventId!),
+        enabled: !!eventId,
         staleTime: 1000 * 60 * 5, // 5 minutes
         onError: (error) => {
             console.error("Query Error: Failed to load event details.", error);

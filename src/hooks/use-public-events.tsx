@@ -3,8 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 
 export interface PublicEvent {
-    id: number; // Agora é o id_url (INT)
-    uuid: string; // O UUID real do Supabase
+    id: string;
     title: string;
     description: string;
     date: string; // Keep as string for display
@@ -20,10 +19,10 @@ export interface PublicEvent {
 }
 
 const fetchPublicEvents = async (): Promise<PublicEvent[]> => {
-    // 1. Buscar todos os eventos com capacidade, incluindo o novo id_url e o UUID original
+    // 1. Buscar todos os eventos com capacidade
     const { data: eventsData, error: eventsError } = await supabase
         .from('events')
-        .select('id, id_url, title, description, date, time, location, image_url, category, capacity') // Include id_url
+        .select('id, title, description, date, time, location, image_url, category, capacity') // Include capacity
         .order('date', { ascending: true });
 
     if (eventsError) {
@@ -31,7 +30,7 @@ const fetchPublicEvents = async (): Promise<PublicEvent[]> => {
         throw new Error(eventsError.message);
     }
     
-    const eventIds = eventsData.map(e => e.id); // Usamos o UUID para buscar pulseiras
+    const eventIds = eventsData.map(e => e.id);
     
     // 2. Buscar o preço mínimo e o ID da pulseira, e contar a disponibilidade para todos os eventos
     const { data: wristbandsData, error: wristbandsError } = await supabase
@@ -68,8 +67,7 @@ const fetchPublicEvents = async (): Promise<PublicEvent[]> => {
         const minPrice = aggregates.min_price === Infinity ? null : aggregates.min_price;
 
         return {
-            id: event.id_url, // Usando id_url como ID principal
-            uuid: event.id, // Mantendo o UUID original
+            id: event.id,
             title: event.title,
             description: event.description,
             date: new Date(event.date).toLocaleDateString('pt-BR'),

@@ -28,13 +28,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminRouteGuard from "./components/AdminRouteGuard";
 import AdminMasterRouteGuard from "./components/AdminMasterRouteGuard";
 import ManagerLayout from "./components/layouts/ManagerLayout";
-import ClientLayout from "./components/layouts/ClientLayout";
 import ForgotPassword from "./pages/ForgotPassword";
-import FinalizarCompra from "./pages/FinalizarCompra";
-import ScrollToTop from "./components/ScrollToTop";
-import ManagerRegister from "./pages/ManagerRegister";
-import ManagerIndividualRegister from "./pages/ManagerIndividualRegister"; // Nova importação
-import ManagerCompanyRegister from "./pages/ManagerCompanyRegister"; // Nova importação
+import FinalizarCompra from "./pages/FinalizarCompra"; // Nova importação
 
 const queryClient = new QueryClient();
 
@@ -44,29 +39,16 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <ScrollToTop />
         <Routes>
-          {/* Public/Client Routes wrapped in ClientLayout */}
-          <Route element={<ClientLayout />}>
-            <Route path="/" element={<Index />} />
-            <Route path="/events/:id" element={<EventDetails />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/tickets" element={<MyTickets />} />
-            <Route path="/manager/register" element={<ManagerRegister />} /> {/* Rota para clientes se tornarem gestores */}
-            <Route path="/manager/register/individual" element={<ManagerIndividualRegister />} /> {/* Nova rota */}
-            <Route path="/manager/register/company" element={<ManagerCompanyRegister />} /> {/* Nova rota */}
-            {/* Rota /events/:id removida */}
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/tickets" element={<MyTickets />} />
-          </Route>
-          
-          {/* Auth Routes (No layout/Full screen) */}
+          {/* Public/Client Routes */}
+          <Route path="/" element={<Index />} />
+          <Route path="/events/:id" element={<EventDetails />} />
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/tickets" element={<MyTickets />} />
-          <Route path="/finalizar-compra" element={<FinalizarCompra />} />
+          <Route path="/finalizar-compra" element={<FinalizarCompra />} /> {/* Nova rota */}
           <Route path="/manager/login" element={<ManagerLogin />} />
           
           {/* Manager Routes (Protected by ManagerLayout, which handles auth/redirect) */}
@@ -88,9 +70,6 @@ const App = () => (
           {/* Admin Master Routes (tipo_usuario_id = 1) */}
           <Route element={<AdminMasterRouteGuard />}>
             <Route element={<ManagerLayout />}>
-                <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                {/* Nova rota para Admin Master acessar o cadastro de gestor */}
-                <Route path="/admin/register-manager" element={<ManagerRegister />} />
                 <Route path="/manager/settings/advanced" element={<ManagerAdvancedSettings />} />
             </Route>
           </Route>

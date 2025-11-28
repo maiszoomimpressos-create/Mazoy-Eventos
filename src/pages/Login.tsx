@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { supabase } from '@/integrations/supabase/client';
 import { showSuccess, showError } from '@/utils/toast';
 
 const Login: React.FC = () => {
     const navigate = useNavigate();
-    const location = useLocation();
     const [loginData, setLoginData] = useState({ email: '', password: '' });
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -65,13 +64,8 @@ const Login: React.FC = () => {
                 }
                 
                 showSuccess(successMessage);
-                
-                // 4. Roteamento: Verifica se há uma rota de retorno salva no estado
-                const from = location.state?.from || '/';
-                const eventState = location.state?.eventState;
-
-                // Redireciona para a rota de origem, mantendo o estado original (como os ingressos selecionados)
-                navigate(from, { state: eventState, replace: true });
+                // 4. Roteamento unificado para a Home, conforme solicitado.
+                navigate('/');
             } else {
                 // Isso pode acontecer se o e-mail não estiver confirmado, dependendo da configuração do Supabase
                 showError("Login falhou. Verifique seu e-mail e senha.");
@@ -95,9 +89,9 @@ const Login: React.FC = () => {
             </div>
             <div className="relative z-10 w-full max-w-sm sm:max-w-md">
                 <div className="text-center mb-6 sm:mb-8">
-                    <Link to="/" className="text-3xl font-serif text-yellow-500 font-bold mb-2 cursor-pointer">
+                    <div className="text-3xl font-serif text-yellow-500 font-bold mb-2">
                         Mazoy
-                    </Link>
+                    </div>
                     <h1 className="text-xl sm:text-2xl font-semibold text-white mb-2">Acessar Conta</h1>
                     <p className="text-gray-400 text-sm sm:text-base">Bem-vindo de volta!</p>
                 </div>

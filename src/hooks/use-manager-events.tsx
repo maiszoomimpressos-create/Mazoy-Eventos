@@ -8,25 +8,22 @@ export interface ManagerEvent {
     // Removendo campos não essenciais para a listagem inicial
 }
 
-const fetchManagerEvents = async (userId: string, userTypeId: number): Promise<ManagerEvent[]> => {
+const fetchManagerEvents = async (userId: string): Promise<ManagerEvent[]> => {
     if (!userId) {
         console.warn("Attempted to fetch manager events without a userId.");
         return [];
     }
 
-    let query = supabase
+    // Filtra explicitamente os eventos onde o user_id é igual ao userId logado.
+    // Isso garante que, mesmo que haja uma política RLS pública, o gestor veja apenas os seus.
+    const { data, error } = await supabase
         .from('events')
         .select(`
             id,
             title
-        `);
-
-    // Se não for Admin Master (tipo 1), filtra por user_id
-    if (userTypeId !== 1) {
-        query = query.eq('user_id', userId);
-    }
-    
-    const { data, error } = await query.order('created_at', { ascending: false });
+        `)
+        .eq('user_id', userId) // FILTRO ADICIONADO AQUI
+        .order('created_at', { ascending: false });
 
     if (error) {
         console.error("Error fetching manager events from Supabase:", error);
@@ -37,13 +34,13 @@ const fetchManagerEvents = async (userId: string, userTypeId: number): Promise<M
     return data as ManagerEvent[];
 };
 
-export const useManagerEvents = (userId: string | undefined, userTypeId: number | undefined) => {
+export const useManagerEvents = (userId: string | undefined) => {
     const queryClient = useQueryClient();
 
     const query = useQuery({
-        queryKey: ['managerEvents', userId, userTypeId], // Inclui userTypeId na chave de cache
-        queryFn: () => fetchManagerEvents(userId!, userTypeId!),
-        enabled: !!userId && !!userTypeId, // Habilita a query apenas se ambos estiverem disponíveis
+        queryKey: ['managerEvents', userId],
+        queryFn: () => fetchManagerEvents(userId!),
+        enabled: !!userId,
         staleTime: 1000 * 60 * 1, // 1 minute
         // Adicionando tratamento de erro para exibir o toast
         onError: (error) => {
@@ -55,6 +52,6 @@ export const useManagerEvents = (userId: string | undefined, userTypeId: number 
     return {
         ...query,
         events: query.data || [],
-        invalidateEvents: () => queryClient.invalidateQueries({ queryKey: ['managerEvents', userId, userTypeId] }),
+        invalidateEvents: () => queryClient.invalidateQueries({ queryKey: ['managerEvents', userId] }),
     };
 };

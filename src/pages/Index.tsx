@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { categories } from '@/data/events'; // Mantendo categories
@@ -9,7 +9,7 @@ import MobileMenu from '@/components/MobileMenu';
 import { supabase } from '@/integrations/supabase/client';
 import { trackAdvancedFilterUse } from '@/utils/metrics';
 import { usePublicEvents, PublicEvent } from '@/hooks/use-public-events';
-import { Loader2, ChevronLeft, ChevronRight } from 'lucide-react'; // Importando ChevronLeft e ChevronRight
+import { Loader2 } from 'lucide-react';
 import EventCarousel from '@/components/EventCarousel'; // Importando o novo componente
 
 const EVENTS_PER_PAGE = 12;
@@ -23,48 +23,23 @@ const getMinPriceDisplay = (price: number | null): string => {
 
 const Index: React.FC = () => {
     const navigate = useNavigate();
-    const location = useLocation(); // Hook para acessar a localização atual
     const [userId, setUserId] = useState<string | undefined>(undefined);
-    
-    // Extrai o termo de busca da URL (ex: /?search=termo)
-    const queryParams = new URLSearchParams(location.search);
-    const initialSearchTerm = queryParams.get('search') || '';
-    
-    const [searchTerm, setSearchTerm] = useState(initialSearchTerm); // Inicializa com o termo da URL
     
     // Carregamento de eventos do Supabase
     const { events: allEvents, isLoading: isLoadingEvents, isError: isErrorEvents } = usePublicEvents();
     
+    // Paginação
+    const [currentPage, setCurrentPage] = useState(1);
+    const totalPages = Math.ceil(allEvents.length / EVENTS_PER_PAGE);
+
     // Fetch user ID on mount
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
             setUserId(user?.id);
         });
     }, []);
-    
-    // Sincroniza o estado de busca com a URL quando o componente é montado ou a URL muda
-    useEffect(() => {
-        const newSearchTerm = queryParams.get('search') || '';
-        if (newSearchTerm !== searchTerm) {
-            setSearchTerm(newSearchTerm);
-            setCurrentPage(1);
-        }
-    }, [location.search]);
 
-
-    // Lógica de Filtragem
-    const filteredEventsBySearch = allEvents.filter(event =>
-        event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        event.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-
-    // Paginação
-    const [currentPage, setCurrentPage] = useState(1);
-    const totalPages = Math.ceil(filteredEventsBySearch.length / EVENTS_PER_PAGE);
-
-    // CORRIGIDO: Redireciona para a tela de finalização de compra
+    // ALTERADO: Redireciona para a tela de finalização de compra, passando o ID do evento
     const handleEventClick = (event: PublicEvent) => {
         navigate(`/finalizar-compra`, { state: { eventId: event.id } });
     };
@@ -97,7 +72,7 @@ const Index: React.FC = () => {
     // Lógica de Paginação
     const startIndex = (currentPage - 1) * EVENTS_PER_PAGE;
     const endIndex = startIndex + EVENTS_PER_PAGE;
-    const displayedEvents = filteredEventsBySearch.slice(startIndex, endIndex);
+    const displayedEvents = allEvents.slice(startIndex, endIndex);
     
     const getPageNumbers = () => {
         const maxPagesToShow = 5;
@@ -113,19 +88,6 @@ const Index: React.FC = () => {
             pages.push(i);
         }
         return pages;
-    };
-    
-    // Função para atualizar o termo de busca e a URL
-    const handleSearchChange = (value: string) => {
-        setSearchTerm(value);
-        setCurrentPage(1);
-        
-        // Atualiza a URL sem recarregar a página
-        if (value) {
-            navigate(`/?search=${encodeURIComponent(value)}`, { replace: true });
-        } else {
-            navigate('/', { replace: true });
-        }
     };
 
     return (
@@ -144,13 +106,10 @@ const Index: React.FC = () => {
                         </nav>
                     </div>
                     <div className="flex items-center space-x-3 sm:space-x-4">
-                        {/* CAMPO DE BUSCA NO HEADER (AGORA FUNCIONAL) */}
                         <div className="relative hidden lg:block">
                             <Input 
                                 type="search" 
                                 placeholder="Buscar eventos..." 
-                                value={searchTerm}
-                                onChange={(e) => handleSearchChange(e.target.value)}
                                 className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 w-48 md:w-64 pl-4 pr-10 py-2 rounded-xl"
                             />
                             <i className="fas fa-search absolute right-4 top-1/2 transform -translate-y-1/2 text-yellow-500/60"></i>
@@ -183,7 +142,16 @@ const Index: React.FC = () => {
                     </div>
                     <div className="mb-12">
                         <div className="flex flex-col lg:flex-row gap-6 mb-8">
-                            {/* CAMPO DE BUSCA REMOVIDO DAQUI, POIS FOI MOVIDO PARA O HEADER */}
+                            <div className="flex-1">
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar eventos..."
+                                        className="w-full bg-black/60 border border-yellow-500/30 rounded-xl px-4 sm:px-6 py-3 sm:py-4 text-white placeholder-gray-400 text-base sm:text-lg focus:border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-500/20 transition-all duration-300"
+                                    />
+                                    <i className="fas fa-search absolute right-4 sm:right-6 top-1/2 transform -translate-y-1/2 text-yellow-500 text-lg"></i>
+                                </div>
+                            </div>
                             <div className="flex flex-wrap gap-4">
                                 <select className="bg-black/60 border border-yellow-500/30 rounded-xl px-4 sm:px-6 py-3 sm:py-4 text-white focus:border-yellow-500 focus:outline-none cursor-pointer text-sm sm:text-base">
                                     <option value="">Todas as Categorias</option>
@@ -281,11 +249,11 @@ const Index: React.FC = () => {
                                         <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
                                         <p className="text-gray-400">Carregando eventos...</p>
                                     </div>
-                                ) : isErrorEvents || filteredEventsBySearch.length === 0 ? (
+                                ) : isErrorEvents || allEvents.length === 0 ? (
                                     <div className="text-center py-20">
                                         <i className="fas fa-calendar-times text-5xl text-gray-600 mb-4"></i>
                                         <p className="text-gray-400 text-lg">Nenhum evento encontrado.</p>
-                                        <p className="text-gray-500 text-sm mt-2">Tente ajustar sua pesquisa ou filtros.</p>
+                                        <p className="text-gray-500 text-sm mt-2">Cadastre um evento na área do gestor para vê-lo aqui.</p>
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
@@ -353,14 +321,14 @@ const Index: React.FC = () => {
                                     </div>
                                 )}
                                 
-                                {filteredEventsBySearch.length > EVENTS_PER_PAGE && (
+                                {allEvents.length > EVENTS_PER_PAGE && (
                                     <div className="flex items-center justify-center mt-12 space-x-2">
                                         <button 
                                             onClick={() => handlePageChange(currentPage - 1)}
                                             disabled={currentPage === 1}
                                             className="w-10 h-10 sm:w-12 sm:h-12 bg-black/60 border border-yellow-500/30 rounded-xl flex items-center justify-center text-yellow-500 hover:bg-yellow-500/20 hover:border-yellow-500 transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            <ChevronLeft className="h-5 w-5" /> {/* Ícone ChevronLeft */}
+                                            <i className="fas fa-chevron-left"></i>
                                         </button>
                                         
                                         {getPageNumbers().map((page) => (
@@ -381,13 +349,13 @@ const Index: React.FC = () => {
                                             disabled={currentPage === totalPages}
                                             className="w-10 h-10 sm:w-12 sm:h-12 bg-black/60 border border-yellow-500/30 rounded-xl flex items-center justify-center text-yellow-500 hover:bg-yellow-500/20 hover:border-yellow-500 transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                         >
-                                            <ChevronRight className="h-5 w-5" /> {/* Ícone ChevronRight */}
+                                            <i className="fas fa-chevron-right"></i>
                                         </button>
                                     </div>
                                 )}
                                 <div className="text-center mt-8">
                                     <p className="text-gray-400 text-sm sm:text-base">
-                                        Mostrando <span className="text-yellow-500 font-semibold">{startIndex + 1}-{Math.min(endIndex, filteredEventsBySearch.length)}</span> de <span className="text-yellow-500 font-semibold">{filteredEventsBySearch.length}</span> eventos
+                                        Mostrando <span className="text-yellow-500 font-semibold">{startIndex + 1}-{Math.min(endIndex, allEvents.length)}</span> de <span className="text-yellow-500 font-semibold">{allEvents.length}</span> eventos
                                     </p>
                                 </div>
                             </div>
@@ -443,7 +411,7 @@ const Index: React.FC = () => {
                             </p>
                         </div>
                         <div>
-                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg}>Links Úteis</h4>
+                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg">Links Úteis</h4>
                             <ul className="space-y-2 text-sm">
                                 <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Sobre Nós</a></li>
                                 <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Como Funciona</a></li>
@@ -452,7 +420,7 @@ const Index: React.FC = () => {
                             </ul>
                         </div>
                         <div>
-                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg}>Suporte</h4>
+                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg">Suporte</h4>
                             <ul className="space-y-2 text-sm">
                                 <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Central de Ajuda</a></li>
                                 <li><a href="#" className="text-gray-400 hover:text-yellow-500 transition-colors cursor-pointer">Contato</a></li>
@@ -461,7 +429,7 @@ const Index: React.FC = () => {
                             </ul>
                         </div>
                         <div>
-                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg}>Redes Sociais</h4>
+                            <h4 className="text-white font-semibold mb-4 text-base sm:text-lg">Redes Sociais</h4>
                             <div className="flex space-x-4">
                                 <a href="#" className="text-yellow-500 hover:text-yellow-600 transition-colors cursor-pointer">
                                     <i className="fab fa-instagram text-xl sm:text-2xl"></i>
