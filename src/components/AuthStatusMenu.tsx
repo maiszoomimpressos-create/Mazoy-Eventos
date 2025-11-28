@@ -8,7 +8,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { useProfileStatus } from '@/hooks/use-profile-status';
 import { useProfile, ProfileData } from '@/hooks/use-profile';
 import NotificationBell from './NotificationBell';
-import { Shield, PlusCircle, UserPlus, Crown } from 'lucide-react'; // Adicionando Crown aqui
+import { Shield, UserPlus, Crown } from 'lucide-react'; // Removendo PlusCircle
 import { useUserType } from '@/hooks/use-user-type';
 
 const AuthStatusMenu: React.FC = () => {
@@ -57,7 +57,7 @@ const AuthStatusMenu: React.FC = () => {
         const initials = profile.first_name ? profile.first_name.charAt(0).toUpperCase() : 'U';
         const isManager = profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2;
         const isAdmin = profile.tipo_usuario_id === 1;
-        const isClient = profile.tipo_usuario_id === 3; // Novo: Verifica se é Cliente
+        // const isClient = profile.tipo_usuario_id === 3; // Removido: Não é mais necessário para o link "Criar Evento"
         
         const fullName = profile.first_name + (profile.last_name ? ` ${profile.last_name}` : '');
 
@@ -117,25 +117,10 @@ const AuthStatusMenu: React.FC = () => {
                                     <Shield className="mr-2 h-4 w-4" />
                                     Dashboard Admin
                                 </DropdownMenuItem>
-                                {/* Novo link para Admin Master registrar gestor */}
-                                <DropdownMenuItem 
-                                    onClick={() => navigate('/admin/register-manager')} 
-                                    className="cursor-pointer hover:bg-yellow-500/10 text-yellow-500 font-semibold"
-                                >
-                                    <UserPlus className="mr-2 h-4 w-4" />
-                                    Registrar Novo Gestor
-                                </DropdownMenuItem>
+                                {/* Removido: Novo link para Admin Master registrar gestor */}
                             </>
                         )}
-                        {isClient && ( // Botão "Criar Evento" visível apenas para clientes
-                            <DropdownMenuItem 
-                                onClick={() => navigate('/manager/register')} 
-                                className="cursor-pointer hover:bg-yellow-500/10 text-yellow-500 font-semibold"
-                            >
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Criar Evento
-                            </DropdownMenuItem>
-                        )}
+                        {/* Removido: Botão "Criar Evento" visível apenas para clientes */}
                         <DropdownMenuSeparator className="bg-yellow-500/20" />
                         <DropdownMenuItem 
                             onClick={handleLogout} 

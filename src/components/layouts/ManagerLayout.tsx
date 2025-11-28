@@ -8,20 +8,20 @@ import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/use-profile';
 import { useUserType } from '@/hooks/use-user-type';
 import { showError } from '@/utils/toast';
-import { useProfileStatus } from '@/hooks/use-profile-status'; // Import useProfileStatus
-import { useManagerCompany } from '@/hooks/use-manager-company'; // Import useManagerCompany
-import { cn } from '@/lib/utils'; // Importando cn para classes condicionais
+import { useProfileStatus } from '@/hooks/use-profile-status';
+import { useManagerCompany } from '@/hooks/use-manager-company';
+import { cn } from '@/lib/utils';
 
 const ADMIN_USER_TYPE_ID = 1;
 const MANAGER_PRO_USER_TYPE_ID = 2;
-const MIN_LOADING_TIME_MS = 1000; // Tempo mínimo em milissegundos para exibir o loader
+const MIN_LOADING_TIME_MS = 1000;
 
 const ManagerLayout: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [userId, setUserId] = useState<string | undefined>(undefined);
     const [loadingSession, setLoadingSession] = useState(true);
-    const [showDelayedLoader, setShowDelayedLoader] = useState(true); // Novo estado para controlar o atraso do loader
+    const [showDelayedLoader, setShowDelayedLoader] = useState(true);
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
@@ -32,7 +32,7 @@ const ManagerLayout: React.FC = () => {
 
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
     const { userTypeName, isLoadingUserType } = useUserType(profile?.tipo_usuario_id);
-    const { isComplete: isProfileFullyComplete, loading: isLoadingProfileStatus, needsCompanyProfile, needsPersonalProfileCompletion } = useProfileStatus(profile, isLoadingProfile);
+    const { isComplete: isProfileFullyComplete, loading: isLoadingProfileStatus, needsPersonalProfileCompletion } = useProfileStatus(profile, isLoadingProfile); // Removido needsCompanyProfile
     const { company, isLoading: isLoadingCompany } = useManagerCompany(userId);
 
     const handleLogout = async () => {
@@ -44,40 +44,30 @@ const ManagerLayout: React.FC = () => {
         }
     };
 
-    // Combined loading state
     const isLoadingCombined = loadingSession || isLoadingProfile || isLoadingUserType || isLoadingProfileStatus || isLoadingCompany;
 
-    // Efeito para controlar o atraso do loader
     useEffect(() => {
         if (isLoadingCombined) {
-            setShowDelayedLoader(true); // Se está carregando, mostra o loader imediatamente
+            setShowDelayedLoader(true);
         } else {
-            // Se não está mais carregando, inicia um timer para esconder o loader
             const timer = setTimeout(() => {
                 setShowDelayedLoader(false);
             }, MIN_LOADING_TIME_MS);
-            return () => clearTimeout(timer); // Limpa o timer se o componente for desmontado ou o estado de carregamento mudar novamente
+            return () => clearTimeout(timer);
         }
     }, [isLoadingCombined]);
 
 
-    // Determine user type and manager status
     const userType = profile?.tipo_usuario_id;
     const isManager = userType === ADMIN_USER_TYPE_ID || userType === MANAGER_PRO_USER_TYPE_ID;
     const isAdminMaster = userType === ADMIN_USER_TYPE_ID;
 
     // Pages where profile completion is allowed/expected
-    const isProfileCompletionPage = location.pathname === '/profile' || 
-                                   location.pathname === '/manager/settings/company-profile' ||
-                                   location.pathname === '/manager/register' || 
-                                   location.pathname === '/manager/register/company' ||
-                                   location.pathname === '/admin/register-manager'; 
+    const isProfileCompletionPage = location.pathname === '/profile'; // Removido /manager/settings/company-profile e /manager/register rotas
 
-    // Effect for redirection logic (ONLY for unauthenticated or non-manager users)
     useEffect(() => {
-        if (isLoadingCombined) return; // Wait for all data to load
+        if (isLoadingCombined) return;
 
-        // 1. Redirect unauthenticated users to login
         if (!userId) {
             if (location.pathname.startsWith('/manager') || location.pathname.startsWith('/admin')) {
                 navigate('/manager/login', { replace: true });
@@ -85,7 +75,6 @@ const ManagerLayout: React.FC = () => {
             return;
         }
 
-        // 2. Redirect non-managers away from manager/admin routes
         if (!isManager) {
             if (location.pathname.startsWith('/manager') || location.pathname.startsWith('/admin')) {
                 navigate('/', { replace: true });
@@ -93,13 +82,10 @@ const ManagerLayout: React.FC = () => {
             return;
         }
         
-        // REMOVIDO: A lógica de redirecionamento para perfis incompletos foi removida daqui.
-        // Agora, o dashboard e as páginas de ação serão responsáveis por exibir avisos e desabilitar funcionalidades.
-
     }, [isLoadingCombined, userId, isManager, userType, navigate, location.pathname]);
 
 
-    if (isLoadingCombined || showDelayedLoader) { // Agora o loader é exibido com base no estado de atraso
+    if (isLoadingCombined || showDelayedLoader) {
         return (
             <div className="min-h-screen bg-black text-white flex items-center justify-center">
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />

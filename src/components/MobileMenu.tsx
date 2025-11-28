@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, X, Bell, User, LogOut, Crown, PlusCircle } from 'lucide-react'; // Importando PlusCircle
+import { Menu, X, Bell, User, LogOut, Crown } from 'lucide-react'; // Removendo PlusCircle
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from '@/integrations/supabase/client';
@@ -61,7 +61,7 @@ const MobileMenu: React.FC = () => {
     const isUserLoading = loadingSession || isLoadingProfile || statusLoading || isLoadingUserType;
     const isLoggedIn = session && profile;
     const isManager = isLoggedIn && (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2);
-    const isClient = isLoggedIn && profile.tipo_usuario_id === 3; // Novo: Verifica se é Cliente
+    // const isClient = isLoggedIn && profile.tipo_usuario_id === 3; // Removido: Não é mais necessário para o link "Criar Evento"
     
     const fullName = profile?.first_name + (profile?.last_name ? ` ${profile.last_name}` : '');
 
@@ -125,16 +125,7 @@ const MobileMenu: React.FC = () => {
                                     Dashboard PRO
                                 </Button>
                             )}
-                            {isClient && ( // Botão "Criar Evento" visível apenas para clientes
-                                <Button 
-                                    onClick={() => handleNavigation('/manager/register')}
-                                    variant="ghost"
-                                    className="w-full justify-start text-lg py-6 text-yellow-500 font-semibold hover:bg-yellow-500/10"
-                                >
-                                    <PlusCircle className="mr-3 h-5 w-5" />
-                                    Criar Evento
-                                </Button>
-                            )}
+                            {/* Removido: Botão "Criar Evento" visível apenas para clientes */}
                             <div className="border-t border-yellow-500/20 pt-4">
                                 <Button 
                                     onClick={handleLogout}

@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { managerStats } from '@/data/events';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Importando Alert
-import { AlertTriangle, Users, Building, Zap, Clock, CheckCircle, Loader2, Plus } from 'lucide-react'; // Importando AlertTriangle e Plus
-import { useProfileStatus } from '@/hooks/use-profile-status'; // Importando useProfileStatus
-import { useProfile } from '@/hooks/use-profile'; // Importando useProfile
-import { supabase } from '@/integrations/supabase/client'; // Importando supabase para obter userId
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle, Users, Building, Zap, Clock, CheckCircle, Loader2, Plus } from 'lucide-react';
+import { useProfileStatus } from '@/hooks/use-profile-status';
+import { useProfile } from '@/hooks/use-profile';
+import { supabase } from '@/integrations/supabase/client';
 
 const ManagerDashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -19,9 +19,9 @@ const ManagerDashboard: React.FC = () => {
     }, []);
 
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
-    const { needsPersonalProfileCompletion, needsCompanyProfile, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile);
+    const { needsPersonalProfileCompletion, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile); // Removido needsCompanyProfile
 
-    const isProfileIncomplete = needsPersonalProfileCompletion || needsCompanyProfile;
+    const isProfileIncomplete = needsPersonalProfileCompletion; // needsCompanyProfile sempre será falso agora
 
     const getActivityStatusClasses = (status: string) => {
         switch (status) {
@@ -57,9 +57,7 @@ const ManagerDashboard: React.FC = () => {
                         {needsPersonalProfileCompletion && (
                             <p className="mb-2">Seu perfil pessoal está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/profile')}>complete-o aqui</Button> para liberar todas as funcionalidades.</p>
                         )}
-                        {needsCompanyProfile && (
-                            <p>Seu perfil de empresa não está cadastrado. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/manager/settings/company-profile')}>preencha os dados da sua empresa</Button> para criar eventos e gerenciar pulseiras.</p>
-                        )}
+                        {/* Removido: Alerta de perfil de empresa incompleto */}
                         <p className="mt-2 text-sm text-white font-semibold">Funcionalidades de criação de eventos e pulseiras estão desabilitadas.</p>
                     </AlertDescription>
                 </Alert>
@@ -236,7 +234,7 @@ const ManagerDashboard: React.FC = () => {
                         <Button 
                             onClick={() => navigate('/manager/events/create')}
                             className="w-full bg-yellow-500 text-black hover:bg-yellow-600 py-3 transition-all duration-300 cursor-pointer flex items-center justify-center text-sm sm:text-base"
-                            disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
+                            disabled={isProfileIncomplete}
                         >
                             <Plus className="mr-2 h-5 w-5" />
                             Criar Novo Evento
@@ -244,7 +242,7 @@ const ManagerDashboard: React.FC = () => {
                         <Button 
                             onClick={() => navigate('/manager/wristbands/create')}
                             className="w-full bg-black/60 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 transition-all duration-300 cursor-pointer flex items-center justify-center text-sm sm:text-base"
-                            disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
+                            disabled={isProfileIncomplete}
                         >
                             <i className="fas fa-id-badge mr-2"></i>
                             Gerar Pulseiras

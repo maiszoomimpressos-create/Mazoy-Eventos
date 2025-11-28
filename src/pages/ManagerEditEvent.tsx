@@ -5,17 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Importando Alert
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { categories } from '@/data/events';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, ImageOff, AlertTriangle, ArrowLeft } from 'lucide-react'; // Importando AlertTriangle e ArrowLeft
+import { Loader2, ImageOff, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { DatePicker } from '@/components/DatePicker';
-import ImageUploadPicker from '@/components/ImageUploadPicker'; // Importando o novo componente
-import { useProfileStatus } from '@/hooks/use-profile-status'; // Importando useProfileStatus
-import { useProfile } from '@/hooks/use-profile'; // Importando useProfile
-import { useManagerCompany } from '@/hooks/use-manager-company'; // Importando useManagerCompany
+import ImageUploadPicker from '@/components/ImageUploadPicker';
+import { useProfileStatus } from '@/hooks/use-profile-status';
+import { useProfile } from '@/hooks/use-profile';
+// Removido: import { useManagerCompany } from '@/hooks/use-manager-company';
 
 // Define the structure for the form data
 interface EventFormData {
@@ -36,10 +36,10 @@ const ManagerEditEvent: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const [formData, setFormData] = useState<EventFormData | null>(null);
-    const [isLoading, setIsLoading] = useState(false); // Estado para o botão de salvar
-    const [isFetchingEvent, setIsFetchingEvent] = useState(true); // Estado para carregar dados do evento
+    const [isLoading, setIsLoading] = useState(false);
+    const [isFetchingEvent, setIsFetchingEvent] = useState(true);
     const [userId, setUserId] = useState<string | null>(null);
-    const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({}); // Estado para erros de validação
+    const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
 
     // Fetch current user ID
     useEffect(() => {
@@ -54,15 +54,15 @@ const ManagerEditEvent: React.FC = () => {
     }, [navigate]);
 
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
-    const { needsPersonalProfileCompletion, needsCompanyProfile, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile);
-    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId);
+    const { needsPersonalProfileCompletion, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile); // Removido needsCompanyProfile
+    // Removido: const { company, isLoading: isLoadingCompany } = useManagerCompany(userId);
 
-    const isProfileIncomplete = needsPersonalProfileCompletion || needsCompanyProfile;
-    const isPageLoading = isLoadingProfile || isLoadingProfileStatus || isLoadingCompany || isFetchingEvent || !userId;
+    const isProfileIncomplete = needsPersonalProfileCompletion; // needsCompanyProfile sempre será falso agora
+    const isPageLoading = isLoadingProfile || isLoadingProfileStatus || isFetchingEvent || !userId; // Removido isLoadingCompany
 
     useEffect(() => {
         const fetchEventAndUser = async () => {
-            if (!userId || isLoadingProfile || isLoadingCompany) return; // Espera o userId e dados do perfil/empresa
+            if (!userId || isLoadingProfile) return; // Removido isLoadingCompany
 
             setIsFetchingEvent(true);
             
@@ -97,7 +97,7 @@ const ManagerEditEvent: React.FC = () => {
             setFormData({
                 title: eventData.title || '',
                 description: eventData.description || '',
-                date: eventData.date ? new Date(eventData.date) : undefined, // Converte para objeto Date
+                date: eventData.date ? new Date(eventData.date) : undefined,
                 time: eventData.time || '',
                 location: eventData.location || '',
                 address: eventData.address || '',
@@ -110,10 +110,10 @@ const ManagerEditEvent: React.FC = () => {
             setIsFetchingEvent(false);
         };
 
-        if (userId) { // Só tenta buscar o evento se o userId estiver disponível
+        if (userId) {
             fetchEventAndUser();
         }
-    }, [id, navigate, userId, isLoadingProfile, isLoadingCompany]); // Adiciona userId e estados de carregamento como dependências
+    }, [id, navigate, userId, isLoadingProfile]); // Removido isLoadingCompany
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value, type } = e.target;
@@ -135,7 +135,7 @@ const ManagerEditEvent: React.FC = () => {
             if (!prev) return null;
             return { ...prev, date };
         });
-        setFormErrors(prev => ({ ...prev, date: '' })); // Limpa o erro para o campo de data
+        setFormErrors(prev => ({ ...prev, date: '' }));
     };
 
     const handleSelectChange = (value: string) => {
@@ -143,7 +143,7 @@ const ManagerEditEvent: React.FC = () => {
             if (!prev) return null;
             return { ...prev, category: value };
         });
-        setFormErrors(prev => ({ ...prev, category: '' })); // Limpa o erro para o campo de categoria
+        setFormErrors(prev => ({ ...prev, category: '' }));
     };
 
     const handleImageUpload = (url: string) => {
@@ -151,7 +151,7 @@ const ManagerEditEvent: React.FC = () => {
             if (!prev) return null;
             return { ...prev, image_url: url };
         });
-        setFormErrors(prev => ({ ...prev, image_url: '' })); // Limpa o erro para o campo de imagem
+        setFormErrors(prev => ({ ...prev, image_url: '' }));
     };
 
     const validateForm = (): { isValid: boolean, errors: { [key: string]: string }, isoDate: string | null } => {
@@ -200,7 +200,7 @@ const ManagerEditEvent: React.FC = () => {
         }
 
         const validationResult = validateForm();
-        setFormErrors(validationResult.errors); // Atualiza o estado de erros
+        setFormErrors(validationResult.errors);
 
         if (!validationResult.isValid || !userId || !id || !formData || !validationResult.isoDate) {
             showError("Por favor, preencha todos os campos obrigatórios.");
@@ -216,7 +216,7 @@ const ManagerEditEvent: React.FC = () => {
                 .update({
                     title: formData.title,
                     description: formData.description,
-                    date: validationResult.isoDate, // Usando a data formatada para ISO
+                    date: validationResult.isoDate,
                     time: formData.time,
                     location: formData.location,
                     address: formData.address,
@@ -227,7 +227,7 @@ const ManagerEditEvent: React.FC = () => {
                     duration: formData.duration,
                 })
                 .eq('id', id)
-                .eq('user_id', userId); // Ensure only the owner can update
+                .eq('user_id', userId);
 
             if (error) {
                 throw error;
@@ -246,7 +246,7 @@ const ManagerEditEvent: React.FC = () => {
         }
     };
 
-    if (isPageLoading || !formData) { // Inclui isPageLoading aqui
+    if (isPageLoading || !formData) {
         return (
             <div className="max-w-4xl mx-auto px-4 sm:px-0 text-center py-20">
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
@@ -277,9 +277,7 @@ const ManagerEditEvent: React.FC = () => {
                         {needsPersonalProfileCompletion && (
                             <p className="mb-2">Seu perfil pessoal está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/profile')}>complete-o aqui</Button> para editar eventos.</p>
                         )}
-                        {needsCompanyProfile && (
-                            <p>Seu perfil de empresa não está cadastrado. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/manager/settings/company-profile')}>preencha os dados da sua empresa</Button> para editar eventos.</p>
-                        )}
+                        {/* Removido: Alerta de perfil de empresa incompleto */}
                         <p className="mt-2 text-sm text-white font-semibold">O formulário de edição de evento está desabilitado.</p>
                     </AlertDescription>
                 </Alert>

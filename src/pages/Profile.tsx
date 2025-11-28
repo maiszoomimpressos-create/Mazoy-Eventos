@@ -13,7 +13,7 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import AuthStatusMenu from '@/components/AuthStatusMenu';
 import AvatarUpload from '@/components/AvatarUpload';
-import { useProfileStatus, isValueEmpty, ESSENTIAL_PERSONAL_PROFILE_FIELDS } from '@/hooks/use-profile-status'; // Importando ESSENTIAL_PERSONAL_PROFILE_FIELDS
+import { useProfileStatus, isValueEmpty, ESSENTIAL_PERSONAL_PROFILE_FIELDS } from '@/hooks/use-profile-status';
 import { useProfile, ProfileData } from '@/hooks/use-profile';
 import { useQueryClient } from '@tanstack/react-query';
 import TermsAndConditionsDialog from '@/components/TermsAndConditionsDialog';
@@ -40,7 +40,7 @@ const validateCEP = (cep: string) => {
 
 const profileSchema = z.object({
     first_name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
-    last_name: z.string().min(2, { message: "O sobrenome deve ter pelo menos 2 caracteres." }), // Adicionado last_name
+    last_name: z.string().min(2, { message: "O sobrenome deve ter pelo menos 2 caracteres." }),
     birth_date: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de nascimento é obrigatória." }),
     gender: z.string().optional().nullable(),
     
@@ -81,7 +81,7 @@ const Profile: React.FC = () => {
 
     const userId = session?.user?.id;
     const { profile, isLoading: isLoadingProfile, refetch } = useProfile(userId);
-    const { hasPendingNotifications, loading: statusLoading, needsCompanyProfile, needsPersonalProfileCompletion } = useProfileStatus(profile, isLoadingProfile);
+    const { hasPendingNotifications, loading: statusLoading, needsPersonalProfileCompletion } = useProfileStatus(profile, isLoadingProfile); // Removido needsCompanyProfile
 
     const loading = loadingSession || isLoadingProfile;
 
@@ -118,7 +118,7 @@ const Profile: React.FC = () => {
         resolver: zodResolver(profileSchema),
         defaultValues: {
             first_name: '',
-            last_name: '', // Adicionado last_name
+            last_name: '',
             birth_date: '',
             gender: '',
             cpf: '',
@@ -133,7 +133,7 @@ const Profile: React.FC = () => {
         },
         values: {
             first_name: profile?.first_name || '',
-            last_name: profile?.last_name || '', // Adicionado last_name
+            last_name: profile?.last_name || '',
             birth_date: profile?.birth_date || '',
             gender: profile?.gender || '',
             cpf: profile?.cpf ? formatCPF(profile.cpf) : '',
@@ -150,10 +150,9 @@ const Profile: React.FC = () => {
 
     useEffect(() => {
         if (profile) {
-            // Resetar o formulário com os dados do perfil sempre que o perfil for carregado/atualizado
             form.reset({
                 first_name: profile.first_name || '',
-                last_name: profile.last_name || '', // Adicionado last_name
+                last_name: profile.last_name || '',
                 birth_date: profile.birth_date || '',
                 gender: profile.gender || '',
                 cpf: profile.cpf ? formatCPF(profile.cpf) : '',
@@ -174,9 +173,9 @@ const Profile: React.FC = () => {
     useEffect(() => {
         // Só executa se todos os dados de carregamento estiverem prontos e o perfil estiver disponível
         if (!loading && !statusLoading && profile) {
-            // Se o perfil pessoal está completo e não há notificações pendentes (incluindo empresa para gestores)
-            if (!hasPendingNotifications) {
-                if (isEditing) { // Se estava editando e agora está completo, sai do modo de edição
+            // Se o perfil pessoal está completo e não há notificações pendentes
+            if (!hasPendingNotifications) { // needsCompanyProfile sempre será falso agora
+                if (isEditing) {
                     setIsEditing(false);
                 }
                 showSuccess("Seu perfil está completo!");
@@ -188,21 +187,16 @@ const Profile: React.FC = () => {
                 } else if (profile.tipo_usuario_id === 1) { // Admin Master
                     navigate('/admin/dashboard', { replace: true });
                 }
-                return; // Sai do useEffect para evitar mais lógica
+                return;
             }
 
             // Se o perfil pessoal está incompleto, entra no modo de edição
             if (needsPersonalProfileCompletion && !isEditing) {
                 setIsEditing(true);
             }
-            // Se o perfil pessoal está completo, mas o da empresa não (para gestores PJ), redireciona
-            else if (profile.tipo_usuario_id === 2 && !needsPersonalProfileCompletion && needsCompanyProfile) {
-                showSuccess("Perfil pessoal completo! Agora, preencha os dados da sua empresa.");
-                navigate('/manager/settings/company-profile', { replace: true });
-                return; // Sai do useEffect
-            }
+            // Removido: Lógica de redirecionamento para perfil da empresa incompleto
         }
-    }, [loading, statusLoading, profile, isEditing, hasPendingNotifications, needsPersonalProfileCompletion, needsCompanyProfile, navigate]);
+    }, [loading, statusLoading, profile, isEditing, hasPendingNotifications, needsPersonalProfileCompletion, navigate]);
 
 
     // Função para buscar endereço via ViaCEP
@@ -286,7 +280,7 @@ const Profile: React.FC = () => {
                 .from('profiles')
                 .update({ 
                     first_name: values.first_name,
-                    last_name: values.last_name, // Adicionado last_name
+                    last_name: values.last_name,
                     birth_date: values.birth_date,
                     gender: genderToSave,
                     cpf: cleanCPF, 
@@ -352,7 +346,7 @@ const Profile: React.FC = () => {
 
     // Helper para verificar se um campo está faltando para a notificação de perfil incompleto
     const getMissingFieldsMessage = () => {
-        if (!profile) return ''; // Não precisa de hasPendingNotifications aqui, pois já estamos no contexto de perfil
+        if (!profile) return '';
 
         const missingFields: string[] = [];
         const fieldLabels: { [key: string]: string } = {
@@ -842,9 +836,7 @@ const Profile: React.FC = () => {
                                     </Button>
                                 </CardContent>
                             </Card>
-                            {/* MultiLineEditor component added here */}
                             <div className="mt-8">
-                                {/* Renderiza o novo componente TermsAndConditionsDialog */}
                                 <TermsAndConditionsDialog onAgree={handleTermsAgree} showAgreementCheckbox={false} termsType="general" />
                             </div>
                         </div>

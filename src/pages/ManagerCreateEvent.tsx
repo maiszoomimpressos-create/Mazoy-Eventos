@@ -18,13 +18,13 @@ import {
 import { categories } from '@/data/events';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, ArrowLeft, ImageOff, Loader2, AlertTriangle } from 'lucide-react'; // Importando AlertTriangle e Loader2
+import { Plus, ArrowLeft, ImageOff, Loader2, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { DatePicker } from '@/components/DatePicker';
-import ImageUploadPicker from '@/components/ImageUploadPicker'; // Importando o novo componente
-import { useProfileStatus } from '@/hooks/use-profile-status'; // Importando useProfileStatus
-import { useProfile } from '@/hooks/use-profile'; // Importando useProfile
-import { useManagerCompany } from '@/hooks/use-manager-company'; // Importando useManagerCompany
+import ImageUploadPicker from '@/components/ImageUploadPicker';
+import { useProfileStatus } from '@/hooks/use-profile-status';
+import { useProfile } from '@/hooks/use-profile';
+// Removido: import { useManagerCompany } from '@/hooks/use-manager-company';
 
 // Define the structure for the form data
 interface EventFormData {
@@ -58,7 +58,7 @@ const ManagerCreateEvent: React.FC = () => {
     });
     const [isLoading, setIsLoading] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
-    const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({}); // Estado para erros de validação
+    const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
     
     // Estado para o modal de pulseiras
     const [showWristbandModal, setShowWristbandModal] = useState(false);
@@ -78,11 +78,11 @@ const ManagerCreateEvent: React.FC = () => {
     }, [navigate]);
 
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
-    const { needsPersonalProfileCompletion, needsCompanyProfile, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile);
-    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId);
+    const { needsPersonalProfileCompletion, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile); // Removido needsCompanyProfile
+    // Removido: const { company, isLoading: isLoadingCompany } = useManagerCompany(userId);
 
-    const isProfileIncomplete = needsPersonalProfileCompletion || needsCompanyProfile;
-    const isPageLoading = isLoadingProfile || isLoadingProfileStatus || isLoadingCompany || !userId;
+    const isProfileIncomplete = needsPersonalProfileCompletion; // needsCompanyProfile sempre será falso agora
+    const isPageLoading = isLoadingProfile || isLoadingProfileStatus || !userId; // Removido isLoadingCompany
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value, type } = e.target;
@@ -102,17 +102,17 @@ const ManagerCreateEvent: React.FC = () => {
     
     const handleDateChange = (date: Date | undefined) => {
         setFormData(prev => ({ ...prev, date }));
-        setFormErrors(prev => ({ ...prev, date: '' })); // Limpa o erro para o campo de data
+        setFormErrors(prev => ({ ...prev, date: '' }));
     };
 
     const handleSelectChange = (value: string) => {
         setFormData(prev => ({ ...prev, category: value }));
-        setFormErrors(prev => ({ ...prev, category: '' })); // Limpa o erro para o campo de categoria
+        setFormErrors(prev => ({ ...prev, category: '' }));
     };
     
     const handleImageUpload = (url: string) => {
         setFormData(prev => ({ ...prev, image_url: url }));
-        setFormErrors(prev => ({ ...prev, image_url: '' })); // Limpa o erro para o campo de imagem
+        setFormErrors(prev => ({ ...prev, image_url: '' }));
     };
 
     const validateForm = (): { isValid: boolean, errors: { [key: string]: string }, isoDate: string | null } => {
@@ -159,10 +159,10 @@ const ManagerCreateEvent: React.FC = () => {
         }
 
         const validationResult = validateForm();
-        setFormErrors(validationResult.errors); // Atualiza o estado de erros
+        setFormErrors(validationResult.errors);
 
         if (!validationResult.isValid || !userId || !validationResult.isoDate) {
-            showError("Por favor, preencha todos os campos obrigatórios."); // Toast genérico
+            showError("Por favor, preencha todos os campos obrigatórios.");
             return;
         }
 
@@ -177,15 +177,15 @@ const ManagerCreateEvent: React.FC = () => {
                         user_id: userId,
                         title: formData.title,
                         description: formData.description,
-                        date: validationResult.isoDate, // Usando a data formatada para ISO
+                        date: validationResult.isoDate,
                         time: formData.time,
                         location: formData.location,
                         address: formData.address,
                         image_url: formData.image_url,
                         min_age: Number(formData.min_age),
                         category: formData.category,
-                        capacity: Number(formData.capacity), // SALVANDO CAPACIDADE
-                        duration: formData.duration, // SALVANDO DURAÇÃO
+                        capacity: Number(formData.capacity),
+                        duration: formData.duration,
                     },
                 ])
                 .select('id')
@@ -200,7 +200,7 @@ const ManagerCreateEvent: React.FC = () => {
             
             setNewEventId(data.id);
             setShowWristbandModal(true);
-            setFormErrors({}); // Limpa todos os erros após o sucesso
+            setFormErrors({});
 
         } catch (error: any) {
             dismissToast(toastId);
@@ -253,9 +253,7 @@ const ManagerCreateEvent: React.FC = () => {
                             {needsPersonalProfileCompletion && (
                                 <p className="mb-2">Seu perfil pessoal está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/profile')}>complete-o aqui</Button> para criar eventos.</p>
                             )}
-                            {needsCompanyProfile && (
-                                <p>Seu perfil de empresa não está cadastrado. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/manager/settings/company-profile')}>preencha os dados da sua empresa</Button> para criar eventos.</p>
-                            )}
+                            {/* Removido: Alerta de perfil de empresa incompleto */}
                         </p>
                         <p className="mt-2 text-sm text-white font-semibold">O formulário de criação de evento está desabilitado.</p>
                     </div>
@@ -278,9 +276,9 @@ const ManagerCreateEvent: React.FC = () => {
                                     onChange={handleChange} 
                                     placeholder="Ex: Concerto Sinfônico Premium"
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
-                                    isInvalid={!!formErrors.title} // Passa a prop de erro
+                                    isInvalid={!!formErrors.title}
                                     required
-                                    disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
+                                    disabled={isProfileIncomplete}
                                 />
                                 {formErrors.title && <p className="text-red-400 text-xs mt-1">{formErrors.title}</p>}
                             </div>
@@ -292,9 +290,9 @@ const ManagerCreateEvent: React.FC = () => {
                                     onChange={handleChange} 
                                     placeholder="Ex: Teatro Municipal"
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
-                                    isInvalid={!!formErrors.location} // Passa a prop de erro
+                                    isInvalid={!!formErrors.location}
                                     required
-                                    disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
+                                    disabled={isProfileIncomplete}
                                 />
                                 {formErrors.location && <p className="text-red-400 text-xs mt-1">{formErrors.location}</p>}
                             </div>
@@ -309,9 +307,9 @@ const ManagerCreateEvent: React.FC = () => {
                                 onChange={handleChange} 
                                 placeholder="Ex: Praça Ramos de Azevedo, s/n - República, São Paulo - SP"
                                 className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
-                                isInvalid={!!formErrors.address} // Passa a prop de erro
+                                isInvalid={!!formErrors.address}
                                 required
-                                disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
+                                disabled={isProfileIncomplete}
                             />
                             {formErrors.address && <p className="text-red-400 text-xs mt-1">{formErrors.address}</p>}
                         </div>
@@ -325,9 +323,9 @@ const ManagerCreateEvent: React.FC = () => {
                                 onChange={handleChange} 
                                 placeholder="Descreva o evento, destaques e público-alvo."
                                 className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 min-h-[100px]"
-                                isInvalid={!!formErrors.description} // Passa a prop de erro
+                                isInvalid={!!formErrors.description}
                                 required
-                                disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
+                                disabled={isProfileIncomplete}
                             />
                             {formErrors.description && <p className="text-red-400 text-xs mt-1">{formErrors.description}</p>}
                         </div>
@@ -340,11 +338,11 @@ const ManagerCreateEvent: React.FC = () => {
                                     userId={userId}
                                     currentImageUrl={formData.image_url}
                                     onImageUpload={handleImageUpload}
-                                    disabled={isLoading || isProfileIncomplete} // Desabilita se o perfil estiver incompleto
+                                    disabled={isLoading || isProfileIncomplete}
                                     width={550}
                                     height={380}
                                     placeholderText="Nenhuma imagem de banner selecionada."
-                                    isInvalid={!!formErrors.image_url} // Passa a prop de erro
+                                    isInvalid={!!formErrors.image_url}
                                 />
                             )}
                             {formErrors.image_url && <p className="text-red-400 text-xs mt-1">{formErrors.image_url}</p>}
@@ -358,8 +356,8 @@ const ManagerCreateEvent: React.FC = () => {
                                     date={formData.date}
                                     setDate={handleDateChange}
                                     placeholder="DD/MM/AAAA ou Selecione"
-                                    isInvalid={!!formErrors.date} // Passa a prop de erro
-                                    disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
+                                    isInvalid={!!formErrors.date}
+                                    disabled={isProfileIncomplete}
                                 />
                                 {formErrors.date && <p className="text-red-400 text-xs mt-1">{formErrors.date}</p>}
                             </div>
@@ -371,18 +369,18 @@ const ManagerCreateEvent: React.FC = () => {
                                     value={formData.time} 
                                     onChange={handleChange} 
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
-                                    isInvalid={!!formErrors.time} // Passa a prop de erro
+                                    isInvalid={!!formErrors.time}
                                     required
-                                    disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
+                                    disabled={isProfileIncomplete}
                                 />
                                 {formErrors.time && <p className="text-red-400 text-xs mt-1">{formErrors.time}</p>}
                             </div>
                             <div>
                                 <label htmlFor="category" className="block text-sm font-medium text-white mb-2">Categoria *</label>
-                                <Select onValueChange={handleSelectChange} value={formData.category} disabled={isProfileIncomplete}> {/* Desabilita se o perfil estiver incompleto */}
+                                <Select onValueChange={handleSelectChange} value={formData.category} disabled={isProfileIncomplete}>
                                     <SelectTrigger 
                                         className="w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500"
-                                        isInvalid={!!formErrors.category} // Passa a prop de erro
+                                        isInvalid={!!formErrors.category}
                                     >
                                         <SelectValue placeholder="Selecione a Categoria" />
                                     </SelectTrigger>
@@ -409,10 +407,10 @@ const ManagerCreateEvent: React.FC = () => {
                                     onChange={handleChange} 
                                     placeholder="Ex: 500"
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
-                                    isInvalid={!!formErrors.capacity} // Passa a prop de erro
+                                    isInvalid={!!formErrors.capacity}
                                     min="1"
                                     required
-                                    disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
+                                    disabled={isProfileIncomplete}
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Número máximo de pessoas permitidas.</p>
                                 {formErrors.capacity && <p className="text-red-400 text-xs mt-1">{formErrors.capacity}</p>}
@@ -426,9 +424,9 @@ const ManagerCreateEvent: React.FC = () => {
                                     onChange={handleChange} 
                                     placeholder="Ex: 3 horas ou 2h30min"
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
-                                    isInvalid={!!formErrors.duration} // Passa a prop de erro
+                                    isInvalid={!!formErrors.duration}
                                     required
-                                    disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
+                                    disabled={isProfileIncomplete}
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Duração estimada do evento.</p>
                                 {formErrors.duration && <p className="text-red-400 text-xs mt-1">{formErrors.duration}</p>}
@@ -442,10 +440,10 @@ const ManagerCreateEvent: React.FC = () => {
                                     onChange={handleChange} 
                                     placeholder="0 (Livre)"
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
-                                    isInvalid={!!formErrors.min_age} // Passa a prop de erro
+                                    isInvalid={!!formErrors.min_age}
                                     min="0"
                                     required
-                                    disabled={isProfileIncomplete} // Desabilita se o perfil estiver incompleto
+                                    disabled={isProfileIncomplete}
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Defina 0 para classificação livre.</p>
                                 {formErrors.min_age && <p className="text-red-400 text-xs mt-1">{formErrors.min_age}</p>}
@@ -454,7 +452,7 @@ const ManagerCreateEvent: React.FC = () => {
 
                         <Button
                             type="submit"
-                            disabled={isLoading || !userId || isProfileIncomplete} // Desabilita se o perfil estiver incompleto
+                            disabled={isLoading || !userId || isProfileIncomplete}
                             className="w-full bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
                         >
                             {isLoading ? (

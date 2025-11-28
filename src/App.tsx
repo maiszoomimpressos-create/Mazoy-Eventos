@@ -15,7 +15,6 @@ import ManagerCreateEvent from "./pages/ManagerCreateEvent";
 import ManagerEventsList from "./pages/ManagerEventsList";
 import ManagerEditEvent from "./pages/ManagerEditEvent";
 import ManagerSettings from "./pages/ManagerSettings";
-import ManagerCompanyProfile from "./pages/ManagerCompanyProfile";
 import ManagerNotifications from "./pages/ManagerNotifications";
 import ManagerAdvancedSettings from "./pages/ManagerAdvancedSettings"; 
 import ManagerPaymentSettings from "./pages/ManagerPaymentSettings"; 
@@ -31,10 +30,7 @@ import ClientLayout from "./components/layouts/ClientLayout";
 import ForgotPassword from "./pages/ForgotPassword";
 import FinalizarCompra from "./pages/FinalizarCompra";
 import ScrollToTop from "./components/ScrollToTop";
-import ManagerRegister from "./pages/ManagerRegister";
-import ManagerIndividualRegister from "./pages/ManagerIndividualRegister";
-import ManagerCompanyRegister from "./pages/ManagerCompanyRegister";
-import { TooltipProvider } from "@/components/ui/tooltip"; // Importação corrigida
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const queryClient = new QueryClient();
 
@@ -52,9 +48,6 @@ const App = () => (
             <Route path="/events/:id" element={<EventDetails />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/tickets" element={<MyTickets />} />
-            <Route path="/manager/register" element={<ManagerRegister />} />
-            <Route path="/manager/register/individual" element={<ManagerIndividualRegister />} />
-            <Route path="/manager/register/company" element={<ManagerCompanyRegister />} />
             <Route path="/finalizar-compra" element={<FinalizarCompra />} />
           </Route>
           
@@ -75,7 +68,6 @@ const App = () => (
             <Route path="/manager/wristbands/manage/:id" element={<ManagerManageWristband />} />
             <Route path="/manager/reports" element={<ManagerReports />} />
             <Route path="/manager/settings" element={<ManagerSettings />} />
-            <Route path="/manager/settings/company-profile" element={<ManagerCompanyProfile />} />
             <Route path="/manager/settings/notifications" element={<ManagerNotifications />} />
             <Route path="/manager/settings/payment" element={<ManagerPaymentSettings />} />
           </Route>
@@ -84,8 +76,6 @@ const App = () => (
           <Route element={<AdminMasterRouteGuard />}>
             <Route element={<ManagerLayout />}>
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                {/* Nova rota para Admin Master acessar o cadastro de gestor */}
-                <Route path="/admin/register-manager" element={<ManagerRegister />} />
                 <Route path="/manager/settings/advanced" element={<ManagerAdvancedSettings />} />
             </Route>
           </Route>
