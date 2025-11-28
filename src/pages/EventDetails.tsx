@@ -144,7 +144,7 @@ const EventDetails: React.FC = () => {
 
     const minPriceDisplay = getMinPriceDisplay(ticketTypes);
     const classificationDisplay = event.min_age === 0 ? 'Livre' : `${event.min_age} anos`;
-    const organizerName = event.companies?.corporate_name || 'Organizador Desconhecido';
+    const organizerName = event.companies?.corporate_name || 'Organizador Desconhecido'; // Linha 147
 
     return (
         <div className="min-h-screen bg-black text-white overflow-x-hidden">
