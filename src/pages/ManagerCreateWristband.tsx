@@ -8,7 +8,7 @@ import { ArrowLeft, Loader2, QrCode, Tag, User, Calendar, Hash, DollarSign, Aler
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useManagerCompany } from '@/hooks/use-manager-company';
-import { useManagerEvents, ManagerEvent } from '@/hooks/use-manager-events';
+import { useManagerEvents, ManagerEvent } from '@/hooks/use-manager-events'; // Importando ManagerEvent
 import { useProfileStatus } from '@/hooks/use-profile-status'; // Importando useProfileStatus
 import { useProfile } from '@/hooks/use-profile'; // Importando useProfile
 
@@ -79,11 +79,11 @@ const ManagerCreateWristband: React.FC = () => {
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
     const { needsPersonalProfileCompletion, needsCompanyProfile, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile);
     const { company, isLoading: isLoadingCompany } = useManagerCompany(userId || undefined);
+    // Importando isLoading do useManagerEvents e renomeando para isLoadingEvents
+    const { events, isLoading: isLoadingEvents } = useManagerEvents(userId, profile?.tipo_usuario_id);
     
     const isProfileIncomplete = needsPersonalProfileCompletion || needsCompanyProfile;
-    const isPageLoading = isLoadingProfile || isLoadingProfileStatus || isLoadingCompany || !userId;
-
-    const isLoading = isLoadingCompany || isLoadingEvents || !userId;
+    const isPageLoading = isLoadingProfile || isLoadingProfileStatus || isLoadingCompany || isLoadingEvents || !userId; // Usando isLoadingEvents aqui
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value } = e.target;
@@ -374,7 +374,7 @@ const ManagerCreateWristband: React.FC = () => {
                         <div className="pt-4 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                             <Button
                                 type="submit"
-                                disabled={isSaving || isLoading || !company || isProfileIncomplete} // Desabilita se o perfil estiver incompleto
+                                disabled={isSaving || isPageLoading || !company || isProfileIncomplete} // Usando isPageLoading aqui
                                 className="flex-1 bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
                             >
                                 {isSaving ? (
