@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -31,6 +31,7 @@ const isProfileComplete = (profileData: typeof useProfile extends (...args: any[
 
 const ManagerCompanyRegister: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation(); // Usando useLocation para verificar o histórico
     const [userId, setUserId] = useState<string | null>(null);
     const [userEmail, setUserEmail] = useState<string | null>(null);
     const [isFetchingUser, setIsFetchingUser] = useState(true);
@@ -194,6 +195,17 @@ const ManagerCompanyRegister: React.FC = () => {
             setIsSaving(false);
         }
     };
+    
+    // Determina a rota de retorno
+    const handleGoBack = () => {
+        // Se o usuário veio de /manager/settings (migração de PF para PJ), volta para settings
+        if (location.state?.from === '/manager/settings') {
+            navigate('/manager/settings');
+        } else {
+            // Caso contrário (veio de /manager/register), volta para a seleção de tipo
+            navigate('/manager/register');
+        }
+    };
 
     if (isFetchingUser || isLoadingProfile) {
         return (
@@ -212,7 +224,7 @@ const ManagerCompanyRegister: React.FC = () => {
                     Registro de Empresa (Gestor PRO)
                 </h1>
                 <Button 
-                    onClick={() => navigate('/manager/register')}
+                    onClick={handleGoBack} // Usando a função ajustada
                     variant="outline"
                     className="bg-black/60 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 text-sm"
                 >
@@ -251,7 +263,7 @@ const ManagerCompanyRegister: React.FC = () => {
                                         <div>
                                             <h4 className="font-semibold text-white mb-1">Perfil Pessoal Incompleto</h4>
                                             <p className="text-sm text-gray-300">
-                                                Para registrar sua empresa, seu perfil pessoal deve estar completo. Por favor, preencha todos os campos essenciais do seu perfil.
+                                                Para registrar sua empresa, seu perfil pessoal deve estar completo. Por favor, preencha todos os campos essenciais do seu perfil antes de registrar a empresa.
                                             </p>
                                             <Button 
                                                 variant="link" 
@@ -307,7 +319,7 @@ const ManagerCompanyRegister: React.FC = () => {
                                 </Button>
                                 <Button
                                     type="button"
-                                    onClick={() => navigate('/manager/register')}
+                                    onClick={handleGoBack} // Usando a função ajustada
                                     variant="outline"
                                     className="flex-1 bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer"
                                     disabled={isSaving}

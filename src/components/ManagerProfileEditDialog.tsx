@@ -261,7 +261,8 @@ const ManagerProfileEditDialog: React.FC<ManagerProfileEditDialogProps> = ({
     
     const handleMigrateToCompany = () => {
         onClose(); // Fecha o modal de edição PF
-        navigate('/manager/register/company'); // Redireciona para o cadastro de empresa
+        // Passa o estado 'from' para que a página de registro de empresa saiba para onde voltar
+        navigate('/manager/register/company', { state: { from: '/manager/settings' } }); 
     };
 
     return (
