@@ -6,7 +6,7 @@ import { Loader2, ArrowRight, UserCheck, AlertTriangle } from 'lucide-react';
 import MultiLineEditor from '@/components/MultiLineEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/use-profile';
-import { showError, showSuccess, showLoading } from '@/utils/toast'; // Adicionado showLoading
+import { showError, showSuccess, showLoading, dismissToast } from '@/utils/toast'; // Adicionado dismissToast
 import { useQueryClient } from '@tanstack/react-query';
 
 const ADMIN_MASTER_USER_TYPE_ID = 1;
