@@ -9,7 +9,6 @@ import { useManagerCompany } from '@/hooks/use-manager-company';
 
 const ADMIN_MASTER_USER_TYPE_ID = 1;
 const MANAGER_PRO_USER_TYPE_ID = 2;
-const MANAGER_LEGAL_ENTITY_USER_TYPE_ID = 4; // Novo: Gestor Pessoa Jurídica
 
 const ManagerSettings: React.FC = () => {
     const navigate = useNavigate();
@@ -30,7 +29,6 @@ const ManagerSettings: React.FC = () => {
 
     const isAdminMaster = profile?.tipo_usuario_id === ADMIN_MASTER_USER_TYPE_ID;
     const isManagerPro = profile?.tipo_usuario_id === MANAGER_PRO_USER_TYPE_ID;
-    const isManagerLegalEntity = profile?.tipo_usuario_id === MANAGER_LEGAL_ENTITY_USER_TYPE_ID;
 
     const settingsOptions = [];
     
@@ -41,16 +39,6 @@ const ManagerSettings: React.FC = () => {
         path: "/profile" 
     });
     
-    // Adiciona a opção de Perfil da Empresa apenas para Gestores Pessoa Jurídica
-    if (isManagerLegalEntity) {
-        settingsOptions.push({ 
-            icon: <Building2 className="h-6 w-6 text-yellow-500" />, 
-            title: "Perfil da Empresa", 
-            description: "Gerencie os dados da sua empresa (CNPJ, endereço, etc.).", 
-            path: "/manager/settings/company-profile" 
-        });
-    }
-
     settingsOptions.push(
         { icon: <Bell className="h-6 w-6 text-yellow-500" />, title: "Notificações e Alertas", description: "Defina preferências de notificação por e-mail e sistema.", path: "/manager/settings/notifications" },
         { icon: <CreditCard className="h-6 w-6 text-yellow-500" />, title: "Configurações de Pagamento", description: "Gerencie contas bancárias e gateways de pagamento.", path: "/manager/settings/payment" },

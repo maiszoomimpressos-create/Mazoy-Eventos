@@ -28,8 +28,6 @@ const ACCESS_TYPES = [
     'Organizador'
 ];
 
-const MANAGER_LEGAL_ENTITY_USER_TYPE_ID = 4; // Definindo o ID para Gestor Pessoa Jurídica
-
 // Função utilitária para converter string formatada (ex: "150,00") para float (ex: 150.00)
 const parsePriceToNumeric = (value: string): number => {
     const cleanValue = value.replace(/[^\d,]/g, '').replace(',', '.');
@@ -79,11 +77,11 @@ const ManagerCreateWristband: React.FC = () => {
     }, []);
 
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
-    const { needsPersonalProfileCompletion, needsCompanyProfile, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile); 
+    const { needsPersonalProfileCompletion, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile); 
     const { company, isLoading: isLoadingCompany } = useManagerCompany(userId || undefined, profile?.tipo_usuario_id); 
     const { events, isLoading: isLoadingEvents } = useManagerEvents(userId, profile?.tipo_usuario_id);
     
-    const isProfileIncomplete = needsPersonalProfileCompletion || needsCompanyProfile;
+    const isProfileIncomplete = needsPersonalProfileCompletion;
     const isPageLoading = isLoadingProfile || isLoadingProfileStatus || isLoadingCompany || isLoadingEvents || !userId;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -118,11 +116,6 @@ const ManagerCreateWristband: React.FC = () => {
         if (formData.quantity < 1) errors.push("A quantidade deve ser pelo menos 1.");
         if (!formData.accessType) errors.push("O Tipo de Acesso é obrigatório.");
         
-        // A verificação de company.id é necessária apenas para Gestores Pessoa Jurídica
-        if (profile?.tipo_usuario_id === MANAGER_LEGAL_ENTITY_USER_TYPE_ID && !company?.id) {
-            errors.push("O ID da empresa não está disponível. Verifique seu perfil de empresa.");
-        }
-        
         if (isNaN(priceNumeric) || priceNumeric < 0) errors.push("O Valor deve ser um número positivo.");
 
         if (errors.length > 0) {
@@ -142,22 +135,8 @@ const ManagerCreateWristband: React.FC = () => {
         const priceNumeric = parsePriceToNumeric(formData.price);
         if (!validateForm(priceNumeric) || !userId) return;
 
-        // Obter company_id apenas se for Gestor Pessoa Jurídica
-        let companyIdToUse: string | null = null;
-        if (profile?.tipo_usuario_id === MANAGER_LEGAL_ENTITY_USER_TYPE_ID) {
-            companyIdToUse = company?.id || null;
-            if (!companyIdToUse) {
-                showError("ID da empresa não disponível para Gestor Pessoa Jurídica.");
-                return;
-            }
-        } else {
-            // Para Gestor Pessoa Física, o company_id pode ser o user_id ou null, dependendo da lógica de negócio.
-            // Por simplicidade, vamos usar o user_id como company_id para PF se não houver um conceito de empresa.
-            // Ou, se a tabela wristbands exige company_id, podemos usar um valor padrão ou o user_id.
-            // Para este cenário, vamos usar o user_id como company_id para PF.
-            companyIdToUse = userId; 
-        }
-
+        // Para Gestor Pessoa Física (ID 2), usamos o user_id como company_id
+        const companyIdToUse = userId; 
 
         setIsSaving(true);
         const toastId = showLoading(`Gerando ${formData.quantity} registros de pulseira...`);
@@ -241,9 +220,6 @@ const ManagerCreateWristband: React.FC = () => {
                         <p className="text-sm text-gray-300">
                             {needsPersonalProfileCompletion && (
                                 <p className="mb-2">Seu perfil pessoal está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/profile')}>complete-o aqui</Button> para gerar pulseiras.</p>
-                            )}
-                            {needsCompanyProfile && (
-                                <p className="mb-2">Seu perfil de empresa está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/manager/settings/company-profile')}>complete-o aqui</Button> para gerar pulseiras.</p>
                             )}
                         </p>
                         <p className="mt-2 text-sm text-white font-semibold">O formulário de geração de pulseiras está desabilitado.</p>

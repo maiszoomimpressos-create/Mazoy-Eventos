@@ -14,7 +14,6 @@ import { cn } from '@/lib/utils';
 
 const ADMIN_USER_TYPE_ID = 1;
 const MANAGER_PRO_USER_TYPE_ID = 2;
-const MANAGER_LEGAL_ENTITY_USER_TYPE_ID = 4; // Novo: Gestor Pessoa Jurídica
 const MIN_LOADING_TIME_MS = 1000;
 
 const ManagerLayout: React.FC = () => {
@@ -60,11 +59,11 @@ const ManagerLayout: React.FC = () => {
 
 
     const userType = profile?.tipo_usuario_id;
-    const isManager = userType === ADMIN_USER_TYPE_ID || userType === MANAGER_PRO_USER_TYPE_ID || userType === MANAGER_LEGAL_ENTITY_USER_TYPE_ID;
+    const isManager = userType === ADMIN_USER_TYPE_ID || userType === MANAGER_PRO_USER_TYPE_ID;
     const isAdminMaster = userType === ADMIN_USER_TYPE_ID;
 
     // Pages where profile completion is allowed/expected
-    const isProfileCompletionPage = location.pathname === '/profile' || location.pathname === '/manager/settings/company-profile'; 
+    const isProfileCompletionPage = location.pathname === '/profile'; 
 
     useEffect(() => {
         if (isLoadingCombined) return;

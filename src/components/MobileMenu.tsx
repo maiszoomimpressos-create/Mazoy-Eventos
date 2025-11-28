@@ -9,8 +9,6 @@ import { useProfile } from '@/hooks/use-profile';
 import { useUserType } from '@/hooks/use-user-type';
 import { showSuccess, showError } from '@/utils/toast';
 
-const MANAGER_LEGAL_ENTITY_USER_TYPE_ID = 4; // Novo: Gestor Pessoa Jurídica
-
 const MobileMenu: React.FC = () => {
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(false);
@@ -62,9 +60,8 @@ const MobileMenu: React.FC = () => {
 
     const isUserLoading = loadingSession || isLoadingProfile || statusLoading || isLoadingUserType;
     const isLoggedIn = session && profile;
-    const isManager = isLoggedIn && (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2 || profile.tipo_usuario_id === MANAGER_LEGAL_ENTITY_USER_TYPE_ID);
+    const isManager = isLoggedIn && (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2);
     const isClient = isLoggedIn && profile.tipo_usuario_id === 3; 
-    const isManagerLegalEntity = isLoggedIn && profile.tipo_usuario_id === MANAGER_LEGAL_ENTITY_USER_TYPE_ID;
     
     const fullName = profile?.first_name + (profile?.last_name ? ` ${profile.last_name}` : '');
 
@@ -110,16 +107,6 @@ const MobileMenu: React.FC = () => {
                                 Editar Perfil
                                 {hasPendingNotifications && <Bell className="ml-auto h-5 w-5 text-red-500 animate-pulse" />}
                             </Button>
-                            {isManagerLegalEntity && (
-                                <Button 
-                                    onClick={() => handleNavigation('/manager/settings/company-profile')}
-                                    variant="ghost"
-                                    className="w-full justify-start text-lg py-6 text-white hover:bg-yellow-500/10"
-                                >
-                                    <Building2 className="mr-3 h-5 w-5" />
-                                    Perfil da Empresa
-                                </Button>
-                            )}
                             <Button 
                                 onClick={() => handleNavigation('/tickets')}
                                 variant="ghost"

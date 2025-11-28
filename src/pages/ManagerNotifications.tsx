@@ -45,18 +45,9 @@ const ManagerNotifications: React.FC = () => {
             }
             setUserId(user.id);
 
-            // Fetch Company Email
-            const { data: companyData, error: companyError } = await supabase
-                .from('companies')
-                .select('email')
-                .eq('user_id', user.id)
-                .single();
-
-            if (companyError && companyError.code !== 'PGRST116') {
-                console.error("Error fetching company email:", companyError);
-            }
-            
-            const fetchedCompanyEmail = companyData?.email || null;
+            // Fetch Company Email (Simulando que o email da empresa é o email do usuário logado para PF)
+            // Em um cenário PF, o email de notificação seria o email de login.
+            const fetchedCompanyEmail = user.email || null;
             setCompanyEmail(fetchedCompanyEmail);
 
             // Fetch Manager Settings - Using .limit(1) instead of .single()
@@ -197,19 +188,12 @@ const ManagerNotifications: React.FC = () => {
                             <div className="flex items-start space-x-3">
                                 <i className="fas fa-exclamation-triangle text-xl mt-1 flex-shrink-0"></i>
                                 <div>
-                                    <h3 className="font-semibold text-white mb-1">E-mail da Empresa Ausente</h3>
+                                    <h3 className="font-semibold text-white mb-1">E-mail de Notificação Ausente</h3>
                                     <p className="text-sm text-gray-300">
-                                        Para receber notificações por e-mail, cadastre o E-mail da Empresa.
+                                        Para receber notificações por e-mail, certifique-se de que seu e-mail de login está correto.
                                     </p>
                                 </div>
                             </div>
-                            <Button 
-                                variant="default" 
-                                className="bg-yellow-500 text-black hover:bg-yellow-600 h-8 px-4 text-sm w-full sm:w-auto flex-shrink-0"
-                                onClick={() => navigate('/manager/settings/company-profile')}
-                            >
-                                Configurar E-mail
-                            </Button>
                         </div>
                     )}
 

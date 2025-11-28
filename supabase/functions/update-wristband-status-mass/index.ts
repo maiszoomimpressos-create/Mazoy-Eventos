@@ -48,6 +48,7 @@ serve(async (req) => {
     }
     
     // 2. Security Check: Ensure the user is the manager of the event/company
+    // Revertendo a verificação de tipo de usuário para incluir apenas 1 e 2
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('tipo_usuario_id')

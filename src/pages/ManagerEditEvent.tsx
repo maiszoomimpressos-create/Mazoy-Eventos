@@ -15,7 +15,7 @@ import { DatePicker } from '@/components/DatePicker';
 import ImageUploadPicker from '@/components/ImageUploadPicker';
 import { useProfileStatus } from '@/hooks/use-profile-status';
 import { useProfile } from '@/hooks/use-profile';
-import { useManagerCompany } from '@/hooks/use-manager-company'; // Reintroduzido: import { useManagerCompany } from '@/hooks/use-manager-company';
+import { useManagerCompany } from '@/hooks/use-manager-company'; // Mantendo o import, mas a lógica interna foi simplificada
 
 // Define the structure for the form data
 interface EventFormData {
@@ -54,10 +54,10 @@ const ManagerEditEvent: React.FC = () => {
     }, [navigate]);
 
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
-    const { needsPersonalProfileCompletion, needsCompanyProfile, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile); 
-    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId, profile?.tipo_usuario_id); // Reintroduzido: const { company, isLoading: isLoadingCompany } = useManagerCompany(userId);
+    const { needsPersonalProfileCompletion, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile); 
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId, profile?.tipo_usuario_id); 
 
-    const isProfileIncomplete = needsPersonalProfileCompletion || needsCompanyProfile;
+    const isProfileIncomplete = needsPersonalProfileCompletion;
     const isPageLoading = isLoadingProfile || isLoadingProfileStatus || isFetchingEvent || isLoadingCompany || !userId; 
 
     useEffect(() => {
@@ -276,9 +276,6 @@ const ManagerEditEvent: React.FC = () => {
                     <AlertDescription className="text-gray-300">
                         {needsPersonalProfileCompletion && (
                             <p className="mb-2">Seu perfil pessoal está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/profile')}>complete-o aqui</Button> para editar eventos.</p>
-                        )}
-                        {needsCompanyProfile && (
-                            <p className="mb-2">Seu perfil de empresa está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/manager/settings/company-profile')}>complete-o aqui</Button> para editar eventos.</p>
                         )}
                         <p className="mt-2 text-sm text-white font-semibold">O formulário de edição de evento está desabilitado.</p>
                     </AlertDescription>

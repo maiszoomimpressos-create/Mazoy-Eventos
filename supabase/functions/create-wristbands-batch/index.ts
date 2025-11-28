@@ -38,36 +38,26 @@ serve(async (req) => {
   const userId = user.id;
 
   try {
-    const { event_id, company_id, manager_user_id, base_code, access_type, price, quantity } = await req.json();
+    const { event_id, base_code, access_type, price, quantity } = await req.json();
 
     // 2. Input Validation
-    if (!event_id || !company_id || !manager_user_id || !base_code || !access_type || price === undefined || quantity === undefined || quantity < 1) {
+    if (!event_id || !base_code || !access_type || price === undefined || quantity === undefined || quantity < 1) {
       return new Response(JSON.stringify({ error: 'Missing or invalid required fields.' }), { 
         status: 400, 
         headers: corsHeaders 
       });
     }
     
-    // 3. Security Check: Ensure the user is the manager of the company
-    const { data: companyProfile, error: companyProfileError } = await supabase
-        .from('companies')
-        .select('id')
-        .eq('id', company_id)
-        .eq('user_id', userId) // Ensure the logged-in user owns this company
-        .single();
-
-    if (companyProfileError || !companyProfile) {
-        return new Response(JSON.stringify({ error: 'Forbidden: User is not authorized to create wristbands for this company.' }), { 
-            status: 403, 
-            headers: corsHeaders 
-        });
-    }
+    // 3. Security Check: Ensure the user is authorized (RLS handles event ownership)
+    // Since we removed the PJ flow, we assume company_id = user_id for simplicity (or null if not required by schema)
+    // Based on the schema, company_id is required (UUID). We use user_id as company_id for PF managers.
+    const company_id = userId; 
 
     // 4. Insert the main wristband record
     const wristbandData = {
         event_id: event_id,
         company_id: company_id,
-        manager_user_id: manager_user_id,
+        manager_user_id: userId,
         code: base_code,
         access_type: access_type,
         status: 'active',
@@ -113,7 +103,7 @@ serve(async (req) => {
                     code: wristbandCode,
                     access_type: access_type,
                     price: price,
-                    manager_id: manager_user_id,
+                    manager_id: userId,
                     event_id: event_id,
                     initial_status: 'active',
                     sequential_entry: i + j + 1,

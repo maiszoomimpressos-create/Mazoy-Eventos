@@ -21,37 +21,16 @@ interface CompanyData {
     user_id: string;
 }
 
-const MANAGER_LEGAL_ENTITY_USER_TYPE_ID = 4; // Definindo o ID para Gestor Pessoa Jurídica
-
 const fetchCompanies = async (userId: string, userTypeId: number | undefined): Promise<CompanyData | null> => {
-    if (!userId || userTypeId !== MANAGER_LEGAL_ENTITY_USER_TYPE_ID) {
-        // Se não for um Gestor Pessoa Jurídica, não há empresa para buscar neste contexto
-        return null;
-    }
-
-    const { data, error } = await supabase
-        .from('companies')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-    if (error) {
-        if (error.code === 'PGRST116') { // No rows found
-            console.warn(`[useManagerCompany] Nenhuma empresa encontrada para o usuário ${userId}.`);
-            return null;
-        }
-        console.error("Error fetching company:", error);
-        throw new Error(error.message);
-    }
-    
-    return data as CompanyData;
+    // Removendo a lógica de busca de empresa, pois o tipo PJ foi removido.
+    return null;
 };
 
 export const useManagerCompany = (userId: string | undefined, userTypeId: number | undefined) => {
     const query = useQuery({
-        queryKey: ['managerCompany', userId, userTypeId], // Inclui userTypeId na chave de cache
+        queryKey: ['managerCompany', userId, userTypeId], 
         queryFn: () => fetchCompanies(userId!, userTypeId),
-        enabled: !!userId && userTypeId === MANAGER_LEGAL_ENTITY_USER_TYPE_ID, // Habilita a query apenas para Gestor Pessoa Jurídica
+        enabled: !!userId, 
         staleTime: 1000 * 60 * 5, // 5 minutes
         onError: (error) => {
             console.error("Query Error: Failed to load company data.", error);
@@ -61,8 +40,8 @@ export const useManagerCompany = (userId: string | undefined, userTypeId: number
 
     return {
         ...query,
-        company: query.data, // Retorna os dados reais da empresa ou null
-        allCompanies: query.data ? [query.data] : [], // Retorna um array com a empresa ou vazio
+        company: query.data, // Retorna null
+        allCompanies: [], // Retorna um array vazio
     };
 };
 
