@@ -17,6 +17,7 @@ export interface EventData {
     category: string;
     capacity: number; // Adicionando capacidade
     duration: string; // Adicionando duração
+    company_id: string | null; // Adicionando company_id
     
     // Dados do Organizador (JOIN)
     companies: {
@@ -50,11 +51,12 @@ const fetchEventDetails = async (idUrl: string): Promise<EventDetailsData | null
     
     console.log(`[EventDetails] Buscando evento com id_url: ${numericId}`);
 
-    // 1. Buscar detalhes do Evento usando id_url (REMOVENDO JOIN COM COMPANIES)
+    // 1. Buscar detalhes do Evento usando id_url, incluindo JOIN com companies
     const { data: eventData, error: eventError } = await supabase
         .from('events')
         .select(`
-            id, id_url, title, description, date, time, location, address, image_url, min_age, category, capacity, duration
+            id, id_url, title, description, date, time, location, address, image_url, min_age, category, capacity, duration, company_id,
+            companies (corporate_name)
         `)
         .eq('id_url', numericId) // BUSCANDO PELO NOVO CAMPO id_url
         .single();
@@ -77,11 +79,8 @@ const fetchEventDetails = async (idUrl: string): Promise<EventDetailsData | null
     
     const eventUUID = eventData.id; // Usamos o UUID para buscar pulseiras
     
-    // Adicionamos o campo 'companies' manualmente como null, já que não o buscamos
-    const eventDetailsWithNullCompany = {
-        ...eventData,
-        companies: null,
-    } as EventData;
+    // A tipagem agora é EventData
+    const eventDetailsWithCompany = eventData as EventData;
     
     // 2. Buscar Tipos de Pulseira (Wristbands) associados a este evento
     const { data: wristbandsData, error: wristbandsError } = await supabase
@@ -93,7 +92,7 @@ const fetchEventDetails = async (idUrl: string): Promise<EventDetailsData | null
     if (wristbandsError) {
         console.warn("[EventDetails] Aviso: Falha ao buscar pulseiras (RLS provável). Exibindo evento sem ingressos.", wristbandsError);
         return {
-            event: eventDetailsWithNullCompany,
+            event: eventDetailsWithCompany,
             ticketTypes: [],
         };
     }
@@ -118,7 +117,7 @@ const fetchEventDetails = async (idUrl: string): Promise<EventDetailsData | null
     const ticketTypes = Object.values(groupedTickets).sort((a, b) => a.price - b.price);
 
     return {
-        event: eventDetailsWithNullCompany,
+        event: eventDetailsWithCompany,
         ticketTypes: ticketTypes,
     };
 };
