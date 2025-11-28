@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useForm } from 'react-hook-form'; // CORRIGIDO: Importado de 'react-hook-form'
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -13,10 +13,10 @@ import { showSuccess, showError } from '@/utils/toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import AuthStatusMenu from '@/components/AuthStatusMenu';
 import AvatarUpload from '@/components/AvatarUpload';
-import { useProfileStatus } from '@/hooks/use-profile-status';
+import { useProfileStatus, isValueEmpty } from '@/hooks/use-profile-status';
 import { useProfile, ProfileData } from '@/hooks/use-profile';
 import { useQueryClient } from '@tanstack/react-query';
-import TermsAndConditionsDialog from '@/components/TermsAndConditionsDialog'; // Importando o novo componente
+import TermsAndConditionsDialog from '@/components/TermsAndConditionsDialog';
 
 const GENDER_OPTIONS = [
     "Masculino",
@@ -40,6 +40,7 @@ const validateCEP = (cep: string) => {
 
 const profileSchema = z.object({
     first_name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
+    last_name: z.string().min(2, { message: "O sobrenome deve ter pelo menos 2 caracteres." }), // Adicionado last_name
     birth_date: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de nascimento é obrigatória." }),
     gender: z.string().optional().nullable(),
     
@@ -117,6 +118,7 @@ const Profile: React.FC = () => {
         resolver: zodResolver(profileSchema),
         defaultValues: {
             first_name: '',
+            last_name: '', // Adicionado last_name
             birth_date: '',
             gender: '',
             cpf: '',
@@ -131,6 +133,7 @@ const Profile: React.FC = () => {
         },
         values: {
             first_name: profile?.first_name || '',
+            last_name: profile?.last_name || '', // Adicionado last_name
             birth_date: profile?.birth_date || '',
             gender: profile?.gender || '',
             cpf: profile?.cpf ? formatCPF(profile.cpf) : '',
@@ -150,6 +153,7 @@ const Profile: React.FC = () => {
             // Resetar o formulário com os dados do perfil sempre que o perfil for carregado/atualizado
             form.reset({
                 first_name: profile.first_name || '',
+                last_name: profile.last_name || '', // Adicionado last_name
                 birth_date: profile.birth_date || '',
                 gender: profile.gender || '',
                 cpf: profile.cpf ? formatCPF(profile.cpf) : '',
@@ -247,6 +251,7 @@ const Profile: React.FC = () => {
                 .from('profiles')
                 .update({ 
                     first_name: values.first_name,
+                    last_name: values.last_name, // Adicionado last_name
                     birth_date: values.birth_date,
                     gender: genderToSave,
                     cpf: cleanCPF, 
@@ -308,6 +313,13 @@ const Profile: React.FC = () => {
         // No perfil, não precisamos de uma lógica complexa para isso,
         // pois o usuário já concordou no registro.
         // O MultiLineEditor dentro do dialog não terá o checkbox visível.
+    };
+
+    // Helper para verificar se um campo está faltando para a notificação de perfil incompleto
+    const isFieldMissingForNotification = (fieldName: keyof ProfileData) => {
+        if (!profile || !hasPendingNotifications) return false;
+        const value = profile[fieldName];
+        return isValueEmpty(value);
     };
 
     if (loading) {
@@ -410,19 +422,46 @@ const Profile: React.FC = () => {
                                     )}
                                     <Form {...form}>
                                         <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
-                                            <FormField
-                                                control={form.control}
-                                                name="first_name"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="text-white">Nome</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="Seu nome" {...field} disabled={!isEditing} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="first_name"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-white">Nome</FormLabel>
+                                                            <FormControl>
+                                                                <Input 
+                                                                    placeholder="Seu nome" 
+                                                                    {...field} 
+                                                                    disabled={!isEditing} 
+                                                                    isInvalid={!!form.formState.errors.first_name || (isEditing && isFieldMissingForNotification('first_name'))}
+                                                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="last_name"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-white">Sobrenome</FormLabel>
+                                                            <FormControl>
+                                                                <Input 
+                                                                    placeholder="Seu sobrenome" 
+                                                                    {...field} 
+                                                                    disabled={!isEditing} 
+                                                                    isInvalid={!!form.formState.errors.last_name || (isEditing && isFieldMissingForNotification('last_name'))}
+                                                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
+                                                                />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
                                             <FormItem>
                                                 <FormLabel className="text-white">E-mail</FormLabel>
                                                 <FormControl>
@@ -447,6 +486,7 @@ const Profile: React.FC = () => {
                                                                     {...field} 
                                                                     onChange={handleCpfChange}
                                                                     disabled={!isEditing} 
+                                                                    isInvalid={!!form.formState.errors.cpf || (isEditing && isFieldMissingForNotification('cpf'))}
                                                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
                                                                     maxLength={14}
                                                                 />
@@ -467,6 +507,7 @@ const Profile: React.FC = () => {
                                                                     {...field} 
                                                                     onChange={handleRgChange}
                                                                     disabled={!isEditing} 
+                                                                    isInvalid={!!form.formState.errors.rg || (isEditing && isFieldMissingForNotification('rg'))}
                                                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
                                                                     maxLength={12}
                                                                 />
@@ -489,6 +530,7 @@ const Profile: React.FC = () => {
                                                                     type="date" 
                                                                     {...field} 
                                                                     disabled={!isEditing} 
+                                                                    isInvalid={!!form.formState.errors.birth_date || (isEditing && isFieldMissingForNotification('birth_date'))}
                                                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
                                                                 />
                                                             </FormControl>
@@ -509,6 +551,7 @@ const Profile: React.FC = () => {
                                                             >
                                                                 <FormControl>
                                                                     <SelectTrigger 
+                                                                        isInvalid={!!form.formState.errors.gender || (isEditing && isFieldMissingForNotification('gender'))}
                                                                         className="w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed"
                                                                     >
                                                                         <SelectValue placeholder="Selecione seu gênero" />
@@ -547,6 +590,7 @@ const Profile: React.FC = () => {
                                                                         {...field} 
                                                                         onChange={handleCepChange}
                                                                         disabled={!isEditing || isCepLoading} 
+                                                                        isInvalid={!!form.formState.errors.cep || (isEditing && isFieldMissingForNotification('cep'))}
                                                                         className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed pr-10" 
                                                                         maxLength={9}
                                                                     />
@@ -572,7 +616,14 @@ const Profile: React.FC = () => {
                                                             <FormItem>
                                                                 <FormLabel className="text-white">Rua (Opcional)</FormLabel>
                                                                 <FormControl>
-                                                                    <Input id="rua" placeholder="Ex: Av. Paulista" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
+                                                                    <Input 
+                                                                        id="rua" 
+                                                                        placeholder="Ex: Av. Paulista" 
+                                                                        {...field} 
+                                                                        disabled={!isEditing || isCepLoading} 
+                                                                        isInvalid={!!form.formState.errors.rua || (isEditing && isFieldMissingForNotification('rua'))}
+                                                                        className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
+                                                                    />
                                                                 </FormControl>
                                                                 <FormMessage />
                                                             </FormItem>
@@ -586,7 +637,14 @@ const Profile: React.FC = () => {
                                                         <FormItem>
                                                             <FormLabel className="text-white">Número (Opcional)</FormLabel>
                                                             <FormControl>
-                                                                <Input id="numero" placeholder="123" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
+                                                                <Input 
+                                                                    id="numero" 
+                                                                    placeholder="123" 
+                                                                    {...field} 
+                                                                    disabled={!isEditing || isCepLoading} 
+                                                                    isInvalid={!!form.formState.errors.numero || (isEditing && isFieldMissingForNotification('numero'))}
+                                                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
+                                                                />
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
@@ -601,7 +659,13 @@ const Profile: React.FC = () => {
                                                     <FormItem>
                                                         <FormLabel className="text-white">Complemento (Opcional)</FormLabel>
                                                         <FormControl>
-                                                            <Input placeholder="Apto 101, Bloco B" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
+                                                            <Input 
+                                                                placeholder="Apto 101, Bloco B" 
+                                                                {...field} 
+                                                                disabled={!isEditing || isCepLoading} 
+                                                                isInvalid={!!form.formState.errors.complemento || (isEditing && isFieldMissingForNotification('complemento'))}
+                                                                className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
+                                                            />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -617,7 +681,13 @@ const Profile: React.FC = () => {
                                                             <FormItem>
                                                                 <FormLabel className="text-white">Bairro (Opcional)</FormLabel>
                                                                 <FormControl>
-                                                                    <Input placeholder="Jardim Paulista" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
+                                                                    <Input 
+                                                                        placeholder="Jardim Paulista" 
+                                                                        {...field} 
+                                                                        disabled={!isEditing || isCepLoading} 
+                                                                        isInvalid={!!form.formState.errors.bairro || (isEditing && isFieldMissingForNotification('bairro'))}
+                                                                        className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
+                                                                    />
                                                                 </FormControl>
                                                                 <FormMessage />
                                                             </FormItem>
@@ -631,7 +701,13 @@ const Profile: React.FC = () => {
                                                         <FormItem>
                                                             <FormLabel className="text-white">Cidade (Opcional)</FormLabel>
                                                             <FormControl>
-                                                                <Input placeholder="São Paulo" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
+                                                                <Input 
+                                                                    placeholder="São Paulo" 
+                                                                    {...field} 
+                                                                    disabled={!isEditing || isCepLoading} 
+                                                                    isInvalid={!!form.formState.errors.cidade || (isEditing && isFieldMissingForNotification('cidade'))}
+                                                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
+                                                                />
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
@@ -644,7 +720,13 @@ const Profile: React.FC = () => {
                                                         <FormItem>
                                                             <FormLabel className="text-white">Estado (Opcional)</FormLabel>
                                                             <FormControl>
-                                                                <Input placeholder="SP" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
+                                                                <Input 
+                                                                    placeholder="SP" 
+                                                                    {...field} 
+                                                                    disabled={!isEditing || isCepLoading} 
+                                                                    isInvalid={!!form.formState.errors.estado || (isEditing && isFieldMissingForNotification('estado'))}
+                                                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" 
+                                                                />
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
