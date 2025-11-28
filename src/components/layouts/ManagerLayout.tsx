@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/use-profile';
 import { useUserType } from '@/hooks/use-user-type';
-import { showError } from '@/utils/toast';
+import { showError, showSuccess } from '@/utils/toast'; // Importando showSuccess
 import { useManagerCompany } from '@/hooks/use-manager-company'; // Importando hook da empresa
 
 const ADMIN_USER_TYPE_ID = 1;
@@ -29,6 +29,16 @@ const ManagerLayout: React.FC = () => {
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
     const { userTypeName, isLoadingUserType } = useUserType(profile?.tipo_usuario_id);
     const { company, isLoading: isLoadingCompany } = useManagerCompany(userId); // Buscando dados da empresa
+
+    const handleLogout = async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            showError("Erro ao sair: " + error.message);
+        } else {
+            showSuccess("Sessão encerrada com sucesso.");
+            navigate('/');
+        }
+    };
 
     // Redirect unauthenticated users to login
     if (loadingSession || isLoadingProfile || isLoadingUserType || isLoadingCompany) {
