@@ -81,7 +81,7 @@ const Profile: React.FC = () => {
 
     const userId = session?.user?.id;
     const { profile, isLoading: isLoadingProfile, refetch } = useProfile(userId);
-    const { hasPendingNotifications, loading: statusLoading } = useProfileStatus(profile, isLoadingProfile);
+    const { hasPendingNotifications, loading: statusLoading, needsCompanyProfile, needsPersonalProfileCompletion } = useProfileStatus(profile, isLoadingProfile);
 
     const loading = loadingSession || isLoadingProfile;
 
@@ -170,11 +170,39 @@ const Profile: React.FC = () => {
     }, [profile, form]);
 
     // Ativa o modo de edição automaticamente se o perfil estiver incompleto
+    // E redireciona se o perfil estiver completo
     useEffect(() => {
-        if (!loading && hasPendingNotifications && profile) {
-            setIsEditing(true);
+        // Só executa se todos os dados de carregamento estiverem prontos e o perfil estiver disponível
+        if (!loading && !statusLoading && profile) {
+            // Se o perfil pessoal está completo e não há notificações pendentes (incluindo empresa para gestores)
+            if (!hasPendingNotifications) {
+                if (isEditing) { // Se estava editando e agora está completo, sai do modo de edição
+                    setIsEditing(false);
+                }
+                showSuccess("Seu perfil está completo!");
+                // Redireciona com base no tipo de usuário
+                if (profile.tipo_usuario_id === 3) { // Cliente
+                    navigate('/', { replace: true });
+                } else if (profile.tipo_usuario_id === 2) { // Gestor PRO
+                    navigate('/manager/dashboard', { replace: true });
+                } else if (profile.tipo_usuario_id === 1) { // Admin Master
+                    navigate('/admin/dashboard', { replace: true });
+                }
+                return; // Sai do useEffect para evitar mais lógica
+            }
+
+            // Se o perfil pessoal está incompleto, entra no modo de edição
+            if (needsPersonalProfileCompletion && !isEditing) {
+                setIsEditing(true);
+            }
+            // Se o perfil pessoal está completo, mas o da empresa não (para gestores PJ), redireciona
+            else if (profile.tipo_usuario_id === 2 && !needsPersonalProfileCompletion && needsCompanyProfile) {
+                showSuccess("Perfil pessoal completo! Agora, preencha os dados da sua empresa.");
+                navigate('/manager/settings/company-profile', { replace: true });
+                return; // Sai do useEffect
+            }
         }
-    }, [loading, hasPendingNotifications, profile]);
+    }, [loading, statusLoading, profile, isEditing, hasPendingNotifications, needsPersonalProfileCompletion, needsCompanyProfile, navigate]);
 
 
     // Função para buscar endereço via ViaCEP
@@ -281,7 +309,7 @@ const Profile: React.FC = () => {
                 showSuccess("Perfil atualizado com sucesso!");
                 // Invalida a query para forçar a re-busca e atualização imediata do status de notificação em todos os componentes
                 queryClient.invalidateQueries({ queryKey: ['profile', userId] });
-                setIsEditing(false);
+                // O redirecionamento e a saída do modo de edição serão tratados pelo useEffect
             }
         } catch (e) {
             // Captura erros inesperados (como falhas de rede/timeout)
@@ -323,40 +351,10 @@ const Profile: React.FC = () => {
     };
 
     // Helper para verificar se um campo está faltando para a notificação de perfil incompleto
-    const getMissingFieldsMessage = () => {
-        if (!profile || !hasPendingNotifications) return '';
-
-        const missingFields: string[] = [];
-        const fieldLabels: { [key: string]: string } = {
-            first_name: 'Nome',
-            last_name: 'Sobrenome',
-            birth_date: 'Data de Nascimento',
-            gender: 'Gênero',
-            cpf: 'CPF',
-            cep: 'CEP',
-            rua: 'Rua',
-            bairro: 'Bairro',
-            cidade: 'Cidade',
-            estado: 'Estado',
-            numero: 'Número',
-            complemento: 'Complemento',
-        };
-
-        for (const fieldName of ESSENTIAL_PERSONAL_PROFILE_FIELDS) {
-            const value = profile[fieldName as keyof ProfileData];
-            if (isValueEmpty(value)) {
-                missingFields.push(fieldLabels[fieldName] || fieldName);
-            }
-        }
-
-        if (missingFields.length === 0) {
-            return '';
-        } else if (missingFields.length === 1) {
-            return `O campo "${missingFields[0]}" está faltando.`;
-        } else {
-            const lastField = missingFields.pop();
-            return `Os campos "${missingFields.join('", "')}" e "${lastField}" estão faltando.`;
-        }
+    const isFieldMissingForNotification = (fieldName: keyof ProfileData) => {
+        if (!profile || !hasPendingNotifications) return false;
+        const value = profile[fieldName];
+        return isValueEmpty(value);
     };
 
     if (loading) {
