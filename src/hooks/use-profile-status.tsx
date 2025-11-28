@@ -30,7 +30,7 @@ export const ESSENTIAL_PERSONAL_PROFILE_FIELDS = [
     'cep', 'rua', 'bairro', 'cidade', 'estado', 'numero', 'complemento' // RG é opcional
 ];
 
-const MANAGER_PRO_USER_TYPE_ID = 2; // Gestor Pessoa Física
+const MANAGER_PRO_USER_TYPE_ID = 2; // Gestor Pessoa Física/Jurídica
 
 // Simulação de verificação de notificações de sistema para Gestores
 const checkManagerSystemNotifications = async (userId: string): Promise<boolean> => {
@@ -77,6 +77,23 @@ const checkManagerSystemNotifications = async (userId: string): Promise<boolean>
     return false;
 };
 
+// Verifica se o gestor (tipo 2) tem um perfil de empresa cadastrado
+const checkCompanyProfile = async (userId: string): Promise<boolean> => {
+    const { data, error } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(1);
+
+    if (error && error.code !== 'PGRST116') {
+        console.error("[ProfileStatus] Error checking company profile:", error);
+        return false; // Assume que não está completo em caso de erro
+    }
+    
+    return data && data.length > 0;
+};
+
+
 export function useProfileStatus(profile: ProfileData | null | undefined, isLoading: boolean): ProfileStatus {
     const [status, setStatus] = useState<ProfileStatus>({
         isComplete: true,
@@ -113,10 +130,11 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
             let hasPendingNotifications = false;
             let isComplete = true;
             let needsPersonalProfileCompletion = false;
+            let needsCompanyProfile = false;
 
             console.log(`[ProfileStatus] Verificando perfil para o usuário ${profile.id}, tipo: ${profile.tipo_usuario_id}`);
 
-            // Verifica a completude do perfil pessoal para TODOS os usuários (clientes e gestores)
+            // 1. Verifica a completude do perfil pessoal para TODOS os usuários
             for (const field of ESSENTIAL_PERSONAL_PROFILE_FIELDS) {
                 const value = profile[field as keyof ProfileData];
                 if (isValueEmpty(value)) {
@@ -126,8 +144,23 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
                     break;
                 }
             }
+            
+            // 2. Verifica se o gestor (tipo 2) tem perfil de empresa (simulando PJ)
+            if (profile.tipo_usuario_id === MANAGER_PRO_USER_TYPE_ID) {
+                const hasCompany = await checkCompanyProfile(profile.id);
+                
+                // Se o gestor não tem perfil de empresa, marcamos como incompleto
+                if (!hasCompany) {
+                    // NOTA: Não podemos saber se ele escolheu PF ou PJ. 
+                    // Se ele não tem perfil de empresa, assumimos que ele precisa de um (PJ) ou que ele é PF e está completo.
+                    // Para simplificar, se ele é tipo 2 e não tem empresa, marcamos que precisa de uma (PJ flow).
+                    needsCompanyProfile = true;
+                    isComplete = false;
+                    console.log("[ProfileStatus] Gestor PRO (tipo 2) não tem perfil de empresa cadastrado.");
+                }
+            }
 
-            // Verifica notificações de sistema para gestores (tipo 1 e 2)
+            // 3. Verifica notificações de sistema para gestores (tipo 1 e 2)
             if (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === MANAGER_PRO_USER_TYPE_ID) {
                 hasPendingNotifications = await checkManagerSystemNotifications(profile.id);
                 if (hasPendingNotifications) {
@@ -135,22 +168,24 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
                 }
             }
             
-            // Se o perfil pessoal estiver incompleto, sempre define hasPendingNotifications como true
-            if (needsPersonalProfileCompletion) { 
+            // Se qualquer parte estiver incompleta, define hasPendingNotifications como true
+            if (needsPersonalProfileCompletion || needsCompanyProfile) { 
                 hasPendingNotifications = true;
-                console.log("[ProfileStatus] Definindo hasPendingNotifications como TRUE devido ao perfil incompleto.");
+                isComplete = false;
+                console.log("[ProfileStatus] Definindo hasPendingNotifications como TRUE devido a dados incompletos.");
             }
 
             console.log(`[ProfileStatus] Estado Final - User ID: ${profile.id}, Tipo: ${profile.tipo_usuario_id}`);
             console.log(`[ProfileStatus]   isComplete: ${isComplete}`);
             console.log(`[ProfileStatus]   needsPersonalProfileCompletion: ${needsPersonalProfileCompletion}`);
+            console.log(`[ProfileStatus]   needsCompanyProfile: ${needsCompanyProfile}`);
             console.log(`[ProfileStatus]   hasPendingNotifications: ${hasPendingNotifications}`);
 
             setStatus({
                 isComplete: isComplete,
                 hasPendingNotifications: hasPendingNotifications,
                 loading: false,
-                needsCompanyProfile: false, // Sempre false agora
+                needsCompanyProfile: needsCompanyProfile,
                 needsPersonalProfileCompletion: needsPersonalProfileCompletion,
             });
         };

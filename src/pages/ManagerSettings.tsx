@@ -39,6 +39,16 @@ const ManagerSettings: React.FC = () => {
         path: "/profile" 
     });
     
+    // Adiciona Perfil da Empresa para todos os gestores (tipo 1 e 2)
+    if (isAdminMaster || isManagerPro) {
+        settingsOptions.push({ 
+            icon: <Building2 className="h-6 w-6 text-yellow-500" />, 
+            title: "Perfil da Empresa (PJ)", 
+            description: "Gerencie CNPJ, Razão Social e endereço corporativo.", 
+            path: "/manager/settings/company-profile" 
+        });
+    }
+    
     settingsOptions.push(
         { icon: <Bell className="h-6 w-6 text-yellow-500" />, title: "Notificações e Alertas", description: "Defina preferências de notificação por e-mail e sistema.", path: "/manager/settings/notifications" },
         { icon: <CreditCard className="h-6 w-6 text-yellow-500" />, title: "Configurações de Pagamento", description: "Gerencie contas bancárias e gateways de pagamento.", path: "/manager/settings/payment" },

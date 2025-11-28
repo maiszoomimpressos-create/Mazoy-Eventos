@@ -8,9 +8,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/use-profile';
 import { showError, showSuccess, showLoading, dismissToast } from '@/utils/toast';
 import { useQueryClient } from '@tanstack/react-query';
+import UserTypeSelectionModal from '@/components/UserTypeSelectionModal'; // Importando o novo modal
 
 const ADMIN_MASTER_USER_TYPE_ID = 1;
-const MANAGER_PRO_USER_TYPE_ID = 2; // Pessoa Física
+const MANAGER_PRO_USER_TYPE_ID = 2; // Pessoa Física/Jurídica (usamos 2 para ambos)
 const CLIENT_USER_TYPE_ID = 3;
 
 const ManagerRegistrationPage: React.FC = () => {
@@ -20,6 +21,7 @@ const ManagerRegistrationPage: React.FC = () => {
     const [loadingSession, setLoadingSession] = useState(true);
     const [agreedToTerms, setAgreedToTerms] = useState(false);
     const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+    const [showSelectionModal, setShowSelectionModal] = useState(false); // Novo estado para o modal
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
@@ -50,7 +52,7 @@ const ManagerRegistrationPage: React.FC = () => {
         setAgreedToTerms(agreed);
     };
 
-    const handleContinueClick = async () => {
+    const handleContinueClick = () => {
         if (!userId || !profile || profile.tipo_usuario_id !== CLIENT_USER_TYPE_ID) {
             showError("Ação não permitida. Você não é um cliente logado.");
             return;
@@ -60,12 +62,18 @@ const ManagerRegistrationPage: React.FC = () => {
             showError("Você deve concordar com os termos para continuar.");
             return;
         }
-
+        
+        // Abre o modal de seleção PF/PJ
+        setShowSelectionModal(true);
+    };
+    
+    const handleTypeSelection = async (type: 'PF' | 'PJ') => {
+        setShowSelectionModal(false);
         setIsUpdatingProfile(true);
-        const toastId = showLoading("Atualizando seu perfil para Gestor PRO...");
+        const toastId = showLoading(`Atualizando seu perfil para Gestor PRO (${type})...`);
 
         try {
-            // Atualiza o perfil para Gestor Pessoa Física (ID 2)
+            // 1. Atualiza o perfil para Gestor Pessoa Física (ID 2) - Usamos 2 para ambos
             const { error } = await supabase
                 .from('profiles')
                 .update({ tipo_usuario_id: MANAGER_PRO_USER_TYPE_ID })
@@ -76,12 +84,17 @@ const ManagerRegistrationPage: React.FC = () => {
             }
 
             dismissToast(toastId);
-            showSuccess("Parabéns! Seu perfil foi atualizado para Gestor PRO. Agora você pode cadastrar eventos.");
+            showSuccess(`Parabéns! Seu perfil foi atualizado para Gestor PRO (${type}).`);
             
-            // Invalida a query do perfil para que o useProfile recarregue com o novo tipo de usuário
+            // 2. Invalida a query do perfil para que o useProfile recarregue com o novo tipo de usuário
             queryClient.invalidateQueries({ queryKey: ['profile', userId] });
             
-            navigate('/manager/events/create', { replace: true });
+            // 3. Redirecionamento baseado na escolha
+            if (type === 'PF') {
+                navigate('/manager/events/create', { replace: true });
+            } else { // PJ
+                navigate('/manager/settings/company-profile', { replace: true });
+            }
 
         } catch (e: any) {
             dismissToast(toastId);
@@ -146,12 +159,19 @@ const ManagerRegistrationPage: React.FC = () => {
                         ) : (
                             <>
                                 <ArrowRight className="mr-2 h-5 w-5" />
-                                Continuar para Cadastro de Evento
+                                Continuar para Cadastro de Gestor
                             </>
                         )}
                     </Button>
                 </CardContent>
             </Card>
+            
+            <UserTypeSelectionModal
+                isOpen={showSelectionModal}
+                onClose={() => setShowSelectionModal(false)}
+                onSelect={handleTypeSelection}
+                isProcessing={isUpdatingProfile}
+            />
         </div>
     );
 };

@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 
@@ -21,16 +21,36 @@ interface CompanyData {
     user_id: string;
 }
 
+const ADMIN_MASTER_USER_TYPE_ID = 1;
+const MANAGER_PRO_USER_TYPE_ID = 2;
+
 const fetchCompanies = async (userId: string, userTypeId: number | undefined): Promise<CompanyData | null> => {
-    // Removendo a lógica de busca de empresa, pois o tipo PJ foi removido.
-    return null;
+    if (!userId || (userTypeId !== ADMIN_MASTER_USER_TYPE_ID && userTypeId !== MANAGER_PRO_USER_TYPE_ID)) {
+        return null;
+    }
+    
+    // Busca o perfil da empresa associado ao user_id
+    const { data, error } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 = No rows found
+        console.error("Error fetching company profile:", error);
+        throw new Error(error.message);
+    }
+    
+    return data as CompanyData || null;
 };
 
 export const useManagerCompany = (userId: string | undefined, userTypeId: number | undefined) => {
+    const queryClient = useQueryClient();
+    
     const query = useQuery({
         queryKey: ['managerCompany', userId, userTypeId], 
         queryFn: () => fetchCompanies(userId!, userTypeId),
-        enabled: !!userId, 
+        enabled: !!userId && (userTypeId === ADMIN_MASTER_USER_TYPE_ID || userTypeId === MANAGER_PRO_USER_TYPE_ID), 
         staleTime: 1000 * 60 * 5, // 5 minutes
         onError: (error) => {
             console.error("Query Error: Failed to load company data.", error);
@@ -40,8 +60,9 @@ export const useManagerCompany = (userId: string | undefined, userTypeId: number
 
     return {
         ...query,
-        company: query.data, // Retorna null
-        allCompanies: [], // Retorna um array vazio
+        company: query.data,
+        allCompanies: [], // Mantido vazio para simplificar
+        invalidateCompany: () => queryClient.invalidateQueries({ queryKey: ['managerCompany', userId, userTypeId] }),
     };
 };
 
