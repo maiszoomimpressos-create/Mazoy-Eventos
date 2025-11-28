@@ -309,7 +309,7 @@ const Profile: React.FC = () => {
                 showSuccess("Perfil atualizado com sucesso!");
                 // Invalida a query para forçar a re-busca e atualização imediata do status de notificação em todos os componentes
                 queryClient.invalidateQueries({ queryKey: ['profile', userId] });
-                // O redirecionamento e a saída do modo de edição serão tratados pelo useEffect
+                setIsEditing(false);
             }
         } catch (e) {
             // Captura erros inesperados (como falhas de rede/timeout)
@@ -351,10 +351,40 @@ const Profile: React.FC = () => {
     };
 
     // Helper para verificar se um campo está faltando para a notificação de perfil incompleto
-    const isFieldMissingForNotification = (fieldName: keyof ProfileData) => {
-        if (!profile || !hasPendingNotifications) return false;
-        const value = profile[fieldName];
-        return isValueEmpty(value);
+    const getMissingFieldsMessage = () => {
+        if (!profile) return ''; // Não precisa de hasPendingNotifications aqui, pois já estamos no contexto de perfil
+
+        const missingFields: string[] = [];
+        const fieldLabels: { [key: string]: string } = {
+            first_name: 'Nome',
+            last_name: 'Sobrenome',
+            birth_date: 'Data de Nascimento',
+            gender: 'Gênero',
+            cpf: 'CPF',
+            cep: 'CEP',
+            rua: 'Rua',
+            bairro: 'Bairro',
+            cidade: 'Cidade',
+            estado: 'Estado',
+            numero: 'Número',
+            complemento: 'Complemento',
+        };
+
+        for (const fieldName of ESSENTIAL_PERSONAL_PROFILE_FIELDS) {
+            const value = profile[fieldName as keyof ProfileData];
+            if (isValueEmpty(value)) {
+                missingFields.push(fieldLabels[fieldName] || fieldName);
+            }
+        }
+
+        if (missingFields.length === 0) {
+            return '';
+        } else if (missingFields.length === 1) {
+            return `O campo "${missingFields[0]}" está faltando.`;
+        } else {
+            const lastField = missingFields.pop();
+            return `Os campos "${missingFields.join('", "')}" e "${lastField}" estão faltando.`;
+        }
     };
 
     if (loading) {
