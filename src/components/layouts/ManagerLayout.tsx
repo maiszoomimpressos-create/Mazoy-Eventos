@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/use-profile';
 import { useUserType } from '@/hooks/use-user-type';
 import { showError } from '@/utils/toast';
-import { useManagerCompany } from '@/hooks/use-manager-company'; // NOVO: Importando hook da empresa
+import { useManagerCompany } from '@/hooks/use-manager-company';
 
 const ADMIN_USER_TYPE_ID = 1;
 const MANAGER_USER_TYPE_ID = 2;
@@ -29,7 +29,6 @@ const ManagerLayout: React.FC = () => {
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
     const { userTypeName: baseUserTypeName, isLoadingUserType } = useUserType(profile?.tipo_usuario_id);
     
-    // NOVO: Busca dados da empresa se for Gestor PRO (tipo 2)
     const isManagerPro = profile?.tipo_usuario_id === MANAGER_USER_TYPE_ID;
     const { company, isLoading: isLoadingCompany } = useManagerCompany(isManagerPro ? userId : undefined);
 
@@ -143,16 +142,35 @@ const ManagerLayout: React.FC = () => {
                                     {userRoleDisplay}
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator className="bg-yellow-500/20" />
-                                {navItems.map(item => (
-                                    <DropdownMenuItem 
-                                        key={item.path}
-                                        onClick={() => navigate(item.path)}
-                                        className="cursor-pointer hover:bg-yellow-500/10"
-                                    >
-                                        {item.icon}
-                                        {item.label}
-                                    </DropdownMenuItem>
-                                ))}
+                                {navItems.map(item => {
+                                    const isActive = location.pathname === item.path;
+                                    
+                                    // Se for a rota ativa, desabilita e muda o estilo
+                                    if (isActive) {
+                                        return (
+                                            <DropdownMenuItem 
+                                                key={item.path}
+                                                disabled
+                                                className="cursor-default bg-yellow-500/20 text-yellow-500 font-semibold opacity-100"
+                                            >
+                                                {item.icon}
+                                                {item.label}
+                                            </DropdownMenuItem>
+                                        );
+                                    }
+
+                                    // Se não for a rota ativa, permite a navegação normal
+                                    return (
+                                        <DropdownMenuItem 
+                                            key={item.path}
+                                            onClick={() => navigate(item.path)}
+                                            className="cursor-pointer hover:bg-yellow-500/10"
+                                        >
+                                            {item.icon}
+                                            {item.label}
+                                        </DropdownMenuItem>
+                                    );
+                                })}
                                 <DropdownMenuSeparator className="bg-yellow-500/20" />
                                 <DropdownMenuItem 
                                     onClick={handleLogout} 
@@ -187,16 +205,25 @@ const ManagerLayout: React.FC = () => {
                                     </div>
                                     {/* Reutilizando navItems para o menu mobile */}
                                     <nav className="flex flex-col space-y-2">
-                                        {navItems.map(item => (
-                                            <button 
-                                                key={item.path}
-                                                onClick={() => navigate(item.path)} 
-                                                className="flex items-center p-3 rounded-xl text-white hover:bg-yellow-500/10 transition-colors duration-200 text-lg"
-                                            >
-                                                {item.icon}
-                                                {item.label}
-                                            </button>
-                                        ))}
+                                        {navItems.map(item => {
+                                            const isActive = location.pathname === item.path;
+                                            
+                                            return (
+                                                <button 
+                                                    key={item.path}
+                                                    onClick={() => navigate(item.path)} 
+                                                    disabled={isActive}
+                                                    className={`flex items-center p-3 rounded-xl transition-colors duration-200 text-lg ${
+                                                        isActive 
+                                                            ? 'bg-yellow-500/20 text-yellow-500 font-semibold cursor-default' 
+                                                            : 'text-white hover:bg-yellow-500/10'
+                                                    }`}
+                                                >
+                                                    {item.icon}
+                                                    {item.label}
+                                                </button>
+                                            );
+                                        })}
                                     </nav>
                                     <div className="border-t border-yellow-500/20 pt-4">
                                         <Button
