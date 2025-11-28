@@ -12,7 +12,7 @@ import { Loader2, Building, ArrowLeft, User, AlertTriangle } from 'lucide-react'
 import CompanyForm, { companySchema, CompanyFormData } from '@/components/CompanyForm';
 import { useProfile } from '@/hooks/use-profile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useManagerCompany } from '@/hooks/use-manager-company'; // Importando hook da empresa
+import { useManagerCompany } from '@/hooks/use-manager-company';
 
 // Campos essenciais do perfil do usuário que devem estar preenchidos
 const ESSENTIAL_PROFILE_FIELDS = [
@@ -47,6 +47,27 @@ const formatCompanyDataForForm = (data: any): Partial<CompanyFormData> => ({
     number: data.number || '',
     complement: data.complement || '',
 });
+
+// Funções de formatação para exibição
+const formatCPFDisplay = (value: string | null | undefined) => {
+    if (!value) return 'N/A';
+    const cleanValue = value.replace(/\D/g, '');
+    return cleanValue.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+};
+
+const formatRGDisplay = (value: string | null | undefined) => {
+    if (!value) return 'N/A';
+    const cleanValue = value.replace(/\D/g, '');
+    // Tenta formatar para o padrão XX.XXX.XXX-X (ou similar)
+    if (cleanValue.length >= 7) {
+        return cleanValue
+            .replace(/(\d{2})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d)/, '$1.$2')
+            .replace(/(\d{3})(\d{1})/, '$1-$2')
+            .replace(/(-\d{1})\d+?$/, '$1');
+    }
+    return cleanValue;
+};
 
 
 const ManagerCompanyProfile: React.FC = () => {
@@ -340,8 +361,8 @@ const ManagerCompanyProfile: React.FC = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-300">
                                         <div>
                                             <p><span className="font-medium text-white">Nome:</span> {profile.first_name} {profile.last_name}</p>
-                                            <p><span className="font-medium text-white">CPF:</span> {profile.cpf ? profile.cpf.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4') : 'N/A'}</p>
-                                            <p><span className="font-medium text-white">RG:</span> {profile.rg || 'N/A'}</p>
+                                            <p><span className="font-medium text-white">CPF:</span> {formatCPFDisplay(profile.cpf)}</p>
+                                            <p><span className="font-medium text-white">RG:</span> {formatRGDisplay(profile.rg)}</p>
                                         </div>
                                         <div>
                                             <p><span className="font-medium text-white">Nascimento:</span> {profile.birth_date ? new Date(profile.birth_date).toLocaleDateString('pt-BR') : 'N/A'}</p>
