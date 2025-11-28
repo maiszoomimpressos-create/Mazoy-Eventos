@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { Loader2, Building, ArrowLeft } from 'lucide-react';
+import { useManagerCompany } from '@/hooks/use-manager-company'; // Importando o hook
 
 // --- Utility Functions ---
 
@@ -85,7 +86,7 @@ const companyProfileSchema = z.object({
     corporate_name: z.string().min(3, { message: "Razão Social é obrigatória." }),
     trade_name: z.string().optional().nullable(),
     phone: z.string().optional().nullable(),
-    email: z.string().email({ message: "E-mail inválido." }).optional().nullable(), // Novo campo de e-mail
+    email: z.string().email({ message: "E-mail inválido." }).optional().nullable(), 
     
     // Address Fields
     cep: z.string().optional().nullable().refine((val) => !val || val.replace(/\D/g, '').length === 8, { message: "CEP inválido (8 dígitos)." }),
@@ -106,8 +107,22 @@ const ManagerCompanyProfile: React.FC = () => {
     const [userId, setUserId] = useState<string | null>(null);
     const [isFetching, setIsFetching] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [companyId, setCompanyId] = useState<string | null>(null);
     const [isCepLoading, setIsCepLoading] = useState(false);
+    
+    // 1. Obter o ID da empresa do gestor
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (!user) {
+                showError("Sessão expirada. Faça login novamente.");
+                navigate('/manager/login');
+                return;
+            }
+            setUserId(user.id);
+        });
+    }, [navigate]);
+    
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId || undefined);
+    const companyId = company?.id;
 
     const form = useForm<CompanyProfileData>({
         resolver: zodResolver(companyProfileSchema),
@@ -116,7 +131,7 @@ const ManagerCompanyProfile: React.FC = () => {
             corporate_name: '',
             trade_name: '',
             phone: '',
-            email: '', // Default value
+            email: '', 
             cep: '',
             street: '',
             neighborhood: '',
@@ -127,36 +142,35 @@ const ManagerCompanyProfile: React.FC = () => {
         },
     });
 
-    // Fetch Data
+    // 2. Fetch Company Details using companyId
     useEffect(() => {
-        const fetchProfile = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                showError("Sessão expirada. Faça login novamente.");
-                navigate('/manager/login');
+        const fetchProfileDetails = async () => {
+            if (!userId || isLoadingCompany) return;
+
+            if (!companyId) {
+                // Se não houver empresa associada, o gestor precisa cadastrar
+                setIsFetching(false);
                 return;
             }
-            setUserId(user.id);
 
             const { data, error } = await supabase
                 .from('companies')
                 .select('*')
-                .eq('user_id', user.id)
+                .eq('id', companyId)
                 .single();
 
-            if (error && error.code !== 'PGRST116') { // PGRST116 = No rows found
+            if (error && error.code !== 'PGRST116') { 
                 console.error("Error fetching company profile:", error);
                 showError("Erro ao carregar perfil da empresa.");
             }
 
             if (data) {
-                setCompanyId(data.id);
                 form.reset({
                     cnpj: formatCNPJ(data.cnpj || ''),
                     corporate_name: data.corporate_name || '',
                     trade_name: data.trade_name || '',
                     phone: formatPhone(data.phone || ''),
-                    email: data.email || '', // Load email
+                    email: data.email || '', 
                     cep: formatCEP(data.cep || ''),
                     street: data.street || '',
                     neighborhood: data.neighborhood || '',
@@ -168,8 +182,8 @@ const ManagerCompanyProfile: React.FC = () => {
             }
             setIsFetching(false);
         };
-        fetchProfile();
-    }, [navigate, form]);
+        fetchProfileDetails();
+    }, [userId, companyId, isLoadingCompany, form]);
 
     // Function to fetch address via ViaCEP
     const fetchAddressByCep = async (cep: string) => {
@@ -227,17 +241,20 @@ const ManagerCompanyProfile: React.FC = () => {
     };
 
     const onSubmit = async (values: CompanyProfileData) => {
-        if (!userId) return;
+        if (!userId || !companyId) {
+            showError("ID da empresa não encontrado. Tente recarregar ou cadastre a empresa primeiro.");
+            return;
+        }
         setIsSaving(true);
-        const toastId = showLoading(companyId ? "Atualizando perfil..." : "Cadastrando perfil...");
+        const toastId = showLoading("Atualizando perfil...");
 
         const dataToSave = {
-            user_id: userId,
+            // REMOVIDO: user_id: userId, // Não salvamos mais user_id na tabela companies
             cnpj: values.cnpj.replace(/\D/g, ''),
             corporate_name: values.corporate_name,
             trade_name: values.trade_name || null,
             phone: values.phone ? values.phone.replace(/\D/g, '') : null,
-            email: values.email || null, // Save email
+            email: values.email || null, 
             
             cep: values.cep ? values.cep.replace(/\D/g, '') : null,
             street: values.street || null,
@@ -249,26 +266,11 @@ const ManagerCompanyProfile: React.FC = () => {
         };
 
         try {
-            let error;
-            if (companyId) {
-                // Update existing profile
-                const result = await supabase
-                    .from('companies')
-                    .update(dataToSave)
-                    .eq('id', companyId);
-                error = result.error;
-            } else {
-                // Insert new profile
-                const result = await supabase
-                    .from('companies')
-                    .insert([dataToSave])
-                    .select('id')
-                    .single();
-                error = result.error;
-                if (result.data) {
-                    setCompanyId(result.data.id);
-                }
-            }
+            // Update existing profile
+            const { error } = await supabase
+                .from('companies')
+                .update(dataToSave)
+                .eq('id', companyId);
 
             if (error) {
                 // Check for unique constraint violation (CNPJ already exists)
@@ -291,7 +293,7 @@ const ManagerCompanyProfile: React.FC = () => {
         }
     };
 
-    if (isFetching) {
+    if (isFetching || isLoadingCompany) {
         return (
             <div className="max-w-4xl mx-auto px-4 sm:px-0 text-center py-20">
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
@@ -299,6 +301,25 @@ const ManagerCompanyProfile: React.FC = () => {
             </div>
         );
     }
+    
+    if (!companyId) {
+        return (
+            <div className="max-w-4xl mx-auto px-4 sm:px-0 text-center py-20">
+                <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-6 rounded-xl mb-8">
+                    <i className="fas fa-exclamation-triangle text-2xl mb-3"></i>
+                    <h3 className="font-semibold text-white mb-2">Empresa Não Cadastrada</h3>
+                    <p className="text-sm">Sua conta PRO (PJ) não está associada a uma empresa. Por favor, complete o cadastro.</p>
+                    <Button 
+                        onClick={() => navigate('/manager/register/company')}
+                        className="mt-4 bg-yellow-500 text-black hover:bg-yellow-600"
+                    >
+                        Cadastrar Empresa
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
 
     return (
         <div className="max-w-4xl mx-auto px-4 sm:px-0">
@@ -320,7 +341,7 @@ const ManagerCompanyProfile: React.FC = () => {
             <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
                 <CardHeader>
                     <CardTitle className="text-white text-xl sm:text-2xl font-semibold">
-                        {companyId ? "Editar Dados Corporativos" : "Cadastrar Dados Corporativos"}
+                        Editar Dados Corporativos
                     </CardTitle>
                     <CardDescription className="text-gray-400 text-sm">
                         Estes dados são essenciais para a emissão de notas fiscais e validação de eventos.

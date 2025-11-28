@@ -94,7 +94,7 @@ const ManagerCompanyRegister: React.FC = () => {
         const toastId = showLoading("Registrando empresa e perfil de gestor...");
 
         const dataToSave = {
-            user_id: userId,
+            // REMOVIDO: user_id: userId, // A posse agora é gerenciada pela tabela user_companies
             cnpj: values.cnpj.replace(/\D/g, ''),
             corporate_name: values.corporate_name,
             trade_name: values.trade_name || null,
@@ -134,12 +134,10 @@ const ManagerCompanyRegister: React.FC = () => {
                 .eq('id', userId);
 
             if (profileUpdateError) {
-                // Se a atualização do perfil falhar, idealmente reverteríamos a inserção da empresa.
-                // Por simplicidade, apenas logamos o erro e continuamos, mas alertamos o usuário.
                 console.error("Warning: Failed to update user profile type:", profileUpdateError);
             }
             
-            // 3. Criar associação na tabela user_companies (opcional, mas boa prática)
+            // 3. Criar associação na tabela user_companies (VINCULA O GESTOR À EMPRESA)
             const { error: associationError } = await supabase
                 .from('user_companies')
                 .insert({ user_id: userId, company_id: companyId, role: 'owner', is_primary: true });
@@ -176,7 +174,7 @@ const ManagerCompanyRegister: React.FC = () => {
                 <div className="text-center mb-6 sm:mb-8">
                     <div 
                         className="text-3xl font-serif text-yellow-500 font-bold mb-2 cursor-pointer"
-                        onClick={() => navigate('/')} // Adicionado onClick para navegar para a home
+                        onClick={() => navigate('/')} 
                     >
                         Mazoy PRO
                     </div>
@@ -202,7 +200,7 @@ const ManagerCompanyRegister: React.FC = () => {
                                         isSaving={isSaving} 
                                         isCepLoading={isCepLoading} 
                                         fetchAddressByCep={fetchAddressByCep} 
-                                        isManagerContext={true} // Indica que é o contexto de registro de gestor
+                                        isManagerContext={true} 
                                     />
 
                                     <div className="pt-4 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
