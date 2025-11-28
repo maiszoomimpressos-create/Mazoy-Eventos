@@ -9,23 +9,22 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Form } from '@/components/ui/form';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { Loader2, Building, ArrowLeft, User, AlertTriangle } from 'lucide-react';
-import CompanyForm, { createCompanySchema, CompanyFormData } from '@/components/CompanyForm'; // Importando o novo componente e schema
-import { useProfile } from '@/hooks/use-profile';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useProfileStatus, isValueEmpty } from '@/hooks/use-profile-status'; // Importando useProfileStatus e isValueEmpty
+import CompanyForm, { companySchema, CompanyFormData } from '@/components/CompanyForm';
+import { useProfile } from '@/hooks/use-profile'; // Importando useProfile
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Importando componentes de Tabs
 
-// Campos essenciais do perfil do usuário que devem estar preenchidos para ser sócio
-const ESSENTIAL_PROFILE_FIELDS_FOR_PARTNER = [
+// Campos essenciais do perfil do usuário que devem estar preenchidos
+const ESSENTIAL_PROFILE_FIELDS = [
     'first_name', 'last_name', 'cpf', 'rg', 'birth_date', 'gender',
     'cep', 'rua', 'bairro', 'cidade', 'estado', 'numero'
 ];
 
-const isProfileCompleteForPartner = (profileData: typeof useProfile extends (...args: any[]) => { profile: infer T } ? T : never): boolean => {
+const isProfileComplete = (profileData: typeof useProfile extends (...args: any[]) => { profile: infer T } ? T : never): boolean => {
     if (!profileData) return false;
 
-    for (const field of ESSENTIAL_PROFILE_FIELDS_FOR_PARTNER) {
+    for (const field of ESSENTIAL_PROFILE_FIELDS) {
         const value = profileData[field as keyof typeof profileData];
-        if (isValueEmpty(value)) {
+        if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) {
             return false;
         }
     }
@@ -60,11 +59,9 @@ const ManagerCompanyProfile: React.FC = () => {
 
     // Fetch user profile for 'Sócios' tab
     const { profile, isLoading: isLoadingProfile } = useProfile(userId || undefined);
-    const isManager = profile && (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2);
-    const currentCompanySchema = createCompanySchema(isManager); // Usa o schema dinâmico
 
     const form = useForm<CompanyFormData>({
-        resolver: zodResolver(currentCompanySchema), // Usa o schema dinâmico
+        resolver: zodResolver(companySchema),
         defaultValues: {
             cnpj: '',
             corporate_name: '',
@@ -109,8 +106,8 @@ const ManagerCompanyProfile: React.FC = () => {
                     cep: data.cep ? data.cep.replace(/^(\d{5})(\d{3})$/, '$1-$2') : '',
                     street: data.street || '',
                     neighborhood: data.neighborhood || '',
-                    city: data.cidade || '', // Corrigido para 'cidade' do DB
-                    state: data.estado || '', // Corrigido para 'estado' do DB
+                    city: data.localidade || '', // Corrigido para 'localidade' do ViaCEP
+                    state: data.uf || '', // Corrigido para 'uf' do ViaCEP
                     number: data.number || '',
                     complement: data.complement || '',
                 });
@@ -162,8 +159,8 @@ const ManagerCompanyProfile: React.FC = () => {
 
         const dataToSave = {
             user_id: userId,
-            cnpj: values.cnpj ? values.cnpj.replace(/\D/g, '') : null,
-            corporate_name: values.corporate_name || null,
+            cnpj: values.cnpj.replace(/\D/g, ''),
+            corporate_name: values.corporate_name,
             trade_name: values.trade_name || null,
             phone: values.phone ? values.phone.replace(/\D/g, '') : null,
             email: values.email || null,
@@ -228,8 +225,6 @@ const ManagerCompanyProfile: React.FC = () => {
         );
     }
 
-    const isPersonalProfileComplete = isProfileCompleteForPartner(profile);
-
     return (
         <div className="max-w-4xl mx-auto px-4 sm:px-0">
             <div className="flex items-center justify-between mb-8">
@@ -279,7 +274,6 @@ const ManagerCompanyProfile: React.FC = () => {
                                         isSaving={isSaving} 
                                         isCepLoading={isCepLoading} 
                                         fetchAddressByCep={fetchAddressByCep} 
-                                        isManagerContext={isManager} // Passa a prop
                                     />
 
                                     <div className="pt-4 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
@@ -320,7 +314,7 @@ const ManagerCompanyProfile: React.FC = () => {
                                     <User className="h-5 w-5 mr-2 text-yellow-500" />
                                     Dados do Sócio Principal (Você)
                                 </h3>
-                                {!isPersonalProfileComplete && (
+                                {!isProfileComplete(profile) && (
                                     <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-xl flex items-start space-x-3 mb-4">
                                         <AlertTriangle className="h-5 w-5 mt-1 flex-shrink-0" />
                                         <div>

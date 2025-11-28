@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Outlet, Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Menu, X, Loader2, Crown, LayoutDashboard, CalendarCheck, PlusCircle, QrCode, Settings, LogOut } from 'lucide-react';
+import { Menu, X, Loader2, Crown, LayoutDashboard, CalendarCheck, PlusCircle, QrCode, Settings, LogOut } from 'lucide-react'; // Importando LogOut
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/use-profile';
 import { useUserType } from '@/hooks/use-user-type';
 import { showError } from '@/utils/toast';
-import { useProfileStatus } from '@/hooks/use-profile-status'; // Import useProfileStatus
-import { useManagerCompany } from '@/hooks/use-manager-company'; // Import useManagerCompany
 
 const ADMIN_USER_TYPE_ID = 1;
-const MANAGER_PRO_USER_TYPE_ID = 2;
+const MANAGER_USER_TYPE_ID = 2;
 
 const ManagerLayout: React.FC = () => {
     const navigate = useNavigate();
@@ -29,9 +27,6 @@ const ManagerLayout: React.FC = () => {
 
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
     const { userTypeName, isLoadingUserType } = useUserType(profile?.tipo_usuario_id);
-    // Mantemos o useProfileStatus para que as páginas internas possam usá-lo
-    const { isComplete: isProfileFullyComplete, loading: isLoadingProfileStatus, needsCompanyProfile, needsPersonalProfileCompletion } = useProfileStatus(profile, isLoadingProfile);
-    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId); // Fetch company data
 
     const handleLogout = async () => {
         const { error } = await supabase.auth.signOut();
@@ -42,53 +37,33 @@ const ManagerLayout: React.FC = () => {
         }
     };
 
-    // Combined loading state
-    const isLoadingCombined = loadingSession || isLoadingProfile || isLoadingUserType || isLoadingProfileStatus || isLoadingCompany;
-
-    // Determine user type and manager status
-    const userType = profile?.tipo_usuario_id;
-    const isManager = userType === ADMIN_USER_TYPE_ID || userType === MANAGER_PRO_USER_TYPE_ID;
-    const isAdminMaster = userType === ADMIN_USER_TYPE_ID;
-
-    // Pages where profile completion is allowed/expected
-    const isProfileCompletionPage = location.pathname === '/profile' || 
-                                   location.pathname === '/manager/settings/company-profile' ||
-                                   location.pathname === '/manager/register' || 
-                                   location.pathname === '/manager/register/company' ||
-                                   location.pathname === '/admin/register-manager'; 
-
-    // Effect for redirection logic (ONLY for unauthenticated or non-manager users)
-    useEffect(() => {
-        if (isLoadingCombined) return; // Wait for all data to load
-
-        // 1. Redirect unauthenticated users to login
-        if (!userId) {
+    // Redirect unauthenticated users to login
+    if (loadingSession || isLoadingProfile || isLoadingUserType) {
+        if (!userId && !loadingSession) {
+            // Only redirect if trying to access a manager/admin route
             if (location.pathname.startsWith('/manager') || location.pathname.startsWith('/admin')) {
-                navigate('/manager/login', { replace: true });
+                navigate('/manager/login');
             }
-            return;
         }
-
-        // 2. Redirect non-managers away from manager/admin routes
-        if (!isManager) {
-            if (location.pathname.startsWith('/manager') || location.pathname.startsWith('/admin')) {
-                navigate('/', { replace: true });
-            }
-            return;
-        }
-        
-        // REMOVIDO: A lógica de redirecionamento para perfis incompletos foi removida daqui.
-        // Agora, o dashboard e as páginas de ação serão responsáveis por exibir avisos e desabilitar funcionalidades.
-
-    }, [isLoadingCombined, userId, isManager, userType, navigate, location.pathname]);
-
-
-    if (isLoadingCombined) {
+        // If loading, show spinner
         return (
             <div className="min-h-screen bg-black text-white flex items-center justify-center">
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
             </div>
         );
+    }
+    
+    // Check if user is authorized (Admin or Manager)
+    const userType = profile?.tipo_usuario_id;
+    const isManager = userType === ADMIN_USER_TYPE_ID || userType === MANAGER_USER_TYPE_ID;
+    const isAdminMaster = userType === ADMIN_USER_TYPE_ID;
+
+    if (!isManager) {
+        // If the user is logged in but not a manager/admin (e.g., client type 3), redirect them
+        if (location.pathname.startsWith('/manager') || location.pathname.startsWith('/admin')) {
+            navigate('/');
+            return null;
+        }
     }
     
     const navItems = [
@@ -100,6 +75,7 @@ const ManagerLayout: React.FC = () => {
         { path: '/manager/settings', label: 'Configurações' },
     ];
     
+    // Add Admin Dashboard link if the user is an Admin Master
     if (isAdminMaster) {
         navItems.splice(1, 0, { path: '/admin/dashboard', label: 'Dashboard Admin' });
     }
@@ -112,8 +88,10 @@ const ManagerLayout: React.FC = () => {
     const NavLinks: React.FC<{ onClick?: () => void }> = ({ onClick }) => (
         <nav className="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0">
             {navItems.map(item => {
+                // Verifica se o caminho atual começa com o caminho do item para considerar ativo
                 const isLinkActive = location.pathname.startsWith(item.path) && (item.path !== '/' || location.pathname === '/');
 
+                // Se o link for para a página atual, não renderiza o botão
                 if (isLinkActive) {
                     return (
                         <span 
@@ -150,6 +128,8 @@ const ManagerLayout: React.FC = () => {
                             Mazoy
                             <span className="ml-2 sm:ml-3 bg-gradient-to-r from-yellow-500 to-yellow-600 text-black px-2 sm:px-3 py-0.5 rounded-lg text-xs sm:text-sm font-bold">{dashboardTitle}</span>
                         </Link>
+                        
+                        {/* O DropdownMenu de 'Ações Rápidas' foi removido daqui */}
                     </div>
                     <div className="flex items-center space-x-3 sm:space-x-4">
                         <button className="relative p-2 text-yellow-500 hover:bg-yellow-500/10 rounded-lg transition-colors cursor-pointer hidden sm:block">
@@ -157,6 +137,7 @@ const ManagerLayout: React.FC = () => {
                             <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-xs text-white">3</span>
                         </button>
                         
+                        {/* NOVO: Botão 'Gestor PRO' agora é um DropdownMenu */}
                         {isManager && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -205,11 +186,13 @@ const ManagerLayout: React.FC = () => {
                             </DropdownMenu>
                         )}
 
+                        {/* Informações do Usuário (Nome e Cargo) */}
                         <div className="text-right hidden lg:block">
                             <div className="text-white font-semibold text-sm">{userName}</div>
                             <div className="text-gray-400 text-xs">{userRole}</div>
                         </div>
 
+                        {/* Logout Button */}
                         <Button
                             onClick={handleLogout}
                             className="bg-transparent border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 transition-all duration-300 cursor-pointer px-3 py-1 h-8 text-sm hidden sm:block"
@@ -217,6 +200,7 @@ const ManagerLayout: React.FC = () => {
                             Sair
                         </Button>
 
+                        {/* Mobile Menu Trigger */}
                         <Sheet>
                             <SheetTrigger asChild>
                                 <Button variant="ghost" size="icon" className="md:hidden text-yellow-500 hover:bg-yellow-500/10">

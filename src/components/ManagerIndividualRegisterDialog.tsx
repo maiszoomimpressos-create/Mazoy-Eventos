@@ -72,23 +72,23 @@ const validateCEP = (cep: string) => {
     return cleanCEP.length === 8;
 };
 
-// Schema para o registro de gestor individual (todos os campos são obrigatórios)
 const managerIndividualProfileSchema = z.object({
-    first_name: z.string().min(1, "Nome é obrigatório."),
-    last_name: z.string().min(1, "Sobrenome é obrigatório."),
-    birth_date: z.string().min(1, "Data de nascimento é obrigatória."),
-    gender: z.string().min(1, "Gênero é obrigatório."), // Removido .nullable()
+    first_name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
+    last_name: z.string().min(1, { message: "Sobrenome é obrigatório." }),
+    birth_date: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de nascimento é obrigatória." }),
+    gender: z.string().min(1, { message: "Gênero é obrigatório." }).refine((val) => GENDER_OPTIONS.includes(val), { message: "Selecione um gênero válido." }), // Tornando obrigatório e validando contra opções
     
-    cpf: z.string().min(1, "CPF é obrigatório.").refine(validateCPF, { message: "CPF inválido." }),
-    rg: z.string().min(1, "RG é obrigatório.").refine(validateRG, { message: "RG inválido." }),
+    cpf: z.string().refine(validateCPF, { message: "CPF inválido." }),
+    rg: z.string().min(1, { message: "RG é obrigatório." }).refine(validateRG, { message: "RG inválido." }),
 
-    cep: z.string().min(1, "CEP é obrigatório.").refine((val) => val.replace(/\D/g, '').length === 8, { message: "CEP inválido (8 dígitos)." }),
-    rua: z.string().min(1, "Rua é obrigatória."),
-    bairro: z.string().min(1, "Bairro é obrigatório."),
-    cidade: z.string().min(1, "Cidade é obrigatória."),
-    estado: z.string().min(1, "Estado é obrigatório."),
-    numero: z.string().min(1, "Número é obrigatório."),
-    complemento: z.string().min(1, "Complemento é obrigatório."), // Removido .optional().nullable()
+    // Campos de Endereço - Tornando todos obrigatórios, exceto complemento
+    cep: z.string().min(1, { message: "CEP é obrigatório." }).refine(validateCEP, { message: "CEP inválido (8 dígitos)." }),
+    rua: z.string().min(1, { message: "Rua é obrigatória." }),
+    bairro: z.string().min(1, { message: "Bairro é obrigatório." }),
+    cidade: z.string().min(1, { message: "Cidade é obrigatória." }),
+    estado: z.string().min(1, { message: "Estado é obrigatório." }),
+    numero: z.string().min(1, { message: "Número é obrigatório." }),
+    complemento: z.string().optional().nullable(), // Complemento pode ser opcional
 });
 
 type ManagerIndividualProfileData = z.infer<typeof managerIndividualProfileSchema>;
@@ -110,7 +110,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
             first_name: '',
             last_name: '',
             birth_date: '',
-            gender: "", 
+            gender: '',
             cpf: '',
             rg: '',
             cep: '',
@@ -127,9 +127,9 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
         if (profile) {
             form.reset({
                 first_name: profile.first_name || '',
-                last_name: profile.last_name || '', 
+                last_name: profile.last_name || '', // Usando last_name do perfil
                 birth_date: profile.birth_date || '',
-                gender: profile.gender || "", 
+                gender: profile.gender || '', // Se for null/vazio, o Zod vai pegar
                 cpf: profile.cpf ? formatCPF(profile.cpf) : '',
                 rg: profile.rg ? formatRG(profile.rg) : '',
                 cep: profile.cep ? formatCEP(profile.cep) : '',
@@ -231,25 +231,24 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
         setIsSaving(true);
         const toastId = showLoading("Registrando como Gestor PF...");
 
-        const cleanCPF = values.cpf ? values.cpf.replace(/\D/g, '') : null;
+        const cleanCPF = values.cpf.replace(/\D/g, '');
         const cleanRG = values.rg ? values.rg.replace(/\D/g, '') : null;
         const cleanCEP = values.cep ? values.cep.replace(/\D/g, '') : null;
-        
-        const genderToSave = values.gender || null; 
+        const genderToSave = values.gender; // Agora é sempre uma string válida
 
         const dataToSave = {
-            first_name: values.first_name || null,
-            last_name: values.last_name || null, 
-            birth_date: values.birth_date || null,
+            first_name: values.first_name,
+            last_name: values.last_name, // Salvando last_name
+            birth_date: values.birth_date,
             gender: genderToSave,
             cpf: cleanCPF,
             rg: cleanRG,
             cep: cleanCEP,
-            rua: values.rua || null,
-            bairro: values.bairro || null,
-            cidade: values.cidade || null,
-            estado: values.estado || null,
-            numero: values.numero || null,
+            rua: values.rua,
+            bairro: values.bairro,
+            cidade: values.cidade,
+            estado: values.estado,
+            numero: values.numero,
             complemento: values.complemento || null,
             tipo_usuario_id: 2, // Define como Gestor PRO (Pessoa Física)
         };
@@ -302,12 +301,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                         <FormItem>
                                             <FormLabel className="text-white">Nome *</FormLabel>
                                             <FormControl>
-                                                <Input 
-                                                    placeholder="Seu primeiro nome" 
-                                                    {...field} 
-                                                    isInvalid={!!form.formState.errors.first_name} // Adicionado isInvalid
-                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
-                                                />
+                                                <Input placeholder="Seu primeiro nome" {...field} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -320,12 +314,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                         <FormItem>
                                             <FormLabel className="text-white">Sobrenome *</FormLabel>
                                             <FormControl>
-                                                <Input 
-                                                    placeholder="Seu sobrenome" 
-                                                    {...field} 
-                                                    isInvalid={!!form.formState.errors.last_name} // Adicionado isInvalid
-                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
-                                                />
+                                                <Input placeholder="Seu sobrenome" {...field} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -345,8 +334,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                                     placeholder="000.000.000-00"
                                                     {...field} 
                                                     onChange={handleCpfChange}
-                                                    isInvalid={!!form.formState.errors.cpf} // Adicionado isInvalid
-                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
+                                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
                                                     maxLength={14}
                                                 />
                                             </FormControl>
@@ -365,8 +353,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                                     placeholder="00.000.000-0"
                                                     {...field} 
                                                     onChange={handleRgChange}
-                                                    isInvalid={!!form.formState.errors.rg} // Adicionado isInvalid
-                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
+                                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
                                                     maxLength={12}
                                                 />
                                             </FormControl>
@@ -387,8 +374,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                                 <Input 
                                                     type="date" 
                                                     {...field} 
-                                                    isInvalid={!!form.formState.errors.birth_date} // Adicionado isInvalid
-                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
+                                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" 
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -403,13 +389,10 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                             <FormLabel className="text-white">Gênero *</FormLabel>
                                             <Select 
                                                 onValueChange={field.onChange} 
-                                                value={field.value} // Removido || ""
+                                                defaultValue={field.value} 
                                             >
                                                 <FormControl>
-                                                    <SelectTrigger 
-                                                        isInvalid={!!form.formState.errors.gender} // Adicionado isInvalid
-                                                        className={`w-full bg-black/60 text-white focus:ring-yellow-500`}
-                                                    >
+                                                    <SelectTrigger className="w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500">
                                                         <SelectValue placeholder="Selecione seu gênero" />
                                                     </SelectTrigger>
                                                 </FormControl>
@@ -429,7 +412,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
 
                             {/* Seção de Endereço */}
                             <div className="pt-4 border-t border-yellow-500/20">
-                                <h3 className="text-xl font-semibold text-white mb-4">Endereço</h3>
+                                <h3 className="text-xl font-semibold text-white mb-4">Endereço *</h3>
                                 <FormField
                                     control={form.control}
                                     name="cep"
@@ -443,8 +426,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                                         {...field} 
                                                         onChange={handleCepChange}
                                                         disabled={isCepLoading} 
-                                                        isInvalid={!!form.formState.errors.cep} // Adicionado isInvalid
-                                                        className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500 pr-10`} 
+                                                        className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 pr-10" 
                                                         maxLength={9}
                                                     />
                                                     {isCepLoading && (
@@ -470,14 +452,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                             <FormItem>
                                                 <FormLabel className="text-white">Rua *</FormLabel>
                                                 <FormControl>
-                                                    <Input 
-                                                        id="rua" 
-                                                        placeholder="Ex: Av. Paulista" 
-                                                        {...field} 
-                                                        disabled={isCepLoading} 
-                                                        isInvalid={!!form.formState.errors.rua} // Adicionado isInvalid
-                                                        className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
-                                                    />
+                                                    <Input id="rua" placeholder="Ex: Av. Paulista" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -491,14 +466,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                         <FormItem>
                                             <FormLabel className="text-white">Número *</FormLabel>
                                             <FormControl>
-                                                <Input 
-                                                    id="numero" 
-                                                    placeholder="123" 
-                                                    {...field} 
-                                                    disabled={isCepLoading} 
-                                                    isInvalid={!!form.formState.errors.numero} // Adicionado isInvalid
-                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
-                                                />
+                                                <Input id="numero" placeholder="123" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -511,15 +479,9 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                 name="complemento"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel className="text-white">Complemento *</FormLabel>
+                                        <FormLabel className="text-white">Complemento (Opcional)</FormLabel>
                                         <FormControl>
-                                            <Input 
-                                                placeholder="Apto 101, Bloco B" 
-                                                {...field} 
-                                                disabled={isCepLoading} 
-                                                isInvalid={!!form.formState.errors.complemento} // Adicionado isInvalid
-                                                className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
-                                            />
+                                            <Input placeholder="Apto 101, Bloco B" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -534,13 +496,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                         <FormItem>
                                             <FormLabel className="text-white">Bairro *</FormLabel>
                                             <FormControl>
-                                                <Input 
-                                                    placeholder="Jardim Paulista" 
-                                                    {...field} 
-                                                    disabled={isCepLoading} 
-                                                    isInvalid={!!form.formState.errors.bairro} // Adicionado isInvalid
-                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
-                                                />
+                                                <Input placeholder="Jardim Paulista" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -553,13 +509,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                         <FormItem>
                                             <FormLabel className="text-white">Cidade *</FormLabel>
                                             <FormControl>
-                                                <Input 
-                                                    placeholder="São Paulo" 
-                                                    {...field} 
-                                                    disabled={isCepLoading} 
-                                                    isInvalid={!!form.formState.errors.cidade} // Adicionado isInvalid
-                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
-                                                />
+                                                <Input placeholder="São Paulo" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -572,13 +522,7 @@ const ManagerIndividualRegisterDialog: React.FC<ManagerIndividualRegisterDialogP
                                         <FormItem>
                                             <FormLabel className="text-white">Estado *</FormLabel>
                                             <FormControl>
-                                                <Input 
-                                                    placeholder="SP" 
-                                                    {...field} 
-                                                    disabled={isCepLoading} 
-                                                    isInvalid={!!form.formState.errors.estado} // Adicionado isInvalid
-                                                    className={`bg-black/60 text-white placeholder-gray-500 focus:border-yellow-500`} 
-                                                />
+                                                <Input placeholder="SP" {...field} disabled={isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
