@@ -8,20 +8,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/use-profile';
 import { useUserType } from '@/hooks/use-user-type';
 import { showError } from '@/utils/toast';
-import { useProfileStatus } from '@/hooks/use-profile-status';
-import { useManagerCompany } from '@/hooks/use-manager-company';
-import { cn } from '@/lib/utils';
+import { useProfileStatus } from '@/hooks/use-profile-status'; 
+import { useManagerCompany } from '@/hooks/use-manager-company'; 
 
 const ADMIN_USER_TYPE_ID = 1;
 const MANAGER_PRO_USER_TYPE_ID = 2;
-const MIN_LOADING_TIME_MS = 1000;
 
 const ManagerLayout: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [userId, setUserId] = useState<string | undefined>(undefined);
     const [loadingSession, setLoadingSession] = useState(true);
-    const [showDelayedLoader, setShowDelayedLoader] = useState(true);
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
@@ -30,62 +27,79 @@ const ManagerLayout: React.FC = () => {
         });
     }, []);
 
+    // Chamar hooks de dados apenas se userId não for undefined
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
     const { userTypeName, isLoadingUserType } = useUserType(profile?.tipo_usuario_id);
-    const { isComplete: isProfileFullyComplete, loading: isLoadingProfileStatus, needsPersonalProfileCompletion, needsCompanyProfile } = useProfileStatus(profile, isLoadingProfile); 
-    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId, profile?.tipo_usuario_id);
+    const { isComplete: isProfileFullyComplete, loading: isLoadingProfileStatus, needsCompanyProfile, needsPersonalProfileCompletion } = useProfileStatus(profile, isLoadingProfile);
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId); 
 
     const handleLogout = async () => {
         const { error } = await supabase.auth.signOut();
         if (error) {
             showError("Erro ao sair: " + error.message);
         } else {
+            showSuccess("Sessão encerrada com sucesso.");
             navigate('/');
         }
     };
 
+    // Combined loading state
     const isLoadingCombined = loadingSession || isLoadingProfile || isLoadingUserType || isLoadingProfileStatus || isLoadingCompany;
 
-    useEffect(() => {
-        if (isLoadingCombined) {
-            setShowDelayedLoader(true);
-        } else {
-            const timer = setTimeout(() => {
-                setShowDelayedLoader(false);
-            }, MIN_LOADING_TIME_MS);
-            return () => clearTimeout(timer);
-        }
-    }, [isLoadingCombined]);
-
-
+    // Determine user type and manager status
     const userType = profile?.tipo_usuario_id;
     const isManager = userType === ADMIN_USER_TYPE_ID || userType === MANAGER_PRO_USER_TYPE_ID;
     const isAdminMaster = userType === ADMIN_USER_TYPE_ID;
 
     // Pages where profile completion is allowed/expected
-    const isProfileCompletionPage = location.pathname === '/profile'; 
+    const isProfileCompletionPage = location.pathname === '/profile' || 
+                                   location.pathname === '/manager/settings/company-profile' ||
+                                   location.pathname === '/manager/register' || 
+                                   location.pathname === '/manager/register/individual' || // Adicionado
+                                   location.pathname === '/manager/register/company' ||
+                                   location.pathname === '/admin/register-manager'; 
 
+    // Effect for redirection logic
     useEffect(() => {
-        if (isLoadingCombined) return;
+        if (isLoadingCombined) return; // Wait for all data to load
 
+        // 1. Redirect unauthenticated users to login
         if (!userId) {
             if (location.pathname.startsWith('/manager') || location.pathname.startsWith('/admin')) {
-                navigate('/manager/login', { replace: true });
+                navigate('/login', { replace: true }); // Redireciona para o login geral
             }
             return;
         }
 
+        // 2. Redirect non-managers away from manager/admin routes
         if (!isManager) {
             if (location.pathname.startsWith('/manager') || location.pathname.startsWith('/admin')) {
                 navigate('/', { replace: true });
             }
             return;
         }
-        
-    }, [isLoadingCombined, userId, isManager, userType, navigate, location.pathname]);
+
+        // 3. Redirect managers with incomplete profiles
+        if (isManager && !isProfileFullyComplete && !isProfileCompletionPage) {
+            if (needsCompanyProfile) {
+                showError("Seu perfil de empresa não está cadastrado. Por favor, preencha os dados da sua empresa para acessar o Dashboard PRO.");
+                navigate('/manager/settings/company-profile', { replace: true });
+                return;
+            }
+            if (needsPersonalProfileCompletion) {
+                showError("Seu perfil pessoal está incompleto. Por favor, preencha todos os dados essenciais para acessar o Dashboard PRO.");
+                navigate('/profile', { replace: true });
+                return;
+            }
+            // Fallback for any other incomplete state not explicitly handled
+            showError("Seu perfil de gestor está incompleto. Por favor, complete seu cadastro.");
+            navigate('/profile', { replace: true }); // Default to personal profile completion
+            return;
+        }
+    }, [isLoadingCombined, userId, isManager, isProfileFullyComplete, isProfileCompletionPage, userType, company, navigate, location.pathname, needsCompanyProfile, needsPersonalProfileCompletion, profile]);
 
 
-    if (isLoadingCombined || showDelayedLoader) {
+    if (isLoadingCombined) {
         return (
             <div className="min-h-screen bg-black text-white flex items-center justify-center">
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
@@ -110,7 +124,15 @@ const ManagerLayout: React.FC = () => {
     
     const userName = profile?.first_name || 'Gestor';
     const userRole = userTypeName;
-
+    
+    // Determina o tipo de cadastro (PJ se for Gestor PRO e tiver empresa, PF se for Gestor PRO e não tiver empresa)
+    let registrationType = '';
+    if (userType === MANAGER_USER_TYPE_ID) {
+        registrationType = company ? 'PJ' : 'PF';
+    } else if (userType === ADMIN_USER_TYPE_ID) {
+        registrationType = 'MASTER';
+    }
+    
     const NavLinks: React.FC<{ onClick?: () => void }> = ({ onClick }) => (
         <nav className="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-2 md:space-y-0">
             {navItems.map(item => {
@@ -209,7 +231,10 @@ const ManagerLayout: React.FC = () => {
 
                         <div className="text-right hidden lg:block">
                             <div className="text-white font-semibold text-sm">{userName}</div>
-                            <div className="text-gray-400 text-xs">{userRole}</div>
+                            <div className="text-gray-400 text-xs">
+                                {userRole} 
+                                {registrationType && <span className="ml-1 text-yellow-500 font-bold">({registrationType})</span>}
+                            </div>
                         </div>
 
                         <Button
@@ -236,7 +261,10 @@ const ManagerLayout: React.FC = () => {
                                         </div>
                                         <div>
                                             <div className="text-white font-semibold">{userName}</div>
-                                            <div className="text-gray-400 text-sm">{userRole}</div>
+                                            <div className="text-gray-400 text-sm">
+                                                {userRole}
+                                                {registrationType && <span className="ml-1 text-yellow-500 font-bold">({registrationType})</span>}
+                                            </div>
                                         </div>
                                     </div>
                                     <NavLinks onClick={() => {}} />
@@ -255,7 +283,7 @@ const ManagerLayout: React.FC = () => {
                     </div>
                 </div>
             </header>
-            <main className={cn("pt-20 p-4 sm:p-6", !showDelayedLoader && "animate-fadeIn")}>
+            <main className="pt-20 p-4 sm:p-6">
                 <Outlet />
             </main>
         </div>
