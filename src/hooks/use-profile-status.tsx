@@ -30,11 +30,13 @@ export const ESSENTIAL_PERSONAL_PROFILE_FIELDS = [
     'cep', 'rua', 'bairro', 'cidade', 'estado', 'numero', 'complemento' // RG é opcional
 ];
 
-// Removido: Essential fields for a company profile (for Manager PRO - PJ)
-// const ESSENTIAL_COMPANY_PROFILE_FIELDS = [
-//     'cnpj', 'corporate_name', 'phone', 'email',
-//     'cep', 'street', 'neighborhood', 'city', 'state', 'number', 'complement'
-// ];
+// NOVO: Essential fields for a company profile (for Manager PRO - PJ)
+const ESSENTIAL_COMPANY_PROFILE_FIELDS = [
+    'cnpj', 'corporate_name', 'phone', 'email',
+    'cep', 'street', 'neighborhood', 'city', 'state', 'number', 'complement'
+];
+
+const MANAGER_LEGAL_ENTITY_USER_TYPE_ID = 4; // Definindo o ID para Gestor Pessoa Jurídica
 
 // Simulação de verificação de notificações de sistema para Gestores
 const checkManagerSystemNotifications = async (userId: string): Promise<boolean> => {
@@ -119,7 +121,7 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
         const checkStatus = async () => {
             let hasPendingNotifications = false;
             let isComplete = true;
-            let needsCompanyProfile = false; // Sempre falso agora que o cadastro de empresa foi removido
+            let needsCompanyProfile = false; 
             let needsPersonalProfileCompletion = false;
 
             console.log(`[ProfileStatus] Verificando perfil para o usuário ${profile.id}, tipo: ${profile.tipo_usuario_id}`);
@@ -135,56 +137,55 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
                 }
             }
 
-            // Removido: Lógica de verificação de perfil da empresa para Gestor PRO (tipo_usuario_id = 2)
-            // if (profile.tipo_usuario_id === 2) {
-            //     console.log("[ProfileStatus] Usuário é Gestor PRO. Verificando perfil da empresa...");
-            //     const { data: companyData, error: companyError } = await supabase
-            //         .from('companies')
-            //         .select('*')
-            //         .eq('user_id', profile.id)
-            //         .limit(1);
+            // NOVO: Lógica de verificação de perfil da empresa para Gestor Pessoa Jurídica (tipo_usuario_id = 4)
+            if (profile.tipo_usuario_id === MANAGER_LEGAL_ENTITY_USER_TYPE_ID) {
+                console.log("[ProfileStatus] Usuário é Gestor Pessoa Jurídica. Verificando perfil da empresa...");
+                const { data: companyData, error: companyError } = await supabase
+                    .from('companies')
+                    .select('*')
+                    .eq('user_id', profile.id)
+                    .limit(1);
 
-            //     if (companyError && companyError.code !== 'PGRST116') {
-            //         console.error("[ProfileStatus] Erro ao buscar dados da empresa:", companyError);
-            //         isComplete = false; 
-            //         needsCompanyProfile = true; 
-            //     } else if (!companyData || companyData.length === 0) {
-            //         needsCompanyProfile = true;
-            //         isComplete = false;
-            //         console.log("[ProfileStatus] Gestor PRO precisa criar perfil da empresa (nenhuma empresa encontrada).");
-            //     } else {
-            //         const companyProfile = companyData[0];
-            //         for (const field of ESSENTIAL_COMPANY_PROFILE_FIELDS) {
-            //             const value = companyProfile[field as keyof typeof companyProfile];
-            //             if (isValueEmpty(value)) {
-            //                 isComplete = false;
-            //                 needsCompanyProfile = true; 
-            //                 console.log(`[ProfileStatus] Perfil da empresa do gestor incompleto: Campo '${field}' faltando (Valor: '${value}')`);
-            //                 break;
-            //             }
-            //         }
-            //         if (!needsCompanyProfile) {
-            //             console.log("[ProfileStatus] Perfil da empresa do gestor está completo.");
-            //         }
-            //     }
-            // }
-            // Para Admin Master (tipo_usuario_id = 1), o perfil pessoal é verificado acima.
-            // O perfil da empresa é opcional para Admin Master, então não há verificação adicional aqui.
-            // else if (profile.tipo_usuario_id === 1) {
-            //     console.log("[ProfileStatus] Usuário é Admin Master. Perfil da empresa é opcional.");
-            // }
+                if (companyError && companyError.code !== 'PGRST116') {
+                    console.error("[ProfileStatus] Erro ao buscar dados da empresa:", companyError);
+                    isComplete = false; 
+                    needsCompanyProfile = true; 
+                } else if (!companyData || companyData.length === 0) {
+                    needsCompanyProfile = true;
+                    isComplete = false;
+                    console.log("[ProfileStatus] Gestor Pessoa Jurídica precisa criar perfil da empresa (nenhuma empresa encontrada).");
+                } else {
+                    const companyProfile = companyData[0];
+                    for (const field of ESSENTIAL_COMPANY_PROFILE_FIELDS) {
+                        const value = companyProfile[field as keyof typeof companyProfile];
+                        if (isValueEmpty(value)) {
+                            isComplete = false;
+                            needsCompanyProfile = true; 
+                            console.log(`[ProfileStatus] Perfil da empresa do gestor incompleto: Campo '${field}' faltando (Valor: '${value}')`);
+                            break;
+                        }
+                    }
+                    if (!needsCompanyProfile) {
+                        console.log("[ProfileStatus] Perfil da empresa do gestor está completo.");
+                    }
+                }
+            }
+            // Para Admin Master (tipo_usuario_id = 1) e Gestor Pessoa Física (tipo_usuario_id = 2), o perfil da empresa é opcional.
+            else if (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2) {
+                console.log("[ProfileStatus] Usuário é Admin Master ou Gestor Pessoa Física. Perfil da empresa é opcional.");
+            }
 
 
             // Verifica notificações de sistema para gestores (independente da completude do perfil)
-            if (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2) {
+            if (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2 || profile.tipo_usuario_id === MANAGER_LEGAL_ENTITY_USER_TYPE_ID) {
                 hasPendingNotifications = await checkManagerSystemNotifications(profile.id);
                 if (hasPendingNotifications) {
                     console.log("[ProfileStatus] Gestor tem notificações de sistema.");
                 }
             }
             
-            // Se o perfil pessoal estiver incompleto, sempre define hasPendingNotifications como true
-            if (needsPersonalProfileCompletion) { // needsCompanyProfile sempre será falso agora
+            // Se o perfil pessoal ou da empresa estiver incompleto, sempre define hasPendingNotifications como true
+            if (needsPersonalProfileCompletion || needsCompanyProfile) { 
                 hasPendingNotifications = true;
                 console.log("[ProfileStatus] Definindo hasPendingNotifications como TRUE devido ao perfil incompleto.");
             }
@@ -199,7 +200,7 @@ export function useProfileStatus(profile: ProfileData | null | undefined, isLoad
                 isComplete: isComplete,
                 hasPendingNotifications: hasPendingNotifications,
                 loading: false,
-                needsCompanyProfile: needsCompanyProfile, // Sempre falso
+                needsCompanyProfile: needsCompanyProfile, 
                 needsPersonalProfileCompletion: needsPersonalProfileCompletion,
             });
         };

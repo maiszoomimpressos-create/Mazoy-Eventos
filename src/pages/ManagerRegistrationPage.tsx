@@ -6,12 +6,14 @@ import { Loader2, ArrowRight, UserCheck, AlertTriangle } from 'lucide-react';
 import MultiLineEditor from '@/components/MultiLineEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/use-profile';
-import { showError, showSuccess, showLoading, dismissToast } from '@/utils/toast'; // Adicionado dismissToast
+import { showError, showSuccess, showLoading, dismissToast } from '@/utils/toast';
 import { useQueryClient } from '@tanstack/react-query';
+import UserTypeSelectionModal from '@/components/UserTypeSelectionModal'; // Importando o novo modal
 
 const ADMIN_MASTER_USER_TYPE_ID = 1;
-const MANAGER_PRO_USER_TYPE_ID = 2;
+const MANAGER_PRO_USER_TYPE_ID = 2; // Pessoa Física
 const CLIENT_USER_TYPE_ID = 3;
+const MANAGER_LEGAL_ENTITY_USER_TYPE_ID = 4; // Novo: Pessoa Jurídica
 
 const ManagerRegistrationPage: React.FC = () => {
     const navigate = useNavigate();
@@ -20,6 +22,7 @@ const ManagerRegistrationPage: React.FC = () => {
     const [loadingSession, setLoadingSession] = useState(true);
     const [agreedToTerms, setAgreedToTerms] = useState(false);
     const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+    const [showUserTypeModal, setShowUserTypeModal] = useState(false); // Estado para controlar o modal
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
@@ -35,7 +38,7 @@ const ManagerRegistrationPage: React.FC = () => {
     // Redireciona se o usuário já for um gestor ou admin
     useEffect(() => {
         if (!isLoadingCombined && profile) {
-            if (profile.tipo_usuario_id === ADMIN_MASTER_USER_TYPE_ID || profile.tipo_usuario_id === MANAGER_PRO_USER_TYPE_ID) {
+            if (profile.tipo_usuario_id === ADMIN_MASTER_USER_TYPE_ID || profile.tipo_usuario_id === MANAGER_PRO_USER_TYPE_ID || profile.tipo_usuario_id === MANAGER_LEGAL_ENTITY_USER_TYPE_ID) {
                 showSuccess("Você já é um gestor. Redirecionando para a criação de eventos.");
                 navigate('/manager/events/create', { replace: true });
             } else if (profile.tipo_usuario_id !== CLIENT_USER_TYPE_ID) {
@@ -50,7 +53,7 @@ const ManagerRegistrationPage: React.FC = () => {
         setAgreedToTerms(agreed);
     };
 
-    const handleContinue = async () => {
+    const handleContinueClick = () => {
         if (!userId || !profile || profile.tipo_usuario_id !== CLIENT_USER_TYPE_ID) {
             showError("Ação não permitida. Você não é um cliente logado.");
             return;
@@ -60,14 +63,30 @@ const ManagerRegistrationPage: React.FC = () => {
             showError("Você deve concordar com os termos para continuar.");
             return;
         }
+        setShowUserTypeModal(true); // Abre o modal de seleção de tipo de usuário
+    };
+
+    const handleUserTypeSelection = async (selectedType: 'individual' | 'legal_entity') => {
+        if (!userId || !profile || profile.tipo_usuario_id !== CLIENT_USER_TYPE_ID) {
+            showError("Ação não permitida. Você não é um cliente logado.");
+            return;
+        }
 
         setIsUpdatingProfile(true);
+        setShowUserTypeModal(false); // Fecha o modal
         const toastId = showLoading("Atualizando seu perfil para Gestor PRO...");
+
+        let newTipoUsuarioId: number;
+        if (selectedType === 'individual') {
+            newTipoUsuarioId = MANAGER_PRO_USER_TYPE_ID;
+        } else {
+            newTipoUsuarioId = MANAGER_LEGAL_ENTITY_USER_TYPE_ID;
+        }
 
         try {
             const { error } = await supabase
                 .from('profiles')
-                .update({ tipo_usuario_id: MANAGER_PRO_USER_TYPE_ID })
+                .update({ tipo_usuario_id: newTipoUsuarioId })
                 .eq('id', userId);
 
             if (error) {
@@ -102,7 +121,7 @@ const ManagerRegistrationPage: React.FC = () => {
 
     // Se o perfil já foi carregado e não é um cliente, o useEffect já redirecionou.
     // Este return é um fallback ou para o caso de um breve flash antes do redirecionamento.
-    if (profile && (profile.tipo_usuario_id === ADMIN_MASTER_USER_TYPE_ID || profile.tipo_usuario_id === MANAGER_PRO_USER_TYPE_ID)) {
+    if (profile && (profile.tipo_usuario_id === ADMIN_MASTER_USER_TYPE_ID || profile.tipo_usuario_id === MANAGER_PRO_USER_TYPE_ID || profile.tipo_usuario_id === MANAGER_LEGAL_ENTITY_USER_TYPE_ID)) {
         return null; 
     }
 
@@ -134,7 +153,7 @@ const ManagerRegistrationPage: React.FC = () => {
                     />
 
                     <Button
-                        onClick={handleContinue}
+                        onClick={handleContinueClick}
                         disabled={!agreedToTerms || isUpdatingProfile}
                         className="w-full bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
                     >
@@ -152,6 +171,13 @@ const ManagerRegistrationPage: React.FC = () => {
                     </Button>
                 </CardContent>
             </Card>
+
+            <UserTypeSelectionModal
+                isOpen={showUserTypeModal}
+                onClose={() => setShowUserTypeModal(false)}
+                onSelectUserType={handleUserTypeSelection}
+                isProcessing={isUpdatingProfile}
+            />
         </div>
     );
 };

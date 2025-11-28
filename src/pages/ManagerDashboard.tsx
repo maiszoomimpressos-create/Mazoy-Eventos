@@ -19,9 +19,9 @@ const ManagerDashboard: React.FC = () => {
     }, []);
 
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
-    const { needsPersonalProfileCompletion, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile); // Removido needsCompanyProfile
+    const { needsPersonalProfileCompletion, needsCompanyProfile, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile); 
 
-    const isProfileIncomplete = needsPersonalProfileCompletion; // needsCompanyProfile sempre será falso agora
+    const isProfileIncomplete = needsPersonalProfileCompletion || needsCompanyProfile;
 
     const getActivityStatusClasses = (status: string) => {
         switch (status) {
@@ -57,7 +57,9 @@ const ManagerDashboard: React.FC = () => {
                         {needsPersonalProfileCompletion && (
                             <p className="mb-2">Seu perfil pessoal está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/profile')}>complete-o aqui</Button> para liberar todas as funcionalidades.</p>
                         )}
-                        {/* Removido: Alerta de perfil de empresa incompleto */}
+                        {needsCompanyProfile && (
+                            <p className="mb-2">Seu perfil de empresa está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/manager/settings/company-profile')}>complete-o aqui</Button> para liberar todas as funcionalidades.</p>
+                        )}
                         <p className="mt-2 text-sm text-white font-semibold">Funcionalidades de criação de eventos e pulseiras estão desabilitadas.</p>
                     </AlertDescription>
                 </Alert>

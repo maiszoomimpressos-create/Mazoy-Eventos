@@ -28,6 +28,8 @@ const ACCESS_TYPES = [
     'Organizador'
 ];
 
+const MANAGER_LEGAL_ENTITY_USER_TYPE_ID = 4; // Definindo o ID para Gestor Pessoa Jurídica
+
 // Função utilitária para converter string formatada (ex: "150,00") para float (ex: 150.00)
 const parsePriceToNumeric = (value: string): number => {
     const cleanValue = value.replace(/[^\d,]/g, '').replace(',', '.');
@@ -77,11 +79,11 @@ const ManagerCreateWristband: React.FC = () => {
     }, []);
 
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
-    const { needsPersonalProfileCompletion, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile); // Removido needsCompanyProfile
-    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId || undefined); // Mantido useManagerCompany para obter company.id
+    const { needsPersonalProfileCompletion, needsCompanyProfile, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile); 
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId || undefined, profile?.tipo_usuario_id); 
     const { events, isLoading: isLoadingEvents } = useManagerEvents(userId, profile?.tipo_usuario_id);
     
-    const isProfileIncomplete = needsPersonalProfileCompletion; // needsCompanyProfile sempre será falso agora
+    const isProfileIncomplete = needsPersonalProfileCompletion || needsCompanyProfile;
     const isPageLoading = isLoadingProfile || isLoadingProfileStatus || isLoadingCompany || isLoadingEvents || !userId;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -115,8 +117,11 @@ const ManagerCreateWristband: React.FC = () => {
         if (!formData.baseCode.trim()) errors.push("O Código Base é obrigatório.");
         if (formData.quantity < 1) errors.push("A quantidade deve ser pelo menos 1.");
         if (!formData.accessType) errors.push("O Tipo de Acesso é obrigatório.");
-        // A verificação de company.id ainda é necessária para a Edge Function
-        if (!company?.id) errors.push("O ID da empresa não está disponível. Verifique seu perfil."); 
+        
+        // A verificação de company.id é necessária apenas para Gestores Pessoa Jurídica
+        if (profile?.tipo_usuario_id === MANAGER_LEGAL_ENTITY_USER_TYPE_ID && !company?.id) {
+            errors.push("O ID da empresa não está disponível. Verifique seu perfil de empresa.");
+        }
         
         if (isNaN(priceNumeric) || priceNumeric < 0) errors.push("O Valor deve ser um número positivo.");
 
@@ -135,7 +140,24 @@ const ManagerCreateWristband: React.FC = () => {
         }
         
         const priceNumeric = parsePriceToNumeric(formData.price);
-        if (!validateForm(priceNumeric) || !company?.id || !userId) return;
+        if (!validateForm(priceNumeric) || !userId) return;
+
+        // Obter company_id apenas se for Gestor Pessoa Jurídica
+        let companyIdToUse: string | null = null;
+        if (profile?.tipo_usuario_id === MANAGER_LEGAL_ENTITY_USER_TYPE_ID) {
+            companyIdToUse = company?.id || null;
+            if (!companyIdToUse) {
+                showError("ID da empresa não disponível para Gestor Pessoa Jurídica.");
+                return;
+            }
+        } else {
+            // Para Gestor Pessoa Física, o company_id pode ser o user_id ou null, dependendo da lógica de negócio.
+            // Por simplicidade, vamos usar o user_id como company_id para PF se não houver um conceito de empresa.
+            // Ou, se a tabela wristbands exige company_id, podemos usar um valor padrão ou o user_id.
+            // Para este cenário, vamos usar o user_id como company_id para PF.
+            companyIdToUse = userId; 
+        }
+
 
         setIsSaving(true);
         const toastId = showLoading(`Gerando ${formData.quantity} registros de pulseira...`);
@@ -147,7 +169,7 @@ const ManagerCreateWristband: React.FC = () => {
             const { data: edgeFunctionResponse, error: edgeFunctionError } = await supabase.functions.invoke('create-wristbands-batch', {
                 body: {
                     event_id: formData.eventId,
-                    company_id: company.id, // company.id ainda é necessário aqui
+                    company_id: companyIdToUse, 
                     manager_user_id: userId,
                     base_code: baseCodeClean,
                     access_type: formData.accessType,
@@ -194,8 +216,6 @@ const ManagerCreateWristband: React.FC = () => {
         );
     }
 
-    // Removido: if (!company) { ... } - A validação agora está no validateForm e no disabled do botão
-
     return (
         <div className="max-w-4xl mx-auto px-4 sm:px-0">
             <div className="flex items-center justify-between mb-8">
@@ -222,7 +242,9 @@ const ManagerCreateWristband: React.FC = () => {
                             {needsPersonalProfileCompletion && (
                                 <p className="mb-2">Seu perfil pessoal está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/profile')}>complete-o aqui</Button> para gerar pulseiras.</p>
                             )}
-                            {/* Removido: Alerta de perfil de empresa incompleto */}
+                            {needsCompanyProfile && (
+                                <p className="mb-2">Seu perfil de empresa está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/manager/settings/company-profile')}>complete-o aqui</Button> para gerar pulseiras.</p>
+                            )}
                         </p>
                         <p className="mt-2 text-sm text-white font-semibold">O formulário de geração de pulseiras está desabilitado.</p>
                     </div>
@@ -355,7 +377,7 @@ const ManagerCreateWristband: React.FC = () => {
                         <div className="pt-4 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                             <Button
                                 type="submit"
-                                disabled={isSaving || isPageLoading || !company || isProfileIncomplete}
+                                disabled={isSaving || isPageLoading || isProfileIncomplete}
                                 className="flex-1 bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
                             >
                                 {isSaving ? (

@@ -8,8 +8,10 @@ import { showSuccess, showError } from '@/utils/toast';
 import { useProfileStatus } from '@/hooks/use-profile-status';
 import { useProfile, ProfileData } from '@/hooks/use-profile';
 import NotificationBell from './NotificationBell';
-import { Shield, UserPlus, Crown, PlusCircle } from 'lucide-react';
+import { Shield, UserPlus, Crown, PlusCircle, Building2 } from 'lucide-react'; // Adicionado Building2
 import { useUserType } from '@/hooks/use-user-type';
+
+const MANAGER_LEGAL_ENTITY_USER_TYPE_ID = 4; // Novo: Gestor Pessoa Jurídica
 
 const AuthStatusMenu: React.FC = () => {
     const navigate = useNavigate();
@@ -55,9 +57,10 @@ const AuthStatusMenu: React.FC = () => {
 
     if (session && profile) {
         const initials = profile.first_name ? profile.first_name.charAt(0).toUpperCase() : 'U';
-        const isManager = profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2;
+        const isManager = profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2 || profile.tipo_usuario_id === MANAGER_LEGAL_ENTITY_USER_TYPE_ID;
         const isAdmin = profile.tipo_usuario_id === 1;
         const isClient = profile.tipo_usuario_id === 3;
+        const isManagerLegalEntity = profile.tipo_usuario_id === MANAGER_LEGAL_ENTITY_USER_TYPE_ID;
         
         const fullName = profile.first_name + (profile.last_name ? ` ${profile.last_name}` : '');
 
@@ -92,6 +95,15 @@ const AuthStatusMenu: React.FC = () => {
                             <i className="fas fa-user-circle mr-2"></i>
                             Editar Perfil
                         </DropdownMenuItem>
+                        {isManagerLegalEntity && (
+                            <DropdownMenuItem 
+                                onClick={() => navigate('/manager/settings/company-profile')} 
+                                className="cursor-pointer hover:bg-yellow-500/10"
+                            >
+                                <Building2 className="mr-2 h-4 w-4" />
+                                Perfil da Empresa
+                            </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem 
                             onClick={() => navigate('/tickets')} 
                             className="cursor-pointer hover:bg-yellow-500/10"

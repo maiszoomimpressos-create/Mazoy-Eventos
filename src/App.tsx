@@ -31,7 +31,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import FinalizarCompra from "./pages/FinalizarCompra";
 import ScrollToTop from "./components/ScrollToTop";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import ManagerRegistrationPage from "./pages/ManagerRegistrationPage"; // Importando a nova página
+import ManagerRegistrationPage from "./pages/ManagerRegistrationPage"; 
+import ManagerCompanyProfile from "./pages/ManagerCompanyProfile"; // Importando a nova página
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="/manager/settings" element={<ManagerSettings />} />
             <Route path="/manager/settings/notifications" element={<ManagerNotifications />} />
             <Route path="/manager/settings/payment" element={<ManagerPaymentSettings />} />
+            <Route path="/manager/settings/company-profile" element={<ManagerCompanyProfile />} /> {/* Nova rota */}
           </Route>
           
           {/* Admin Master Routes (tipo_usuario_id = 1) */}

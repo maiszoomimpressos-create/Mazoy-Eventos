@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, X, Bell, User, LogOut, Crown, PlusCircle } from 'lucide-react'; // Adicionando PlusCircle de volta
+import { Menu, X, Bell, User, LogOut, Crown, PlusCircle, Building2 } from 'lucide-react'; // Adicionando Building2
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +8,8 @@ import { useProfileStatus } from '@/hooks/use-profile-status';
 import { useProfile } from '@/hooks/use-profile';
 import { useUserType } from '@/hooks/use-user-type';
 import { showSuccess, showError } from '@/utils/toast';
+
+const MANAGER_LEGAL_ENTITY_USER_TYPE_ID = 4; // Novo: Gestor Pessoa Jurídica
 
 const MobileMenu: React.FC = () => {
     const navigate = useNavigate();
@@ -60,8 +62,9 @@ const MobileMenu: React.FC = () => {
 
     const isUserLoading = loadingSession || isLoadingProfile || statusLoading || isLoadingUserType;
     const isLoggedIn = session && profile;
-    const isManager = isLoggedIn && (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2);
-    const isClient = isLoggedIn && profile.tipo_usuario_id === 3; // Reintroduzido: Verifica se é cliente
+    const isManager = isLoggedIn && (profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2 || profile.tipo_usuario_id === MANAGER_LEGAL_ENTITY_USER_TYPE_ID);
+    const isClient = isLoggedIn && profile.tipo_usuario_id === 3; 
+    const isManagerLegalEntity = isLoggedIn && profile.tipo_usuario_id === MANAGER_LEGAL_ENTITY_USER_TYPE_ID;
     
     const fullName = profile?.first_name + (profile?.last_name ? ` ${profile.last_name}` : '');
 
@@ -107,6 +110,16 @@ const MobileMenu: React.FC = () => {
                                 Editar Perfil
                                 {hasPendingNotifications && <Bell className="ml-auto h-5 w-5 text-red-500 animate-pulse" />}
                             </Button>
+                            {isManagerLegalEntity && (
+                                <Button 
+                                    onClick={() => handleNavigation('/manager/settings/company-profile')}
+                                    variant="ghost"
+                                    className="w-full justify-start text-lg py-6 text-white hover:bg-yellow-500/10"
+                                >
+                                    <Building2 className="mr-3 h-5 w-5" />
+                                    Perfil da Empresa
+                                </Button>
+                            )}
                             <Button 
                                 onClick={() => handleNavigation('/tickets')}
                                 variant="ghost"
@@ -125,7 +138,7 @@ const MobileMenu: React.FC = () => {
                                     Dashboard PRO
                                 </Button>
                             )}
-                            {isClient && ( // Reintroduzido: Botão "Criar Evento" para clientes
+                            {isClient && ( 
                                 <Button 
                                     onClick={() => handleNavigation('/manager/register-flow')}
                                     variant="ghost"

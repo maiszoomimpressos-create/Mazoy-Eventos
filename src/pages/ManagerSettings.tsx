@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Settings, User, CreditCard, Bell, Loader2 } from 'lucide-react'; // Removendo Building
+import { Settings, User, CreditCard, Bell, Loader2, Building2 } from 'lucide-react'; 
 import { useProfile } from '@/hooks/use-profile';
 import { supabase } from '@/integrations/supabase/client';
 import { useManagerCompany } from '@/hooks/use-manager-company';
 
 const ADMIN_MASTER_USER_TYPE_ID = 1;
 const MANAGER_PRO_USER_TYPE_ID = 2;
+const MANAGER_LEGAL_ENTITY_USER_TYPE_ID = 4; // Novo: Gestor Pessoa Jurídica
 
 const ManagerSettings: React.FC = () => {
     const navigate = useNavigate();
@@ -23,17 +24,16 @@ const ManagerSettings: React.FC = () => {
     }, []);
 
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
-    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId);
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId, profile?.tipo_usuario_id);
 
     const isLoadingCombined = loadingSession || isLoadingProfile || isLoadingCompany;
 
     const isAdminMaster = profile?.tipo_usuario_id === ADMIN_MASTER_USER_TYPE_ID;
     const isManagerPro = profile?.tipo_usuario_id === MANAGER_PRO_USER_TYPE_ID;
+    const isManagerLegalEntity = profile?.tipo_usuario_id === MANAGER_LEGAL_ENTITY_USER_TYPE_ID;
 
     const settingsOptions = [];
     
-    // A opção de perfil da empresa foi removida, mas o perfil pessoal ainda é relevante para todos os tipos de usuário.
-    // Para gestores, o perfil pessoal é onde eles completam seus dados.
     settingsOptions.push({ 
         icon: <User className="h-6 w-6 text-yellow-500" />, 
         title: "Perfil Pessoal", 
@@ -41,6 +41,16 @@ const ManagerSettings: React.FC = () => {
         path: "/profile" 
     });
     
+    // Adiciona a opção de Perfil da Empresa apenas para Gestores Pessoa Jurídica
+    if (isManagerLegalEntity) {
+        settingsOptions.push({ 
+            icon: <Building2 className="h-6 w-6 text-yellow-500" />, 
+            title: "Perfil da Empresa", 
+            description: "Gerencie os dados da sua empresa (CNPJ, endereço, etc.).", 
+            path: "/manager/settings/company-profile" 
+        });
+    }
+
     settingsOptions.push(
         { icon: <Bell className="h-6 w-6 text-yellow-500" />, title: "Notificações e Alertas", description: "Defina preferências de notificação por e-mail e sistema.", path: "/manager/settings/notifications" },
         { icon: <CreditCard className="h-6 w-6 text-yellow-500" />, title: "Configurações de Pagamento", description: "Gerencie contas bancárias e gateways de pagamento.", path: "/manager/settings/payment" },

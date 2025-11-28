@@ -15,7 +15,7 @@ import { DatePicker } from '@/components/DatePicker';
 import ImageUploadPicker from '@/components/ImageUploadPicker';
 import { useProfileStatus } from '@/hooks/use-profile-status';
 import { useProfile } from '@/hooks/use-profile';
-// Removido: import { useManagerCompany } from '@/hooks/use-manager-company';
+import { useManagerCompany } from '@/hooks/use-manager-company'; // Reintroduzido: import { useManagerCompany } from '@/hooks/use-manager-company';
 
 // Define the structure for the form data
 interface EventFormData {
@@ -54,15 +54,15 @@ const ManagerEditEvent: React.FC = () => {
     }, [navigate]);
 
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
-    const { needsPersonalProfileCompletion, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile); // Removido needsCompanyProfile
-    // Removido: const { company, isLoading: isLoadingCompany } = useManagerCompany(userId);
+    const { needsPersonalProfileCompletion, needsCompanyProfile, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile); 
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId, profile?.tipo_usuario_id); // Reintroduzido: const { company, isLoading: isLoadingCompany } = useManagerCompany(userId);
 
-    const isProfileIncomplete = needsPersonalProfileCompletion; // needsCompanyProfile sempre será falso agora
-    const isPageLoading = isLoadingProfile || isLoadingProfileStatus || isFetchingEvent || !userId; // Removido isLoadingCompany
+    const isProfileIncomplete = needsPersonalProfileCompletion || needsCompanyProfile;
+    const isPageLoading = isLoadingProfile || isLoadingProfileStatus || isFetchingEvent || isLoadingCompany || !userId; 
 
     useEffect(() => {
         const fetchEventAndUser = async () => {
-            if (!userId || isLoadingProfile) return; // Removido isLoadingCompany
+            if (!userId || isLoadingProfile || isLoadingCompany) return; 
 
             setIsFetchingEvent(true);
             
@@ -113,7 +113,7 @@ const ManagerEditEvent: React.FC = () => {
         if (userId) {
             fetchEventAndUser();
         }
-    }, [id, navigate, userId, isLoadingProfile]); // Removido isLoadingCompany
+    }, [id, navigate, userId, isLoadingProfile, isLoadingCompany]); 
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value, type } = e.target;
@@ -277,7 +277,9 @@ const ManagerEditEvent: React.FC = () => {
                         {needsPersonalProfileCompletion && (
                             <p className="mb-2">Seu perfil pessoal está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/profile')}>complete-o aqui</Button> para editar eventos.</p>
                         )}
-                        {/* Removido: Alerta de perfil de empresa incompleto */}
+                        {needsCompanyProfile && (
+                            <p className="mb-2">Seu perfil de empresa está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/manager/settings/company-profile')}>complete-o aqui</Button> para editar eventos.</p>
+                        )}
                         <p className="mt-2 text-sm text-white font-semibold">O formulário de edição de evento está desabilitado.</p>
                     </AlertDescription>
                 </Alert>
