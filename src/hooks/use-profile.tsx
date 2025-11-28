@@ -4,6 +4,7 @@ import { showError } from '@/utils/toast';
 
 interface ProfileData {
     first_name: string;
+    last_name: string; // Adicionado last_name para consistência
     avatar_url: string | null;
     cpf: string; // Alterado para string, será '' se for null no DB
     rg: string; // Alterado para string, será '' se for null no DB
@@ -17,6 +18,7 @@ interface ProfileData {
     numero: string; // Alterado para string, será '' se for null no DB
     complemento: string; // Alterado para string, será '' se for null no DB
     tipo_usuario_id: number;
+    public_id: string; // NOVO: Identificador público
 }
 
 const fetchProfile = async (userId: string): Promise<ProfileData | null> => {
@@ -25,9 +27,9 @@ const fetchProfile = async (userId: string): Promise<ProfileData | null> => {
     const { data, error } = await supabase
         .from('profiles')
         .select(`
-            first_name, avatar_url, cpf, rg, birth_date, gender, 
+            first_name, last_name, avatar_url, cpf, rg, birth_date, gender, 
             cep, rua, bairro, cidade, estado, numero, complemento,
-            tipo_usuario_id
+            tipo_usuario_id, public_id
         `)
         .eq('id', userId)
         .single();
@@ -40,6 +42,7 @@ const fetchProfile = async (userId: string): Promise<ProfileData | null> => {
     // Mapeia dados para garantir que campos que podem ser NULL no DB sejam strings vazias no frontend
     return {
         first_name: data.first_name || '',
+        last_name: data.last_name || '', // Mapeando last_name
         avatar_url: data.avatar_url || null,
         cpf: data.cpf || '',
         rg: data.rg || '',
@@ -53,6 +56,7 @@ const fetchProfile = async (userId: string): Promise<ProfileData | null> => {
         numero: data.numero || '',
         complemento: data.complemento || '',
         tipo_usuario_id: data.tipo_usuario_id,
+        public_id: data.public_id || 'N/A', // Mapeando public_id
     } as ProfileData;
 };
 

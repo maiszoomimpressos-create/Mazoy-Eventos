@@ -39,6 +39,7 @@ const validateCEP = (cep: string) => {
 
 const profileSchema = z.object({
     first_name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
+    last_name: z.string().optional().nullable(), // Sobrenome opcional para clientes
     birth_date: z.string().refine((val) => val && !isNaN(Date.parse(val)), { message: "Data de nascimento é obrigatória." }),
     gender: z.string().optional().nullable(),
     
@@ -116,6 +117,7 @@ const Profile: React.FC = () => {
         resolver: zodResolver(profileSchema),
         defaultValues: {
             first_name: '',
+            last_name: '',
             birth_date: '',
             gender: '',
             cpf: '',
@@ -130,6 +132,7 @@ const Profile: React.FC = () => {
         },
         values: {
             first_name: profile?.first_name || '',
+            last_name: profile?.last_name || '',
             birth_date: profile?.birth_date || '',
             gender: profile?.gender || '',
             cpf: profile?.cpf ? formatCPF(profile.cpf) : '',
@@ -149,6 +152,7 @@ const Profile: React.FC = () => {
             // Resetar o formulário com os dados do perfil sempre que o perfil for carregado/atualizado
             form.reset({
                 first_name: profile.first_name || '',
+                last_name: profile.last_name || '',
                 birth_date: profile.birth_date || '',
                 gender: profile.gender || '',
                 cpf: profile.cpf ? formatCPF(profile.cpf) : '',
@@ -240,12 +244,14 @@ const Profile: React.FC = () => {
         const estadoToSave = values.estado || null;
         const numeroToSave = values.numero || null;
         const complementoToSave = values.complemento || null;
+        const lastNameToSave = values.last_name || null;
 
         try {
             const { error } = await supabase
                 .from('profiles')
                 .update({ 
                     first_name: values.first_name,
+                    last_name: lastNameToSave, // Salvando o sobrenome
                     birth_date: values.birth_date,
                     gender: genderToSave,
                     cpf: cleanCPF, 
@@ -335,6 +341,8 @@ const Profile: React.FC = () => {
     }
 
     const initials = profile?.first_name ? profile.first_name.charAt(0).toUpperCase() : 'U';
+    const fullName = profile?.first_name + (profile?.last_name ? ` ${profile.last_name}` : '');
+    const userRoleDisplay = profile?.tipo_usuario_id === 3 ? 'Cliente' : 'Gestor PRO'; // Simplificado para exibição
 
     return (
         <div className="min-h-screen bg-black text-white">
@@ -368,6 +376,21 @@ const Profile: React.FC = () => {
                 <div className="max-w-4xl mx-auto">
                     <h1 className="text-3xl sm:text-4xl font-serif text-yellow-500 mb-8">Meu Perfil</h1>
                     
+                    {/* Informações de Identificação */}
+                    <div className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6 mb-8">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-gray-400 text-sm">Nome Completo:</p>
+                                <h2 className="text-xl font-semibold text-white mb-2">{fullName}</h2>
+                                <p className="text-gray-400 text-sm">Função: <span className="text-yellow-500 font-medium">{userRoleDisplay}</span></p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-gray-400 text-xs">Seu Código de Usuário:</p>
+                                <span className="text-2xl font-mono text-yellow-500 font-bold tracking-widest">{profile?.public_id || 'N/A'}</span>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Alerta de Perfil Incompleto */}
                     {hasPendingNotifications && profile?.tipo_usuario_id === 3 && (
                         <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-4 rounded-xl mb-8 flex items-start space-x-3 animate-fadeInUp">
@@ -401,19 +424,36 @@ const Profile: React.FC = () => {
                                     )}
                                     <Form {...form}>
                                         <form onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-6">
-                                            <FormField
-                                                control={form.control}
-                                                name="first_name"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="text-white">Nome</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="Seu nome" {...field} disabled={!isEditing} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
+                                            
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="first_name"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-white">Nome *</FormLabel>
+                                                            <FormControl>
+                                                                <Input placeholder="Seu nome" {...field} disabled={!isEditing} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="last_name"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-white">Sobrenome (Opcional)</FormLabel>
+                                                            <FormControl>
+                                                                <Input placeholder="Seu sobrenome" {...field} disabled={!isEditing} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+
                                             <FormItem>
                                                 <FormLabel className="text-white">E-mail</FormLabel>
                                                 <FormControl>
@@ -431,7 +471,7 @@ const Profile: React.FC = () => {
                                                     name="cpf"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel className="text-white">CPF</FormLabel>
+                                                            <FormLabel className="text-white">CPF *</FormLabel>
                                                             <FormControl>
                                                                 <Input 
                                                                     placeholder="000.000.000-00"
@@ -474,7 +514,7 @@ const Profile: React.FC = () => {
                                                     name="birth_date"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel className="text-white">Data de Nascimento</FormLabel>
+                                                            <FormLabel className="text-white">Data de Nascimento *</FormLabel>
                                                             <FormControl>
                                                                 <Input 
                                                                     type="date" 
@@ -600,21 +640,19 @@ const Profile: React.FC = () => {
                                             />
 
                                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                                                <div className="sm:col-span-1">
-                                                    <FormField
-                                                        control={form.control}
-                                                        name="bairro"
-                                                        render={({ field }) => (
-                                                            <FormItem>
-                                                                <FormLabel className="text-white">Bairro (Opcional)</FormLabel>
-                                                                <FormControl>
-                                                                    <Input placeholder="Jardim Paulista" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
-                                                                </FormControl>
-                                                                <FormMessage />
-                                                            </FormItem>
-                                                        )}
-                                                    />
-                                                </div>
+                                                <FormField
+                                                    control={form.control}
+                                                    name="bairro"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="text-white">Bairro (Opcional)</FormLabel>
+                                                            <FormControl>
+                                                                <Input placeholder="Jardim Paulista" {...field} disabled={!isEditing || isCepLoading} className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 disabled:text-gray-400 disabled:cursor-not-allowed" />
+                                                            </FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
                                                 <FormField
                                                     control={form.control}
                                                     name="cidade"
