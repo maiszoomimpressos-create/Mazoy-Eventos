@@ -50,19 +50,20 @@ const ManagerNotifications: React.FC = () => {
             const fetchedCompanyEmail = user.email || null;
             setCompanyEmail(fetchedCompanyEmail);
 
-            // Fetch Manager Settings - Using .limit(1) instead of .single()
-            const { data: settingsArray, error: settingsError } = await supabase
+            // Fetch Manager Settings
+            const { data: settingsData, error: settingsError } = await supabase
                 .from('manager_settings')
                 .select('*')
                 .eq('user_id', user.id)
-                .limit(1); // Changed from .single() to .limit(1)
+                .single();
 
-            let initialSettings = DEFAULT_SETTINGS;
-            if (settingsError && settingsError.code !== 'PGRST116' && settingsError.code !== '406') { // PGRST116 = No rows found, 406 = Not Acceptable
+            if (settingsError && settingsError.code !== 'PGRST116') { // PGRST116 = No rows found
                 console.error("Error fetching settings:", settingsError);
                 showError("Erro ao carregar configurações de notificação.");
-            } else if (settingsArray && settingsArray.length > 0) {
-                const settingsData = settingsArray[0]; // Get the first (and only) item from the array
+            }
+
+            let initialSettings = DEFAULT_SETTINGS;
+            if (settingsData) {
                 initialSettings = {
                     newSaleEmail: settingsData.new_sale_email ?? DEFAULT_SETTINGS.newSaleEmail,
                     newSaleSystem: settingsData.new_sale_system ?? DEFAULT_SETTINGS.newSaleSystem,
