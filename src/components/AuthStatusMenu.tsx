@@ -58,7 +58,8 @@ const AuthStatusMenu: React.FC = () => {
     if (session && profile) {
         const initials = profile.first_name ? profile.first_name.charAt(0).toUpperCase() : 'U';
         const isManager = profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2;
-        const isAdmin = profile.tipo_usuario_id === 1; // Novo: Verifica se é Admin Master
+        const isClient = profile.tipo_usuario_id === 3; // Novo: Verifica se é Cliente
+        const isAdmin = profile.tipo_usuario_id === 1; 
         
         // Combina primeiro e último nome (se disponível)
         const fullName = profile.first_name + (profile.last_name ? ` ${profile.last_name}` : '');
@@ -103,6 +104,18 @@ const AuthStatusMenu: React.FC = () => {
                             <i className="fas fa-ticket-alt mr-2"></i>
                             Meus Ingressos
                         </DropdownMenuItem>
+                        
+                        {/* NOVO: Cadastrar Eventos para Clientes (Tipo 3) */}
+                        {isClient && (
+                            <DropdownMenuItem 
+                                onClick={() => navigate('/manager/register')} 
+                                className="cursor-pointer hover:bg-yellow-500/10 text-green-400 font-semibold"
+                            >
+                                <i className="fas fa-plus-circle mr-2"></i>
+                                Cadastrar Eventos
+                            </DropdownMenuItem>
+                        )}
+
                         {isManager && (
                             <DropdownMenuItem 
                                 onClick={() => navigate('/manager/dashboard')} 
