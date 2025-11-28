@@ -10,8 +10,9 @@ import { Form } from '@/components/ui/form';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { Loader2, Building, ArrowLeft, User, AlertTriangle } from 'lucide-react';
 import CompanyForm, { companySchema, CompanyFormData } from '@/components/CompanyForm';
-import { useProfile } from '@/hooks/use-profile'; // Importando useProfile
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Importando componentes de Tabs
+import { useProfile } from '@/hooks/use-profile';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useManagerCompany } from '@/hooks/use-manager-company'; // Importando hook da empresa
 
 // Campos essenciais do perfil do usuário que devem estar preenchidos
 const ESSENTIAL_PROFILE_FIELDS = [
@@ -31,15 +32,31 @@ const isProfileComplete = (profileData: typeof useProfile extends (...args: any[
     return true;
 };
 
+// Helper para formatar dados do DB para o formulário
+const formatCompanyDataForForm = (data: any): Partial<CompanyFormData> => ({
+    cnpj: data.cnpj ? data.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : '',
+    corporate_name: data.corporate_name || '',
+    trade_name: data.trade_name || '',
+    phone: data.phone ? data.phone.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3') : '',
+    email: data.email || '',
+    cep: data.cep ? data.cep.replace(/^(\d{5})(\d{3})$/, '$1-$2') : '',
+    street: data.street || '',
+    neighborhood: data.neighborhood || '',
+    city: data.city || '',
+    state: data.state || '',
+    number: data.number || '',
+    complement: data.complement || '',
+});
+
+
 const ManagerCompanyProfile: React.FC = () => {
     const navigate = useNavigate();
     const [userId, setUserId] = useState<string | null>(null);
-    const [userEmail, setUserEmail] = useState<string | null>(null); // Para exibir o e-mail do usuário
-    const [isFetching, setIsFetching] = useState(true);
+    const [userEmail, setUserEmail] = useState<string | null>(null);
+    const [isFetchingUser, setIsFetchingUser] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
-    const [companyId, setCompanyId] = useState<string | null>(null);
     const [isCepLoading, setIsCepLoading] = useState(false);
-    const [activeTab, setActiveTab] = useState("company-info"); // Estado para controlar a aba ativa
+    const [activeTab, setActiveTab] = useState("company-info");
 
     // Fetch current user ID and Email
     useEffect(() => {
@@ -51,13 +68,14 @@ const ManagerCompanyProfile: React.FC = () => {
                 return;
             }
             setUserId(user.id);
-            setUserEmail(user.email); // Define o e-mail do usuário
-            setIsFetching(false);
+            setUserEmail(user.email);
+            setIsFetchingUser(false);
         };
         fetchUser();
     }, [navigate]);
 
-    // Fetch user profile for 'Sócios' tab
+    // Fetch company data using the new hook
+    const { company, isLoading: isLoadingCompany, refetch: refetchCompany } = useManagerCompany(userId || undefined);
     const { profile, isLoading: isLoadingProfile } = useProfile(userId || undefined);
 
     const form = useForm<CompanyFormData>({
@@ -78,46 +96,12 @@ const ManagerCompanyProfile: React.FC = () => {
         },
     });
 
-    // Fetch Company Data
+    // Sync form data with fetched company data
     useEffect(() => {
-        const fetchCompanyData = async () => {
-            if (!userId) return;
-
-            const { data: companiesData, error } = await supabase
-                .from('companies')
-                .select('*')
-                .eq('user_id', userId)
-                .limit(1);
-
-            if (error) {
-                console.error("Error fetching company profile:", error);
-                showError("Erro ao carregar perfil da empresa.");
-            }
-
-            const data = companiesData?.[0];
-            if (data) {
-                setCompanyId(data.id);
-                form.reset({
-                    cnpj: data.cnpj ? data.cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : '',
-                    corporate_name: data.corporate_name || '',
-                    trade_name: data.trade_name || '',
-                    phone: data.phone ? data.phone.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3') : '',
-                    email: data.email || '',
-                    cep: data.cep ? data.cep.replace(/^(\d{5})(\d{3})$/, '$1-$2') : '',
-                    street: data.street || '',
-                    neighborhood: data.neighborhood || '',
-                    city: data.localidade || '', // Corrigido para 'localidade' do ViaCEP
-                    state: data.uf || '', // Corrigido para 'uf' do ViaCEP
-                    number: data.number || '',
-                    complement: data.complement || '',
-                });
-            }
-            setIsFetching(false);
-        };
-        if (userId) {
-            fetchCompanyData();
+        if (company) {
+            form.reset(formatCompanyDataForForm(company));
         }
-    }, [userId, form]);
+    }, [company, form]);
 
     // Function to fetch address via ViaCEP
     const fetchAddressByCep = async (cep: string) => {
@@ -155,10 +139,10 @@ const ManagerCompanyProfile: React.FC = () => {
     const onSubmit = async (values: CompanyFormData) => {
         if (!userId) return;
         setIsSaving(true);
-        const toastId = showLoading(companyId ? "Atualizando perfil..." : "Cadastrando perfil...");
+        const toastId = showLoading(company ? "Atualizando perfil..." : "Cadastrando perfil...");
 
         const dataToSave = {
-            user_id: userId,
+            user_id: userId, // Keep user_id in companies table for RLS policy 'Owner can view their company'
             cnpj: values.cnpj.replace(/\D/g, ''),
             corporate_name: values.corporate_name,
             trade_name: values.trade_name || null,
@@ -176,15 +160,17 @@ const ManagerCompanyProfile: React.FC = () => {
 
         try {
             let error;
-            if (companyId) {
+            let currentCompanyId = company?.id;
+
+            if (currentCompanyId) {
                 // Update existing profile
                 const result = await supabase
                     .from('companies')
                     .update(dataToSave)
-                    .eq('id', companyId);
+                    .eq('id', currentCompanyId);
                 error = result.error;
             } else {
-                // Insert new profile
+                // Insert new profile (Should only happen if user bypassed ManagerCompanyRegister)
                 const result = await supabase
                     .from('companies')
                     .insert([dataToSave])
@@ -192,7 +178,25 @@ const ManagerCompanyProfile: React.FC = () => {
                     .single();
                 error = result.error;
                 if (result.data) {
-                    setCompanyId(result.data.id);
+                    currentCompanyId = result.data.id;
+                    
+                    // CRITICAL: Associate the user as the primary owner in user_companies
+                    const { error: associateError } = await supabase
+                        .from('user_companies')
+                        .insert({
+                            user_id: userId,
+                            company_id: currentCompanyId,
+                            role: 'owner',
+                            is_primary: true,
+                        });
+                        
+                    if (associateError) {
+                        console.error("CRITICAL: Failed to associate user with company in user_companies during profile update:", associateError);
+                        showError("Aviso: Falha ao associar seu perfil à empresa. Você pode ter problemas de acesso.");
+                    }
+                    
+                    // Refetch company data to update the hook state
+                    refetchCompany();
                 }
             }
 
@@ -216,7 +220,7 @@ const ManagerCompanyProfile: React.FC = () => {
         }
     };
 
-    if (isFetching || isLoadingProfile) {
+    if (isFetchingUser || isLoadingProfile || isLoadingCompany) {
         return (
             <div className="max-w-4xl mx-auto px-4 sm:px-0 text-center py-20">
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
@@ -245,7 +249,7 @@ const ManagerCompanyProfile: React.FC = () => {
             <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
                 <CardHeader>
                     <CardTitle className="text-white text-xl sm:text-2xl font-semibold">
-                        {companyId ? "Editar Dados Corporativos" : "Cadastrar Dados Corporativos"}
+                        {company ? "Editar Dados Corporativos" : "Cadastrar Dados Corporativos"}
                     </CardTitle>
                     <CardDescription className="text-gray-400 text-sm">
                         Estes dados são essenciais para a emissão de notas fiscais e validação de eventos.

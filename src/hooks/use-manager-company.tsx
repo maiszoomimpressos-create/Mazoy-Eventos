@@ -8,17 +8,35 @@ interface CompanyData {
     corporate_name: string;
 }
 
-// Modificado para buscar um array de empresas
+// Modificado para buscar empresas associadas ao userId via user_companies
 const fetchCompanies = async (userId: string): Promise<CompanyData[]> => {
     if (!userId) return [];
 
+    // 1. Buscar todas as associações de empresa para este usuário
+    const { data: userCompanies, error: ucError } = await supabase
+        .from('user_companies')
+        .select('company_id')
+        .eq('user_id', userId);
+
+    if (ucError) {
+        console.error("Error fetching user company associations:", ucError);
+        throw new Error(ucError.message);
+    }
+    
+    const companyIds = userCompanies.map(uc => uc.company_id);
+    
+    if (companyIds.length === 0) {
+        return [];
+    }
+
+    // 2. Buscar detalhes das empresas usando os IDs encontrados
     const { data, error } = await supabase
         .from('companies')
         .select('id, cnpj, corporate_name')
-        .eq('user_id', userId); // Removido .single() para permitir múltiplos resultados
+        .in('id', companyIds);
 
     if (error) {
-        console.error("Error fetching companies:", error);
+        console.error("Error fetching companies details:", error);
         throw new Error(error.message);
     }
 
@@ -39,7 +57,7 @@ export const useManagerCompany = (userId: string | undefined) => {
 
     return {
         ...query,
-        // Retorna a primeira empresa encontrada, ou null se nenhuma for encontrada
+        // Retorna a primeira empresa encontrada (assumindo que o gestor PRO gerencia uma principal)
         company: query.data && query.data.length > 0 ? query.data[0] : null,
         // Também expõe todas as empresas, caso seja necessário no futuro
         allCompanies: query.data || [],

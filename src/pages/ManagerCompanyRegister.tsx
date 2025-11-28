@@ -141,9 +141,11 @@ const ManagerCompanyRegister: React.FC = () => {
 
         try {
             // 1. Insert new company profile
-            const { error: insertError } = await supabase
+            const { data: companyData, error: insertError } = await supabase
                 .from('companies')
-                .insert([dataToSave]);
+                .insert([dataToSave])
+                .select('id') // Select the newly created company ID
+                .single();
 
             if (insertError) {
                 if (insertError.code === '23505' && insertError.message.includes('cnpj')) {
@@ -151,8 +153,25 @@ const ManagerCompanyRegister: React.FC = () => {
                 }
                 throw insertError;
             }
+            
+            const newCompanyId = companyData.id;
 
-            // 2. Update user's profile to set tipo_usuario_id to 2 (Gestor PRO)
+            // 2. Associate the user as the primary owner in user_companies
+            const { error: associateError } = await supabase
+                .from('user_companies')
+                .insert({
+                    user_id: userId,
+                    company_id: newCompanyId,
+                    role: 'owner',
+                    is_primary: true,
+                });
+                
+            if (associateError) {
+                console.error("CRITICAL: Failed to associate user with company in user_companies:", associateError);
+                throw new Error("Falha ao associar usuário à empresa. Tente novamente.");
+            }
+
+            // 3. Update user's profile to set tipo_usuario_id to 2 (Gestor PRO)
             const { error: updateProfileError } = await supabase
                 .from('profiles')
                 .update({ tipo_usuario_id: 2 })
@@ -160,8 +179,7 @@ const ManagerCompanyRegister: React.FC = () => {
 
             if (updateProfileError) {
                 console.error("Erro ao atualizar tipo de usuário no perfil:", updateProfileError);
-                // Decide if you want to roll back company creation or just log
-                // For now, we'll let it proceed but log the error.
+                // We proceed even if this fails, as the company is created and associated.
             }
 
             dismissToast(toastId);
