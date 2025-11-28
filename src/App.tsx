@@ -1,6 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@tanstack/react-query";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
@@ -33,8 +33,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import FinalizarCompra from "./pages/FinalizarCompra";
 import ScrollToTop from "./components/ScrollToTop";
 import ManagerRegister from "./pages/ManagerRegister";
-import ManagerIndividualRegister from "./pages/ManagerIndividualRegister"; // Nova importação
-import ManagerCompanyRegister from "./pages/ManagerCompanyRegister"; // Nova importação
+import ManagerIndividualRegister from "./pages/ManagerIndividualRegister";
+import ManagerCompanyRegister from "./pages/ManagerCompanyRegister";
 
 const queryClient = new QueryClient();
 
@@ -52,21 +52,16 @@ const App = () => (
             <Route path="/events/:id" element={<EventDetails />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/tickets" element={<MyTickets />} />
-            <Route path="/manager/register" element={<ManagerRegister />} /> {/* Rota para clientes se tornarem gestores */}
-            <Route path="/manager/register/individual" element={<ManagerIndividualRegister />} /> {/* Nova rota */}
-            <Route path="/manager/register/company" element={<ManagerCompanyRegister />} /> {/* Nova rota */}
-            {/* Rota /events/:id removida */}
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/tickets" element={<MyTickets />} />
+            <Route path="/manager/register" element={<ManagerRegister />} />
+            <Route path="/manager/register/individual" element={<ManagerIndividualRegister />} />
+            <Route path="/manager/register/company" element={<ManagerCompanyRegister />} />
+            <Route path="/finalizar-compra" element={<FinalizarCompra />} />
           </Route>
           
           {/* Auth Routes (No layout/Full screen) */}
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/tickets" element={<MyTickets />} />
-          <Route path="/finalizar-compra" element={<FinalizarCompra />} />
           <Route path="/manager/login" element={<ManagerLogin />} />
           
           {/* Manager Routes (Protected by ManagerLayout, which handles auth/redirect) */}
