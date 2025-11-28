@@ -13,12 +13,14 @@ import { useManagerCompany } from '@/hooks/use-manager-company'; // Import useMa
 
 const ADMIN_USER_TYPE_ID = 1;
 const MANAGER_PRO_USER_TYPE_ID = 2;
+const MIN_LOADING_TIME_MS = 500; // Tempo mínimo em milissegundos para exibir o loader
 
 const ManagerLayout: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [userId, setUserId] = useState<string | undefined>(undefined);
     const [loadingSession, setLoadingSession] = useState(true);
+    const [showDelayedLoader, setShowDelayedLoader] = useState(true); // Novo estado para controlar o atraso do loader
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
@@ -29,9 +31,8 @@ const ManagerLayout: React.FC = () => {
 
     const { profile, isLoading: isLoadingProfile } = useProfile(userId);
     const { userTypeName, isLoadingUserType } = useUserType(profile?.tipo_usuario_id);
-    // Mantemos o useProfileStatus para que as páginas internas possam usá-lo
     const { isComplete: isProfileFullyComplete, loading: isLoadingProfileStatus, needsCompanyProfile, needsPersonalProfileCompletion } = useProfileStatus(profile, isLoadingProfile);
-    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId); // Fetch company data
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId);
 
     const handleLogout = async () => {
         const { error } = await supabase.auth.signOut();
@@ -44,6 +45,20 @@ const ManagerLayout: React.FC = () => {
 
     // Combined loading state
     const isLoadingCombined = loadingSession || isLoadingProfile || isLoadingUserType || isLoadingProfileStatus || isLoadingCompany;
+
+    // Efeito para controlar o atraso do loader
+    useEffect(() => {
+        if (isLoadingCombined) {
+            setShowDelayedLoader(true); // Se está carregando, mostra o loader imediatamente
+        } else {
+            // Se não está mais carregando, inicia um timer para esconder o loader
+            const timer = setTimeout(() => {
+                setShowDelayedLoader(false);
+            }, MIN_LOADING_TIME_MS);
+            return () => clearTimeout(timer); // Limpa o timer se o componente for desmontado ou o estado de carregamento mudar novamente
+        }
+    }, [isLoadingCombined]);
+
 
     // Determine user type and manager status
     const userType = profile?.tipo_usuario_id;
@@ -83,7 +98,7 @@ const ManagerLayout: React.FC = () => {
     }, [isLoadingCombined, userId, isManager, userType, navigate, location.pathname]);
 
 
-    if (isLoadingCombined) {
+    if (isLoadingCombined || showDelayedLoader) { // Agora o loader é exibido com base no estado de atraso
         return (
             <div className="min-h-screen bg-black text-white flex items-center justify-center">
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
