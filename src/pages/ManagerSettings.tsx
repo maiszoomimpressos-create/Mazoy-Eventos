@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Settings, User, CreditCard, Bell, Loader2 } from 'lucide-react';
+import { Settings, User, CreditCard, Bell, Loader2, Building } from 'lucide-react';
 import { useProfile } from '@/hooks/use-profile';
 import { supabase } from '@/integrations/supabase/client';
+import { useManagerCompany } from '@/hooks/use-manager-company'; // Importando hook da empresa
 
 const ADMIN_MASTER_USER_TYPE_ID = 1;
+const MANAGER_PRO_USER_TYPE_ID = 2;
 
 const ManagerSettings: React.FC = () => {
     const navigate = useNavigate();
@@ -18,11 +20,41 @@ const ManagerSettings: React.FC = () => {
         });
     }, []);
 
-    const { profile, isLoading } = useProfile(userId);
+    const { profile, isLoading: isLoadingProfile } = useProfile(userId);
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId);
+    
+    const isLoading = isLoadingProfile || isLoadingCompany;
     const isAdminMaster = profile?.tipo_usuario_id === ADMIN_MASTER_USER_TYPE_ID;
+    const isManagerPro = profile?.tipo_usuario_id === MANAGER_PRO_USER_TYPE_ID;
+
+    // Determina a rota correta para o Perfil da Empresa
+    const getCompanyProfilePath = () => {
+        // Admin Master sempre gerencia dados PJ (ou a plataforma)
+        if (isAdminMaster) {
+            return "/manager/settings/company-profile";
+        }
+        
+        // Gestor PRO (Tipo 2)
+        if (isManagerPro) {
+            // Se o gestor PRO tem um registro de empresa (PJ), ele edita o perfil da empresa.
+            if (company?.id) {
+                return "/manager/settings/company-profile";
+            }
+            // Se o gestor PRO NÃO tem registro de empresa (PF), ele edita o perfil individual.
+            return "/manager/settings/individual-profile";
+        }
+        
+        // Fallback (deve ser inacessível se o ManagerLayout funcionar corretamente)
+        return "/manager/dashboard";
+    };
 
     const settingsOptions = [
-        { icon: <User className="h-6 w-6 text-yellow-500" />, title: "Perfil da Empresa", description: "Atualize informações de contato e dados corporativos.", path: "/manager/settings/company-profile" },
+        { 
+            icon: isManagerPro && !company?.id ? <User className="h-6 w-6 text-yellow-500" /> : <Building className="h-6 w-6 text-yellow-500" />, 
+            title: isManagerPro && !company?.id ? "Perfil Pessoal (PF)" : "Perfil da Empresa (PJ)", 
+            description: isManagerPro && !company?.id ? "Atualize seus dados pessoais obrigatórios como Gestor PF." : "Atualize informações de contato e dados corporativos.", 
+            path: getCompanyProfilePath() 
+        },
         { icon: <Bell className="h-6 w-6 text-yellow-500" />, title: "Notificações e Alertas", description: "Defina preferências de notificação por e-mail e sistema.", path: "/manager/settings/notifications" },
         { icon: <CreditCard className="h-6 w-6 text-yellow-500" />, title: "Configurações de Pagamento", description: "Gerencie contas bancárias e gateways de pagamento.", path: "/manager/settings/payment" },
     ];

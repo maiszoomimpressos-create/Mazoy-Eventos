@@ -30,9 +30,9 @@ import AdminMasterRouteGuard from "./components/AdminMasterRouteGuard";
 import ManagerLayout from "./components/layouts/ManagerLayout";
 import ForgotPassword from "./pages/ForgotPassword";
 import FinalizarCompra from "./pages/FinalizarCompra";
-import ManagerRegister from "./pages/ManagerRegister"; // Importação adicionada
-import ManagerIndividualRegister from "./pages/ManagerIndividualRegister"; // Importação adicionada
-import ManagerCompanyRegister from "./pages/ManagerCompanyRegister"; // Importação adicionada
+import ManagerRegister from "./pages/ManagerRegister"; 
+import ManagerIndividualProfile from "./pages/ManagerIndividualProfile"; // Importação atualizada
+import ManagerCompanyRegister from "./pages/ManagerCompanyRegister"; 
 
 const queryClient = new QueryClient();
 
@@ -56,7 +56,7 @@ const App = () => (
           
           {/* Manager Registration Routes (Accessible by logged-in clients) */}
           <Route path="/manager/register" element={<ManagerRegister />} />
-          <Route path="/manager/register/individual" element={<ManagerIndividualRegister />} />
+          <Route path="/manager/register/individual" element={<ManagerIndividualProfile />} />
           <Route path="/manager/register/company" element={<ManagerCompanyRegister />} />
           
           {/* Manager Routes (Protected by ManagerLayout, which handles auth/redirect) */}
@@ -71,6 +71,7 @@ const App = () => (
             <Route path="/manager/reports" element={<ManagerReports />} />
             <Route path="/manager/settings" element={<ManagerSettings />} />
             <Route path="/manager/settings/company-profile" element={<ManagerCompanyProfile />} />
+            <Route path="/manager/settings/individual-profile" element={<ManagerIndividualProfile />} /> {/* NOVA ROTA */}
             <Route path="/manager/settings/notifications" element={<ManagerNotifications />} />
             <Route path="/manager/settings/payment" element={<ManagerPaymentSettings />} />
           </Route>
