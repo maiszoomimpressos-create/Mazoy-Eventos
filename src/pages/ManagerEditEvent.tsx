@@ -5,16 +5,23 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"; // Importando Alert
 import { categories } from '@/data/events';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, ImageOff } from 'lucide-react';
+import { Loader2, ImageOff, AlertTriangle, ArrowLeft } from 'lucide-react'; // Importando AlertTriangle e ArrowLeft
+import { format } from 'date-fns';
+import { DatePicker } from '@/components/DatePicker';
+import ImageUploadPicker from '@/components/ImageUploadPicker'; // Importando o novo componente
+import { useProfileStatus } from '@/hooks/use-profile-status'; // Importando useProfileStatus
+import { useProfile } from '@/hooks/use-profile'; // Importando useProfile
+import { useManagerCompany } from '@/hooks/use-manager-company'; // Importando useManagerCompany
 
 // Define the structure for the form data
 interface EventFormData {
     title: string;
     description: string;
-    date: string;
+    date: Date | undefined; // Mantido como Date | undefined
     time: string;
     location: string; // General location name
     address: string; // Detailed address
@@ -29,22 +36,36 @@ const ManagerEditEvent: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const [formData, setFormData] = useState<EventFormData | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [isFetching, setIsFetching] = useState(true);
+    const [isLoading, setIsLoading] = useState(false); // Estado para o botão de salvar
+    const [isFetchingEvent, setIsFetchingEvent] = useState(true); // Estado para carregar dados do evento
     const [userId, setUserId] = useState<string | null>(null);
+    const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({}); // Estado para erros de validação
+
+    // Fetch current user ID
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (user) {
+                setUserId(user.id);
+            } else {
+                showError("Sessão expirada ou não autenticada. Faça login novamente.");
+                navigate('/manager/login');
+            }
+        });
+    }, [navigate]);
+
+    const { profile, isLoading: isLoadingProfile } = useProfile(userId);
+    const { needsPersonalProfileCompletion, needsCompanyProfile, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile);
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId);
+
+    const isProfileIncomplete = needsPersonalProfileCompletion || needsCompanyProfile;
+    const isPageLoading = isLoadingProfile || isLoadingProfileStatus || isLoadingCompany || isFetchingEvent || !userId;
 
     useEffect(() => {
         const fetchEventAndUser = async () => {
-            setIsFetching(true);
-            const { data: { user } } = await supabase.auth.getUser();
-            
-            if (!user) {
-                showError("Sessão expirada ou não autenticada.");
-                navigate('/manager/login');
-                return;
-            }
-            setUserId(user.id);
+            if (!userId || isLoadingProfile || isLoadingCompany) return; // Espera o userId e dados do perfil/empresa
 
+            setIsFetchingEvent(true);
+            
             if (!id) {
                 showError("ID do evento não fornecido.");
                 navigate('/manager/events');
@@ -66,7 +87,7 @@ const ManagerEditEvent: React.FC = () => {
             }
 
             // Basic check to ensure the user owns the event (RLS should handle this, but good practice)
-            if (eventData.user_id !== user.id) {
+            if (eventData.user_id !== userId) {
                 showError("Você não tem permissão para editar este evento.");
                 navigate('/manager/events');
                 return;
@@ -76,24 +97,30 @@ const ManagerEditEvent: React.FC = () => {
             setFormData({
                 title: eventData.title || '',
                 description: eventData.description || '',
-                date: eventData.date || '',
+                date: eventData.date ? new Date(eventData.date) : undefined, // Converte para objeto Date
                 time: eventData.time || '',
                 location: eventData.location || '',
                 address: eventData.address || '',
                 image_url: eventData.image_url || '',
                 min_age: eventData.min_age || 0,
                 category: eventData.category || '',
-                capacity: eventData.capacity || '', // Carregando capacidade
-                duration: eventData.duration || '', // Carregando duração
+                capacity: eventData.capacity || '',
+                duration: eventData.duration || '',
             });
-            setIsFetching(false);
+            setIsFetchingEvent(false);
         };
 
-        fetchEventAndUser();
-    }, [id, navigate]);
+        if (userId) { // Só tenta buscar o evento se o userId estiver disponível
+            fetchEventAndUser();
+        }
+    }, [id, navigate, userId, isLoadingProfile, isLoadingCompany]); // Adiciona userId e estados de carregamento como dependências
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value, type } = e.target;
+        
+        // Limpa o erro para o campo atual quando o usuário começa a digitar
+        setFormErrors(prev => ({ ...prev, [id]: '' }));
+
         setFormData(prev => {
             if (!prev) return null;
             return { 
@@ -103,52 +130,85 @@ const ManagerEditEvent: React.FC = () => {
         });
     };
 
+    const handleDateChange = (date: Date | undefined) => {
+        setFormData(prev => {
+            if (!prev) return null;
+            return { ...prev, date };
+        });
+        setFormErrors(prev => ({ ...prev, date: '' })); // Limpa o erro para o campo de data
+    };
+
     const handleSelectChange = (value: string) => {
         setFormData(prev => {
             if (!prev) return null;
             return { ...prev, category: value };
         });
+        setFormErrors(prev => ({ ...prev, category: '' })); // Limpa o erro para o campo de categoria
     };
 
-    const validateForm = () => {
-        if (!formData) return false;
-        const errors: string[] = [];
+    const handleImageUpload = (url: string) => {
+        setFormData(prev => {
+            if (!prev) return null;
+            return { ...prev, image_url: url };
+        });
+        setFormErrors(prev => ({ ...prev, image_url: '' })); // Limpa o erro para o campo de imagem
+    };
+
+    const validateForm = (): { isValid: boolean, errors: { [key: string]: string }, isoDate: string | null } => {
+        const newErrors: { [key: string]: string } = {};
+        let isValid = true;
+        let isoDate: string | null = null;
         
-        if (!formData.title) errors.push("Título é obrigatório.");
-        if (!formData.description) errors.push("Descrição é obrigatória.");
-        if (!formData.date) errors.push("Data é obrigatória.");
-        if (!formData.time) errors.push("Horário é obrigatório.");
-        if (!formData.location) errors.push("Localização é obrigatória.");
-        if (!formData.address) errors.push("Endereço detalhado é obrigatório.");
-        if (!formData.image_url) errors.push("URL da Imagem/Banner é obrigatória.");
-        if (!formData.duration) errors.push("Duração é obrigatória."); // Validação de Duração
+        if (!formData) { isValid = false; return { isValid, errors: newErrors, isoDate }; }
+
+        if (!formData.title) { newErrors.title = "Título é obrigatório."; isValid = false; }
+        if (!formData.description) { newErrors.description = "Descrição é obrigatória."; isValid = false; }
+        if (!formData.time) { newErrors.time = "Horário é obrigatório."; isValid = false; }
+        if (!formData.location) { newErrors.location = "Localização é obrigatória."; isValid = false; }
+        if (!formData.address) { newErrors.address = "Endereço detalhado é obrigatório."; isValid = false; }
+        if (!formData.image_url) { newErrors.image_url = "URL da Imagem/Banner é obrigatória."; isValid = false; }
+        if (!formData.duration) { newErrors.duration = "Duração é obrigatória."; isValid = false; }
         
+        // Validação da Data (agora é um objeto Date)
+        if (!formData.date) {
+            newErrors.date = "Data é obrigatória."; isValid = false;
+        } else {
+            // Converte para o formato ISO (YYYY-MM-DD) para salvar no Supabase
+            isoDate = format(formData.date, 'yyyy-MM-dd');
+        }
+
         const minAge = Number(formData.min_age);
         if (formData.min_age === '' || formData.min_age === null || isNaN(minAge) || minAge < 0) {
-            errors.push("Idade Mínima é obrigatória e deve ser 0 ou maior.");
+            newErrors.min_age = "Idade Mínima é obrigatória e deve ser 0 ou maior."; isValid = false;
         }
         
         const capacity = Number(formData.capacity);
         if (formData.capacity === '' || formData.capacity === null || isNaN(capacity) || capacity <= 0) {
-            errors.push("Capacidade é obrigatória e deve ser maior que zero.");
+            newErrors.capacity = "Capacidade é obrigatória e deve ser maior que zero."; isValid = false;
         }
 
-        if (!formData.category) errors.push("Categoria é obrigatória.");
-        // REMOVIDO: if (!formData.price || Number(formData.price) <= 0) errors.push("Preço Base é obrigatório e deve ser maior que zero.");
+        if (!formData.category) { newErrors.category = "Categoria é obrigatória."; isValid = false; }
 
-        if (errors.length > 0) {
-            showError(`Por favor, preencha todos os campos obrigatórios.`);
-            return false;
-        }
-        return true;
+        return { isValid, errors: newErrors, isoDate };
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!validateForm() || !userId || !id || !formData) return;
+        if (isProfileIncomplete) {
+            showError("Por favor, complete seu perfil para editar eventos.");
+            return;
+        }
 
-        const toastId = showLoading("Atualizando evento...");
+        const validationResult = validateForm();
+        setFormErrors(validationResult.errors); // Atualiza o estado de erros
+
+        if (!validationResult.isValid || !userId || !id || !formData || !validationResult.isoDate) {
+            showError("Por favor, preencha todos os campos obrigatórios.");
+            return;
+        }
+
         setIsLoading(true);
+        const toastId = showLoading("Atualizando evento...");
 
         try {
             const { error } = await supabase
@@ -156,15 +216,15 @@ const ManagerEditEvent: React.FC = () => {
                 .update({
                     title: formData.title,
                     description: formData.description,
-                    date: formData.date,
+                    date: validationResult.isoDate, // Usando a data formatada para ISO
                     time: formData.time,
                     location: formData.location,
                     address: formData.address,
                     image_url: formData.image_url,
                     min_age: Number(formData.min_age),
                     category: formData.category,
-                    capacity: Number(formData.capacity), // SALVANDO CAPACIDADE
-                    duration: formData.duration, // SALVANDO DURAÇÃO
+                    capacity: Number(formData.capacity),
+                    duration: formData.duration,
                 })
                 .eq('id', id)
                 .eq('user_id', userId); // Ensure only the owner can update
@@ -186,11 +246,11 @@ const ManagerEditEvent: React.FC = () => {
         }
     };
 
-    if (isFetching || !formData) {
+    if (isPageLoading || !formData) { // Inclui isPageLoading aqui
         return (
             <div className="max-w-4xl mx-auto px-4 sm:px-0 text-center py-20">
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
-                <p className="text-gray-400">Carregando detalhes do evento...</p>
+                <p className="text-gray-400">Carregando detalhes do evento e dados do gestor...</p>
             </div>
         );
     }
@@ -204,10 +264,26 @@ const ManagerEditEvent: React.FC = () => {
                     variant="outline"
                     className="bg-black/60 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 text-sm"
                 >
-                    <i className="fas fa-arrow-left mr-2"></i>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
                     Voltar para a Lista
                 </Button>
             </div>
+
+            {isProfileIncomplete && (
+                <Alert className="bg-red-500/20 border border-red-500/50 text-red-400 mb-8 animate-fadeInUp">
+                    <AlertTriangle className="h-5 w-5" />
+                    <AlertTitle className="text-white">Perfil Incompleto!</AlertTitle>
+                    <AlertDescription className="text-gray-300">
+                        {needsPersonalProfileCompletion && (
+                            <p className="mb-2">Seu perfil pessoal está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/profile')}>complete-o aqui</Button> para editar eventos.</p>
+                        )}
+                        {needsCompanyProfile && (
+                            <p>Seu perfil de empresa não está cadastrado. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/manager/settings/company-profile')}>preencha os dados da sua empresa</Button> para editar eventos.</p>
+                        )}
+                        <p className="mt-2 text-sm text-white font-semibold">O formulário de edição de evento está desabilitado.</p>
+                    </AlertDescription>
+                </Alert>
+            )}
 
             <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
                 <CardHeader>
@@ -225,8 +301,11 @@ const ManagerEditEvent: React.FC = () => {
                                     onChange={handleChange} 
                                     placeholder="Ex: Concerto Sinfônico Premium"
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    isInvalid={!!formErrors.title}
                                     required
+                                    disabled={isProfileIncomplete}
                                 />
+                                {formErrors.title && <p className="text-red-400 text-xs mt-1">{formErrors.title}</p>}
                             </div>
                             <div>
                                 <label htmlFor="location" className="block text-sm font-medium text-white mb-2">Localização (Nome do Local) *</label>
@@ -236,8 +315,11 @@ const ManagerEditEvent: React.FC = () => {
                                     onChange={handleChange} 
                                     placeholder="Ex: Teatro Municipal"
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    isInvalid={!!formErrors.location}
                                     required
+                                    disabled={isProfileIncomplete}
                                 />
+                                {formErrors.location && <p className="text-red-400 text-xs mt-1">{formErrors.location}</p>}
                             </div>
                         </div>
 
@@ -250,8 +332,11 @@ const ManagerEditEvent: React.FC = () => {
                                 onChange={handleChange} 
                                 placeholder="Ex: Praça Ramos de Azevedo, s/n - República, São Paulo - SP"
                                 className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                isInvalid={!!formErrors.address}
                                 required
+                                disabled={isProfileIncomplete}
                             />
+                            {formErrors.address && <p className="text-red-400 text-xs mt-1">{formErrors.address}</p>}
                         </div>
 
                         {/* Linha 3: Descrição */}
@@ -263,63 +348,43 @@ const ManagerEditEvent: React.FC = () => {
                                 onChange={handleChange} 
                                 placeholder="Descreva o evento, destaques e público-alvo."
                                 className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 min-h-[100px]"
+                                isInvalid={!!formErrors.description}
                                 required
+                                disabled={isProfileIncomplete}
                             />
+                            {formErrors.description && <p className="text-red-400 text-xs mt-1">{formErrors.description}</p>}
                         </div>
                         
-                        {/* Linha 4: Imagem/Banner Preview */}
+                        {/* Linha 4: Imagem/Banner Preview - Usando o novo componente */}
                         <div className="space-y-4 pt-4 border-t border-yellow-500/20">
-                            <h3 className="text-xl font-semibold text-white">Banner do Evento</h3>
-                            
-                            {/* Preview da Imagem */}
-                            <div className="w-full h-48 bg-black/60 border border-yellow-500/30 rounded-xl overflow-hidden flex items-center justify-center">
-                                {formData.image_url ? (
-                                    <img 
-                                        src={formData.image_url} 
-                                        alt="Preview do Banner" 
-                                        className="w-full h-full object-cover object-center"
-                                        onError={(e) => {
-                                            // Fallback se a URL da imagem estiver quebrada
-                                            e.currentTarget.onerror = null; 
-                                            e.currentTarget.src = 'placeholder.svg'; // Usar um placeholder local
-                                            e.currentTarget.className = "w-16 h-16 text-gray-500";
-                                        }}
-                                    />
-                                ) : (
-                                    <div className="text-center text-gray-500">
-                                        <ImageOff className="h-8 w-8 mx-auto mb-2" />
-                                        Nenhuma URL de imagem fornecida.
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Campo URL da Imagem */}
-                            <div>
-                                <label htmlFor="image_url" className="block text-sm font-medium text-white mb-2">URL da Imagem/Banner *</label>
-                                <Input 
-                                    id="image_url" 
-                                    value={formData.image_url} 
-                                    onChange={handleChange} 
-                                    placeholder="Ex: https://readdy.ai/api/search-image?query=..."
-                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
-                                    required
+                            <h3 className="text-xl font-semibold text-white">Banner do Evento *</h3>
+                            {userId && (
+                                <ImageUploadPicker
+                                    userId={userId}
+                                    currentImageUrl={formData.image_url}
+                                    onImageUpload={handleImageUpload}
+                                    disabled={isLoading || isProfileIncomplete}
+                                    width={550}
+                                    height={380}
+                                    placeholderText="Nenhuma imagem de banner selecionada."
+                                    isInvalid={!!formErrors.image_url}
                                 />
-                                <p className="text-xs text-gray-500 mt-1">Cole a URL da imagem do banner aqui para pré-visualizar acima.</p>
-                            </div>
+                            )}
+                            {formErrors.image_url && <p className="text-red-400 text-xs mt-1">{formErrors.image_url}</p>}
                         </div>
 
                         {/* Linha 5: Data, Horário, Categoria */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
                                 <label htmlFor="date" className="block text-sm font-medium text-white mb-2">Data *</label>
-                                <Input 
-                                    id="date" 
-                                    type="date"
-                                    value={formData.date} 
-                                    onChange={handleChange} 
-                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
-                                    required
+                                <DatePicker 
+                                    date={formData.date}
+                                    setDate={handleDateChange}
+                                    placeholder="DD/MM/AAAA ou Selecione"
+                                    isInvalid={!!formErrors.date}
+                                    disabled={isProfileIncomplete}
                                 />
+                                {formErrors.date && <p className="text-red-400 text-xs mt-1">{formErrors.date}</p>}
                             </div>
                             <div>
                                 <label htmlFor="time" className="block text-sm font-medium text-white mb-2">Horário *</label>
@@ -329,13 +394,19 @@ const ManagerEditEvent: React.FC = () => {
                                     value={formData.time} 
                                     onChange={handleChange} 
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    isInvalid={!!formErrors.time}
                                     required
+                                    disabled={isProfileIncomplete}
                                 />
+                                {formErrors.time && <p className="text-red-400 text-xs mt-1">{formErrors.time}</p>}
                             </div>
                             <div>
                                 <label htmlFor="category" className="block text-sm font-medium text-white mb-2">Categoria *</label>
-                                <Select onValueChange={handleSelectChange} value={formData.category}>
-                                    <SelectTrigger className="w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500">
+                                <Select onValueChange={handleSelectChange} value={formData.category} disabled={isProfileIncomplete}>
+                                    <SelectTrigger 
+                                        className="w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500"
+                                        isInvalid={!!formErrors.category}
+                                    >
                                         <SelectValue placeholder="Selecione a Categoria" />
                                     </SelectTrigger>
                                     <SelectContent className="bg-black border-yellow-500/30 text-white">
@@ -346,6 +417,7 @@ const ManagerEditEvent: React.FC = () => {
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                {formErrors.category && <p className="text-red-400 text-xs mt-1">{formErrors.category}</p>}
                             </div>
                         </div>
                         
@@ -360,10 +432,13 @@ const ManagerEditEvent: React.FC = () => {
                                     onChange={handleChange} 
                                     placeholder="Ex: 500"
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    isInvalid={!!formErrors.capacity}
                                     min="1"
                                     required
+                                    disabled={isProfileIncomplete}
                                 />
-                                <p className="text-xs text-gray-500 mt-1">Número máximo de pessoas.</p>
+                                <p className="text-xs text-gray-500 mt-1">Número máximo de pessoas permitidas.</p>
+                                {formErrors.capacity && <p className="text-red-400 text-xs mt-1">{formErrors.capacity}</p>}
                             </div>
                             <div>
                                 <label htmlFor="duration" className="block text-sm font-medium text-white mb-2">Duração (Ex: 2h30min) *</label>
@@ -374,9 +449,12 @@ const ManagerEditEvent: React.FC = () => {
                                     onChange={handleChange} 
                                     placeholder="Ex: 3 horas ou 2h30min"
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    isInvalid={!!formErrors.duration}
                                     required
+                                    disabled={isProfileIncomplete}
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Duração estimada do evento.</p>
+                                {formErrors.duration && <p className="text-red-400 text-xs mt-1">{formErrors.duration}</p>}
                             </div>
                             <div>
                                 <label htmlFor="min_age" className="block text-sm font-medium text-white mb-2">Idade Mínima (Anos) *</label>
@@ -387,17 +465,20 @@ const ManagerEditEvent: React.FC = () => {
                                     onChange={handleChange} 
                                     placeholder="0 (Livre)"
                                     className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    isInvalid={!!formErrors.min_age}
                                     min="0"
                                     required
+                                    disabled={isProfileIncomplete}
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Defina 0 para classificação livre.</p>
+                                {formErrors.min_age && <p className="text-red-400 text-xs mt-1">{formErrors.min_age}</p>}
                             </div>
                         </div>
 
                         <div className="flex items-center space-x-4 pt-4">
                             <Button
                                 type="submit"
-                                disabled={isLoading || !userId}
+                                disabled={isLoading || !userId || isProfileIncomplete}
                                 className="bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50 flex-1"
                             >
                                 {isLoading ? (
@@ -418,7 +499,7 @@ const ManagerEditEvent: React.FC = () => {
                                 variant="outline"
                                 className="bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer flex-1"
                             >
-                                <i className="fas fa-arrow-left mr-2"></i>
+                                <ArrowLeft className="mr-2 h-5 w-5" />
                                 Voltar para a Lista
                             </Button>
                         </div>
