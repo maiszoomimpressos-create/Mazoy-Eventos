@@ -13,7 +13,7 @@ import { useManagerCompany } from '@/hooks/use-manager-company'; // Import useMa
 
 const ADMIN_USER_TYPE_ID = 1;
 const MANAGER_PRO_USER_TYPE_ID = 2;
-const MIN_LOADING_TIME_MS = 500; // Tempo mínimo em milissegundos para exibir o loader
+const MIN_LOADING_TIME_MS = 1000; // Tempo mínimo em milissegundos para exibir o loader
 
 const ManagerLayout: React.FC = () => {
     const navigate = useNavigate();
