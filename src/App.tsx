@@ -1,5 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
@@ -15,6 +16,7 @@ import ManagerCreateEvent from "./pages/ManagerCreateEvent";
 import ManagerEventsList from "./pages/ManagerEventsList";
 import ManagerEditEvent from "./pages/ManagerEditEvent";
 import ManagerSettings from "./pages/ManagerSettings";
+import ManagerCompanyProfile from "./pages/ManagerCompanyProfile";
 import ManagerNotifications from "./pages/ManagerNotifications";
 import ManagerAdvancedSettings from "./pages/ManagerAdvancedSettings"; 
 import ManagerPaymentSettings from "./pages/ManagerPaymentSettings"; 
@@ -30,9 +32,12 @@ import ClientLayout from "./components/layouts/ClientLayout";
 import ForgotPassword from "./pages/ForgotPassword";
 import FinalizarCompra from "./pages/FinalizarCompra";
 import ScrollToTop from "./components/ScrollToTop";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import ManagerRegistrationPage from "./pages/ManagerRegistrationPage"; 
-import ManagerCompanyProfile from "./pages/ManagerCompanyProfile"; // Importando a nova página
+import ManagerRegister from "./pages/ManagerRegister";
+// ManagerIndividualRegister e ManagerCompanyRegister agora são tratados como parte do fluxo de ManagerRegister
+// e não são mais rotas de página separadas no App.tsx
+// import ManagerIndividualRegister from "./pages/ManagerIndividualRegister"; 
+// import ManagerCompanyRegister from "./pages/ManagerCompanyRegister"; 
+import ManagerCompanyRegister from "./pages/ManagerCompanyRegister"; // A página de registro de empresa agora é uma rota direta
 
 const queryClient = new QueryClient();
 
@@ -50,15 +55,19 @@ const App = () => (
             <Route path="/events/:id" element={<EventDetails />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/tickets" element={<MyTickets />} />
-            <Route path="/finalizar-compra" element={<FinalizarCompra />} />
-            {/* Nova rota para o fluxo de registro de gestor */}
-            <Route path="/manager/register-flow" element={<ManagerRegistrationPage />} />
+            <Route path="/manager/register" element={<ManagerRegister />} /> {/* Rota para clientes se tornarem gestores */}
+            {/* A rota para o registro de empresa agora é uma página completa */}
+            <Route path="/manager/register/company" element={<ManagerCompanyRegister />} /> 
+            {/* ManagerIndividualRegister não é mais uma rota de página, é um modal */}
           </Route>
           
           {/* Auth Routes (No layout/Full screen) */}
           <Route path="/register" element={<Register />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/tickets" element={<MyTickets />} />
+          <Route path="/finalizar-compra" element={<FinalizarCompra />} />
           <Route path="/manager/login" element={<ManagerLogin />} />
           
           {/* Manager Routes (Protected by ManagerLayout, which handles auth/redirect) */}
@@ -72,15 +81,17 @@ const App = () => (
             <Route path="/manager/wristbands/manage/:id" element={<ManagerManageWristband />} />
             <Route path="/manager/reports" element={<ManagerReports />} />
             <Route path="/manager/settings" element={<ManagerSettings />} />
+            <Route path="/manager/settings/company-profile" element={<ManagerCompanyProfile />} />
             <Route path="/manager/settings/notifications" element={<ManagerNotifications />} />
             <Route path="/manager/settings/payment" element={<ManagerPaymentSettings />} />
-            <Route path="/manager/settings/company-profile" element={<ManagerCompanyProfile />} /> {/* Nova Rota PJ */}
           </Route>
           
           {/* Admin Master Routes (tipo_usuario_id = 1) */}
           <Route element={<AdminMasterRouteGuard />}>
             <Route element={<ManagerLayout />}>
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                {/* Nova rota para Admin Master acessar o cadastro de gestor */}
+                <Route path="/admin/register-manager" element={<ManagerRegister />} />
                 <Route path="/manager/settings/advanced" element={<ManagerAdvancedSettings />} />
             </Route>
           </Route>

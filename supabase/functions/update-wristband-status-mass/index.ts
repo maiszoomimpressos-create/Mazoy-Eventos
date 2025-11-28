@@ -7,12 +7,6 @@ const corsHeaders = {
   'Content-Type': 'application/json',
 };
 
-// Initialize Supabase client with Service Role Key for secure backend operations
-const supabaseService = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-);
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -53,41 +47,25 @@ serve(async (req) => {
       });
     }
     
-    // 2. Fetch Event Details to get Company ID
-    const { data: eventData, error: eventError } = await supabaseService
-        .from('events')
-        .select('company_id')
-        .eq('id', event_id)
+    // 2. Security Check: Ensure the user is the manager of the event/company
+    const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('tipo_usuario_id')
+        .eq('id', userId)
         .single();
 
-    if (eventError || !eventData?.company_id) {
-        return new Response(JSON.stringify({ error: 'Event not found or company association missing.' }), { 
-            status: 404, 
-            headers: corsHeaders 
-        });
-    }
-    const companyId = eventData.company_id;
-
-    // 3. Security Check: Ensure the user is an owner/manager of the company
-    const { data: association, error: associationError } = await supabaseService
-        .from('user_companies')
-        .select('role')
-        .eq('user_id', userId)
-        .eq('company_id', companyId)
-        .limit(1);
-
-    if (associationError || !association || association.length === 0) {
-        return new Response(JSON.stringify({ error: 'Forbidden: User is not associated with this company.' }), { 
+    if (profileError || !profile || (profile.tipo_usuario_id !== 1 && profile.tipo_usuario_id !== 2)) {
+        return new Response(JSON.stringify({ error: 'Forbidden: User is not a manager.' }), { 
             status: 403, 
             headers: corsHeaders 
         });
     }
-    
-    // 4. Check for sold wristbands (if mass deactivation is requested)
+
+    // 3. Check for sold wristbands (if mass deactivation is requested)
     if (new_status === 'lost' || new_status === 'cancelled') {
         // Verifica se existe QUALQUER registro de analytics para pulseiras deste evento
         // que tenha um client_user_id associado (indicando venda/associação a um cliente).
-        const { data: soldCheck, error: checkError } = await supabaseService
+        const { data: soldCheck, error: checkError } = await supabase
             .from('wristband_analytics')
             .select(`
                 client_user_id,
@@ -107,12 +85,12 @@ serve(async (req) => {
         }
     }
 
-    // 5. Get all wristband IDs for the event
-    const { data: wristbands, error: fetchError } = await supabaseService
+    // 4. Get all wristband IDs for the event (owned by the manager, RLS handles this)
+    // Note: RLS on 'wristbands' ensures only the manager's wristbands are fetched.
+    const { data: wristbands, error: fetchError } = await supabase
         .from('wristbands')
         .select('id')
-        .eq('event_id', event_id)
-        .eq('company_id', companyId); // Filtra explicitamente por company_id
+        .eq('event_id', event_id);
 
     if (fetchError) throw fetchError;
 
@@ -124,16 +102,16 @@ serve(async (req) => {
         });
     }
 
-    // 6. Mass Update in wristbands table
-    const { error: updateWristbandsError } = await supabaseService
+    // 5. Mass Update in wristbands table
+    const { error: updateWristbandsError } = await supabase
         .from('wristbands')
         .update({ status: new_status })
         .in('id', wristbandIds);
 
     if (updateWristbandsError) throw updateWristbandsError;
 
-    // 7. Mass Update in wristband_analytics table
-    const { error: updateAnalyticsError } = await supabaseService
+    // 6. Mass Update in wristband_analytics table
+    const { error: updateAnalyticsError } = await supabase
         .from('wristband_analytics')
         .update({ status: new_status })
         .in('wristband_id', wristbandIds);

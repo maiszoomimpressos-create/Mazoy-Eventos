@@ -38,23 +38,36 @@ serve(async (req) => {
   const userId = user.id;
 
   try {
-    const { event_id, company_id, base_code, access_type, price, quantity } = await req.json();
+    const { event_id, company_id, manager_user_id, base_code, access_type, price, quantity } = await req.json();
 
     // 2. Input Validation
-    if (!event_id || !company_id || !base_code || !access_type || price === undefined || quantity === undefined || quantity < 1) {
-      return new Response(JSON.stringify({ error: 'Missing or invalid required fields (event_id, company_id, base_code, etc.).' }), { 
+    if (!event_id || !company_id || !manager_user_id || !base_code || !access_type || price === undefined || quantity === undefined || quantity < 1) {
+      return new Response(JSON.stringify({ error: 'Missing or invalid required fields.' }), { 
         status: 400, 
         headers: corsHeaders 
       });
     }
     
-    // 3. Security Check: RLS on 'wristbands' and 'user_companies' ensures the user is authorized to insert for this company_id.
+    // 3. Security Check: Ensure the user is the manager of the company
+    const { data: companyProfile, error: companyProfileError } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('id', company_id)
+        .eq('user_id', userId) // Ensure the logged-in user owns this company
+        .single();
+
+    if (companyProfileError || !companyProfile) {
+        return new Response(JSON.stringify({ error: 'Forbidden: User is not authorized to create wristbands for this company.' }), { 
+            status: 403, 
+            headers: corsHeaders 
+        });
+    }
 
     // 4. Insert the main wristband record
     const wristbandData = {
         event_id: event_id,
         company_id: company_id,
-        manager_user_id: userId, // Mantemos o user_id como o criador/gestor
+        manager_user_id: manager_user_id,
         code: base_code,
         access_type: access_type,
         status: 'active',
@@ -100,9 +113,8 @@ serve(async (req) => {
                     code: wristbandCode,
                     access_type: access_type,
                     price: price,
-                    manager_id: userId,
+                    manager_id: manager_user_id,
                     event_id: event_id,
-                    company_id: company_id, // Adicionando company_id ao event_data
                     initial_status: 'active',
                     sequential_entry: i + j + 1,
                 },
@@ -115,9 +127,9 @@ serve(async (req) => {
 
         if (analyticsError) {
             console.error(`Warning: Failed to insert analytics batch starting at index ${i}:`, analyticsError);
-            // Se a inserção de analytics falhar, devemos reverter a criação da pulseira principal
-            await supabase.from('wristbands').delete().eq('id', wristbandId);
-            throw new Error(`Falha crítica ao criar registros de analytics. Pulseira principal revertida. Erro: ${analyticsError.message}`);
+            // Decide whether to throw an error or continue. For analytics, we might continue.
+            // For this case, we'll throw to ensure all records are created or none.
+            throw analyticsError; 
         }
         totalInsertedAnalytics += currentBatchSize;
     }

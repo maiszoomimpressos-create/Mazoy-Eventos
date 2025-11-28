@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -8,11 +8,12 @@ import { showSuccess, showError } from '@/utils/toast';
 import { useProfileStatus } from '@/hooks/use-profile-status';
 import { useProfile, ProfileData } from '@/hooks/use-profile';
 import NotificationBell from './NotificationBell';
-import { Shield, UserPlus, Crown, PlusCircle, Building2 } from 'lucide-react';
+import { Shield, PlusCircle, UserPlus, Crown } from 'lucide-react'; // Adicionando Crown aqui
 import { useUserType } from '@/hooks/use-user-type';
 
 const AuthStatusMenu: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation(); // Adicionado useLocation
     const [session, setSession] = useState<any>(null);
     const [loadingSession, setLoadingSession] = useState(true);
 
@@ -57,7 +58,7 @@ const AuthStatusMenu: React.FC = () => {
         const initials = profile.first_name ? profile.first_name.charAt(0).toUpperCase() : 'U';
         const isManager = profile.tipo_usuario_id === 1 || profile.tipo_usuario_id === 2;
         const isAdmin = profile.tipo_usuario_id === 1;
-        const isClient = profile.tipo_usuario_id === 3;
+        const isClient = profile.tipo_usuario_id === 3; // Novo: Verifica se é Cliente
         
         const fullName = profile.first_name + (profile.last_name ? ` ${profile.last_name}` : '');
 
@@ -85,21 +86,25 @@ const AuthStatusMenu: React.FC = () => {
                             {userTypeName}
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator className="bg-yellow-500/20" />
-                        <DropdownMenuItem 
-                            onClick={() => navigate('/profile')} 
-                            className="cursor-pointer hover:bg-yellow-500/10"
-                        >
-                            <i className="fas fa-user-circle mr-2"></i>
-                            Editar Perfil
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                            onClick={() => navigate('/tickets')} 
-                            className="cursor-pointer hover:bg-yellow-500/10"
-                        >
-                            <i className="fas fa-ticket-alt mr-2"></i>
-                            Meus Ingressos
-                        </DropdownMenuItem>
-                        {isManager && (
+                        {location.pathname !== '/profile' && (
+                            <DropdownMenuItem 
+                                onClick={() => navigate('/profile')} 
+                                className="cursor-pointer hover:bg-yellow-500/10"
+                            >
+                                <i className="fas fa-user-circle mr-2"></i>
+                                Editar Perfil
+                            </DropdownMenuItem>
+                        )}
+                        {location.pathname !== '/tickets' && (
+                            <DropdownMenuItem 
+                                onClick={() => navigate('/tickets')} 
+                                className="cursor-pointer hover:bg-yellow-500/10"
+                            >
+                                <i className="fas fa-ticket-alt mr-2"></i>
+                                Meus Ingressos
+                            </DropdownMenuItem>
+                        )}
+                        {isManager && location.pathname !== '/manager/dashboard' && (
                             <DropdownMenuItem 
                                 onClick={() => navigate('/manager/dashboard')} 
                                 className="cursor-pointer hover:bg-yellow-500/10 text-yellow-500 font-semibold"
@@ -110,22 +115,34 @@ const AuthStatusMenu: React.FC = () => {
                         )}
                         {isAdmin && (
                             <>
-                                <DropdownMenuItem 
-                                    onClick={() => navigate('/admin/dashboard')} 
-                                    className="cursor-pointer hover:bg-yellow-500/10 text-red-400 font-semibold"
-                                >
-                                    <Shield className="mr-2 h-4 w-4" />
-                                    Dashboard Admin
-                                </DropdownMenuItem>
+                                {location.pathname !== '/admin/dashboard' && (
+                                    <DropdownMenuItem 
+                                        onClick={() => navigate('/admin/dashboard')} 
+                                        className="cursor-pointer hover:bg-yellow-500/10 text-red-400 font-semibold"
+                                    >
+                                        <Shield className="mr-2 h-4 w-4" />
+                                        Dashboard Admin
+                                    </DropdownMenuItem>
+                                )}
+                                {/* Novo link para Admin Master acessar o cadastro de gestor */}
+                                {location.pathname !== '/admin/register-manager' && (
+                                    <DropdownMenuItem 
+                                        onClick={() => navigate('/admin/register-manager')} 
+                                        className="cursor-pointer hover:bg-yellow-500/10 text-yellow-500 font-semibold"
+                                    >
+                                        <UserPlus className="mr-2 h-4 w-4" />
+                                        Registrar Novo Gestor
+                                    </DropdownMenuItem>
+                                )}
                             </>
                         )}
-                        {isClient && (
+                        {isClient && location.pathname !== '/manager/register' && ( // Botão "Criar Evento" visível apenas para clientes
                             <DropdownMenuItem 
-                                onClick={() => navigate('/manager/register-flow')}
-                                className="cursor-pointer hover:bg-yellow-500/10 text-yellow-500"
+                                onClick={() => navigate('/manager/register')} 
+                                className="cursor-pointer hover:bg-yellow-500/10 text-yellow-500 font-semibold"
                             >
                                 <PlusCircle className="mr-2 h-4 w-4" />
-                                Cadastrar Evento
+                                Criar Evento
                             </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator className="bg-yellow-500/20" />

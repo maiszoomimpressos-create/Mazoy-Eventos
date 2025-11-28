@@ -1,46 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { managerStats } from '@/data/events';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertTriangle, Users, Building, Zap, Clock, CheckCircle, Loader2, Plus } from 'lucide-react';
-import { useProfileStatus } from '@/hooks/use-profile-status';
-import { useProfile } from '@/hooks/use-profile';
-import { supabase } from '@/integrations/supabase/client';
 
 const ManagerDashboard: React.FC = () => {
     const navigate = useNavigate();
-    const [userId, setUserId] = useState<string | undefined>(undefined);
-
-    useEffect(() => {
-        supabase.auth.getUser().then(({ data: { user } }) => {
-            setUserId(user?.id);
-        });
-    }, []);
-
-    const { profile, isLoading: isLoadingProfile } = useProfile(userId);
-    const { needsPersonalProfileCompletion, needsCompanyProfile, loading: isLoadingProfileStatus } = useProfileStatus(profile, isLoadingProfile); 
-
-    const isProfileIncomplete = needsPersonalProfileCompletion || needsCompanyProfile;
-
-    const getActivityStatusClasses = (status: string) => {
-        switch (status) {
-            case 'success': return 'text-green-500 bg-green-500/20';
-            case 'warning': return 'text-yellow-500 bg-yellow-500/20';
-            case 'error': return 'text-red-500 bg-red-500/20';
-            case 'info':
-            default: return 'text-blue-500 bg-blue-500/20';
-        }
-    };
-
-    if (isLoadingProfile || isLoadingProfileStatus) {
-        return (
-            <div className="max-w-7xl mx-auto text-center py-20">
-                <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
-                <p className="text-gray-400">Carregando dados do gestor...</p>
-            </div>
-        );
-    }
 
     return (
         <div className="max-w-7xl mx-auto">
@@ -48,22 +12,6 @@ const ManagerDashboard: React.FC = () => {
                 <h1 className="text-2xl sm:text-3xl font-serif text-white mb-2">Bem-vindo ao Dashboard PRO</h1>
                 <p className="text-gray-400 text-sm sm:text-base">Gerencie seus eventos com ferramentas premium e analytics avançados</p>
             </div>
-
-            {isProfileIncomplete && (
-                <Alert className="bg-red-500/20 border border-red-500/50 text-red-400 mb-8 animate-fadeInUp">
-                    <AlertTriangle className="h-5 w-5" />
-                    <AlertTitle className="text-white">Perfil Incompleto!</AlertTitle>
-                    <AlertDescription className="text-gray-300">
-                        {needsPersonalProfileCompletion && (
-                            <p className="mb-2">Seu perfil pessoal está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/profile')}>complete-o aqui</Button> para liberar todas as funcionalidades.</p>
-                        )}
-                        {needsCompanyProfile && (
-                            <p className="mb-2">Seu perfil de empresa (PJ) está incompleto. Por favor, <Button variant="link" className="h-auto p-0 text-red-400 hover:text-red-300" onClick={() => navigate('/manager/settings/company-profile')}>cadastre-o aqui</Button> para liberar todas as funcionalidades.</p>
-                        )}
-                        <p className="mt-2 text-sm text-white font-semibold">Funcionalidades de criação de eventos e pulseiras estão desabilitadas.</p>
-                    </AlertDescription>
-                </Alert>
-            )}
 
             {/* Cartões de Estatísticas */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -236,15 +184,13 @@ const ManagerDashboard: React.FC = () => {
                         <Button 
                             onClick={() => navigate('/manager/events/create')}
                             className="w-full bg-yellow-500 text-black hover:bg-yellow-600 py-3 transition-all duration-300 cursor-pointer flex items-center justify-center text-sm sm:text-base"
-                            disabled={isProfileIncomplete}
                         >
-                            <Plus className="mr-2 h-5 w-5" />
+                            <i className="fas fa-plus mr-2"></i>
                             Criar Novo Evento
                         </Button>
                         <Button 
                             onClick={() => navigate('/manager/wristbands/create')}
                             className="w-full bg-black/60 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 transition-all duration-300 cursor-pointer flex items-center justify-center text-sm sm:text-base"
-                            disabled={isProfileIncomplete}
                         >
                             <i className="fas fa-id-badge mr-2"></i>
                             Gerar Pulseiras

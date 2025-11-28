@@ -5,10 +5,8 @@ import { showError } from '@/utils/toast';
 export interface ManagerEvent {
     id: string;
     title: string;
-    company_id: string; // Novo campo
+    // Removendo campos não essenciais para a listagem inicial
 }
-
-const ADMIN_MASTER_USER_TYPE_ID = 1;
 
 const fetchManagerEvents = async (userId: string, userTypeId: number): Promise<ManagerEvent[]> => {
     if (!userId) {
@@ -20,17 +18,15 @@ const fetchManagerEvents = async (userId: string, userTypeId: number): Promise<M
         .from('events')
         .select(`
             id,
-            title,
-            company_id
+            title
         `);
 
-    // Se não for Admin Master (tipo 1), a RLS já filtra por company_id através da tabela user_companies.
-    // Se for Admin Master, a RLS permite ver tudo.
+    // Se não for Admin Master (tipo 1), filtra por user_id
+    if (userTypeId !== 1) {
+        query = query.eq('user_id', userId);
+    }
     
-    // Apenas ordenamos.
-    query = query.order('created_at', { ascending: false });
-
-    const { data, error } = await query;
+    const { data, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
         console.error("Error fetching manager events from Supabase:", error);

@@ -1,52 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { Input } from "@/components/ui/input";
 import AuthStatusMenu from '@/components/AuthStatusMenu';
 import MobileMenu from '@/components/MobileMenu';
-import { supabase } from '@/integrations/supabase/client';
-import { useProfile } from '@/hooks/use-profile';
-import { Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils'; // Importando cn para classes condicionais
-
-const MIN_LOADING_TIME_MS = 1000; // Tempo mínimo em milissegundos para exibir o loader
 
 const ClientLayout: React.FC = () => {
     const navigate = useNavigate();
-    const [userId, setUserId] = useState<string | undefined>(undefined);
-    const [loadingSession, setLoadingSession] = useState(true);
-    const [showDelayedLoader, setShowDelayedLoader] = useState(true);
-
-    useEffect(() => {
-        supabase.auth.getUser().then(({ data: { user } }) => {
-            setUserId(user?.id);
-            setLoadingSession(false);
-        });
-    }, []);
-
-    const { profile, isLoading: isLoadingProfile } = useProfile(userId);
-
-    // Combined loading state for ClientLayout
-    const isLoadingCombined = loadingSession || isLoadingProfile;
-
-    // Efeito para controlar o atraso do loader
-    useEffect(() => {
-        if (isLoadingCombined) {
-            setShowDelayedLoader(true);
-        } else {
-            const timer = setTimeout(() => {
-                setShowDelayedLoader(false);
-            }, MIN_LOADING_TIME_MS);
-            return () => clearTimeout(timer);
-        }
-    }, [isLoadingCombined]);
-
-    if (isLoadingCombined || showDelayedLoader) {
-        return (
-            <div className="min-h-screen bg-black text-white flex items-center justify-center">
-                <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-screen bg-black text-white">
@@ -75,7 +34,7 @@ const ClientLayout: React.FC = () => {
                     </div>
                 </div>
             </header>
-            <main className={cn("pt-20", !showDelayedLoader && "animate-fadeIn")}>
+            <main className="pt-20">
                 <Outlet />
             </main>
         </div>
