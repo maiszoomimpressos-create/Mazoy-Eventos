@@ -17,10 +17,11 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
-import { Loader2, User, Save, ArrowLeft } from 'lucide-react';
+import { Loader2, User, Save, ArrowLeft, Building } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { ProfileData } from '@/hooks/use-profile';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom'; // Importando useNavigate
 
 interface ManagerProfileEditDialogProps {
     isOpen: boolean;
@@ -95,7 +96,7 @@ const managerProfileSchema = z.object({
     rua: z.string().min(1, { message: "Rua é obrigatória." }),
     bairro: z.string().min(1, { message: "Bairro é obrigatório." }),
     cidade: z.string().min(1, { message: "Cidade é obrigatória." }),
-    estado: z.string().min(1, { message: "Estado é obrigatório." }),
+    estado: z.string().min(1, { message: "Estado é obrigatória." }),
     numero: z.string().min(1, { message: "Número é obrigatório." }),
     complemento: z.string().optional().nullable(),
 });
@@ -108,6 +109,7 @@ const ManagerProfileEditDialog: React.FC<ManagerProfileEditDialogProps> = ({
     profile,
     userId,
 }) => {
+    const navigate = useNavigate(); // Usando useNavigate
     const queryClient = useQueryClient();
     const [isSaving, setIsSaving] = useState(false);
     const [isCepLoading, setIsCepLoading] = useState(false);
@@ -255,6 +257,11 @@ const ManagerProfileEditDialog: React.FC<ManagerProfileEditDialogProps> = ({
         } finally {
             setIsSaving(false);
         }
+    };
+    
+    const handleMigrateToCompany = () => {
+        onClose(); // Fecha o modal de edição PF
+        navigate('/manager/register/company'); // Redireciona para o cadastro de empresa
     };
 
     return (
@@ -522,7 +529,7 @@ const ManagerProfileEditDialog: React.FC<ManagerProfileEditDialogProps> = ({
                                     {isSaving ? (
                                         <div className="flex items-center justify-center">
                                             <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                                            Salvando...
+                                            Salvar Alterações
                                         </div>
                                     ) : (
                                         <>
@@ -533,13 +540,13 @@ const ManagerProfileEditDialog: React.FC<ManagerProfileEditDialogProps> = ({
                                 </Button>
                                 <Button
                                     type="button"
-                                    onClick={onClose}
+                                    onClick={handleMigrateToCompany}
                                     variant="outline"
                                     className="flex-1 bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer"
                                     disabled={isSaving}
                                 >
-                                    <ArrowLeft className="mr-2 h-5 w-5" />
-                                    Voltar
+                                    <Building className="mr-2 h-5 w-5" />
+                                    Migrar para Gestor PJ
                                 </Button>
                             </DialogFooter>
                         </form>
