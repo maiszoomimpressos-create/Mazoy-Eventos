@@ -19,7 +19,7 @@ import { Switch } from "@/components/ui/switch"; // Importando Switch
 import { categories } from '@/data/events';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, ArrowLeft, ImageOff, Loader2, MapPin, CalendarDays, ListOrdered, Heading, Subtitles, SlidersHorizontal, Magic } from 'lucide-react'; // Novos ícones, incluindo Magic
+import { Plus, ArrowLeft, ImageOff, Loader2, MapPin, CalendarDays, ListOrdered, Heading, Subtitles, SlidersHorizontal } from 'lucide-react'; // Removido Magic
 import { format } from 'date-fns';
 import { DatePicker } from '@/components/DatePicker';
 import ImageUploadPicker from '@/components/ImageUploadPicker';
@@ -358,7 +358,7 @@ const ManagerCreateEvent: React.FC = () => {
                             className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 text-sm"
                             disabled={isSaving}
                         >
-                            <Magic className="mr-2 h-4 w-4" />
+                            <i className="fas fa-magic mr-2"></i> {/* Ícone Font Awesome */}
                             Auto-Preencher para Teste
                         </Button>
                     )}
