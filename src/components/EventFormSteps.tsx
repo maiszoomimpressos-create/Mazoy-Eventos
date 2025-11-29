@@ -29,13 +29,13 @@ interface EventFormData {
     time: string;
     location: string;
     address: string;
-    image_url: string;
+    image_url: string; // Main event image
     min_age: number | string;
     category: string;
     capacity: number | string;
     duration: string;
     
-    // Carousel fields (now optional and pre-filled)
+    // Carousel fields (now optional and pre-filled, for event_carousel_banners)
     is_featured_carousel: boolean;
     carousel_display_order: number | string;
     carousel_start_date: Date | undefined;
@@ -58,6 +58,7 @@ const eventSchema = z.object({
     capacity: z.union([z.number().min(1, "Capacidade deve ser maior que zero."), z.literal('')]).transform(e => e === '' ? 0 : Number(e)),
     duration: z.string().min(1, "Duração é obrigatória."),
 
+    // Carousel fields are optional at the schema level, but conditionally required by superRefine
     is_featured_carousel: z.boolean(),
     carousel_display_order: z.union([z.number().min(0, "Ordem de Exibição deve ser 0 ou maior."), z.literal('')]).transform(e => e === '' ? 0 : Number(e)),
     carousel_start_date: z.date().optional().nullable(),
@@ -132,7 +133,7 @@ const EventFormSteps: React.FC<EventFormStepsProps> = ({ eventId, initialData, o
             category: '',
             capacity: 0,
             duration: '',
-            is_featured_carousel: true,
+            is_featured_carousel: false, // Default to false
             carousel_display_order: 0,
             carousel_start_date: undefined,
             carousel_end_date: undefined,
@@ -148,22 +149,54 @@ const EventFormSteps: React.FC<EventFormStepsProps> = ({ eventId, initialData, o
         });
     }, []);
 
+    // Fetch existing carousel banner data if editing an event
+    useEffect(() => {
+        const fetchCarouselBanner = async () => {
+            if (eventId && userId) {
+                const { data, error } = await supabase
+                    .from('event_carousel_banners')
+                    .select('*')
+                    .eq('event_id', eventId)
+                    .single();
+                
+                if (error && error.code !== 'PGRST116') {
+                    console.error("Error fetching existing carousel banner:", error);
+                    showError("Erro ao carregar configurações do banner do carrossel.");
+                }
+
+                if (data) {
+                    form.reset({
+                        ...form.getValues(), // Keep existing form values
+                        is_featured_carousel: true,
+                        carousel_display_order: data.display_order || 0,
+                        carousel_start_date: data.start_date ? parseISO(data.start_date) : undefined,
+                        carousel_end_date: data.end_date ? parseISO(data.end_date) : undefined,
+                        carousel_headline: data.headline || '',
+                        carousel_subheadline: data.subheadline || '',
+                    });
+                }
+            }
+        };
+        fetchCarouselBanner();
+    }, [eventId, userId, form]);
+
+
     // Pre-fill carousel fields when moving to step 2 or when initialData changes
     useEffect(() => {
-        if (step === 2 && initialData) {
-            const eventDate = initialData.date;
+        if (step === 2 && !eventId) { // Only auto-fill for new events
+            const eventDate = form.getValues('date');
             const defaultEndDate = eventDate ? new Date(eventDate.getTime()) : undefined;
             if (defaultEndDate) {
                 defaultEndDate.setDate(defaultEndDate.getDate() + 30); // 30 days after event date
             }
 
-            form.setValue('carousel_headline', initialData.title);
-            form.setValue('carousel_subheadline', initialData.description);
+            form.setValue('carousel_headline', form.getValues('title'));
+            form.setValue('carousel_subheadline', form.getValues('description'));
             form.setValue('carousel_start_date', eventDate);
             form.setValue('carousel_end_date', defaultEndDate);
             form.setValue('carousel_display_order', 0); // Default to 0
         }
-    }, [step, initialData, form]);
+    }, [step, eventId, form]);
 
     const handleImageUpload = (url: string) => {
         form.setValue('image_url', url, { shouldValidate: true });
@@ -196,9 +229,7 @@ const EventFormSteps: React.FC<EventFormStepsProps> = ({ eventId, initialData, o
         const toastId = showLoading(eventId ? "Atualizando evento..." : "Publicando evento...");
 
         const isoDate = values.date ? format(values.date, 'yyyy-MM-dd') : null;
-        const isoCarouselStartDate = values.carousel_start_date ? format(values.carousel_start_date, 'yyyy-MM-dd') : null;
-        const isoCarouselEndDate = values.carousel_end_date ? format(values.carousel_end_date, 'yyyy-MM-dd') : null;
-
+        
         // Placeholder para geocodificação
         const geocodedLatitude = -23.5505; // Exemplo: Latitude de São Paulo
         const geocodedLongitude = -46.6333; // Exemplo: Longitude de São Paulo
@@ -218,41 +249,75 @@ const EventFormSteps: React.FC<EventFormStepsProps> = ({ eventId, initialData, o
             duration: values.duration,
             latitude: geocodedLatitude,
             longitude: geocodedLongitude,
-            is_featured_carousel: values.is_featured_carousel,
-            carousel_display_order: values.is_featured_carousel ? Number(values.carousel_display_order) : 0,
-            carousel_start_date: values.is_featured_carousel ? isoCarouselStartDate : null,
-            carousel_end_date: values.is_featured_carousel ? isoCarouselEndDate : null,
-            carousel_headline: values.is_featured_carousel ? values.carousel_headline : null,
-            carousel_subheadline: values.is_featured_carousel ? values.carousel_subheadline : null,
         };
 
+        let currentEventId = eventId;
+
         try {
-            let data, error;
+            // 1. Salvar/Atualizar o Evento Principal
+            let eventResult;
             if (eventId) {
                 // Update existing event
-                ({ data, error } = await supabase
+                eventResult = await supabase
                     .from('events')
                     .update(eventDataToSave)
                     .eq('id', eventId)
                     .eq('company_id', company.id)
                     .select('id')
-                    .single());
+                    .single();
             } else {
                 // Insert new event
-                ({ data, error } = await supabase
+                eventResult = await supabase
                     .from('events')
                     .insert([eventDataToSave])
                     .select('id')
-                    .single());
+                    .single();
             }
 
-            if (error) {
-                throw error;
+            if (eventResult.error) {
+                throw eventResult.error;
+            }
+            currentEventId = eventResult.data.id;
+
+            // 2. Salvar/Atualizar o Banner do Carrossel do Evento (se is_featured_carousel for true)
+            if (values.is_featured_carousel && currentEventId) {
+                const isoCarouselStartDate = values.carousel_start_date ? format(values.carousel_start_date, 'yyyy-MM-dd') : null;
+                const isoCarouselEndDate = values.carousel_end_date ? format(values.carousel_end_date, 'yyyy-MM-dd') : null;
+
+                const carouselBannerData = {
+                    event_id: currentEventId,
+                    image_url: values.image_url, // Usa a mesma imagem do evento
+                    headline: values.carousel_headline,
+                    subheadline: values.carousel_subheadline,
+                    display_order: Number(values.carousel_display_order),
+                    start_date: isoCarouselStartDate,
+                    end_date: isoCarouselEndDate,
+                    created_by: userId,
+                };
+
+                const { error: carouselError } = await supabase
+                    .from('event_carousel_banners')
+                    .upsert(carouselBannerData, { onConflict: 'event_id' }); // Atualiza se já existir, insere se não
+
+                if (carouselError) {
+                    console.error("Warning: Failed to save event carousel banner:", carouselError);
+                    // Não lançamos erro crítico aqui para não impedir o salvamento do evento
+                }
+            } else if (!values.is_featured_carousel && currentEventId) {
+                // Se o carrossel foi desativado, tenta deletar o banner existente
+                const { error: deleteCarouselError } = await supabase
+                    .from('event_carousel_banners')
+                    .delete()
+                    .eq('event_id', currentEventId);
+                
+                if (deleteCarouselError && deleteCarouselError.code !== 'PGRST116') { // PGRST116 = No rows found
+                    console.error("Warning: Failed to delete event carousel banner:", deleteCarouselError);
+                }
             }
 
             dismissToast(toastId);
             showSuccess(`Evento "${values.title}" ${eventId ? 'atualizado' : 'criado'} com sucesso!`);
-            onSaveSuccess(data.id);
+            onSaveSuccess(currentEventId);
 
         } catch (error: any) {
             dismissToast(toastId);
@@ -299,7 +364,7 @@ const EventFormSteps: React.FC<EventFormStepsProps> = ({ eventId, initialData, o
                             {eventId ? `Editar Evento: ${initialData?.title}` : "Criar Novo Evento"}
                         </CardTitle>
                         <CardDescription className="text-gray-400 text-sm">
-                            {step === 1 ? "Etapa 1 de 2: Detalhes básicos do evento." : "Etapa 2 de 2: Configurações do carrossel (opcional)."}
+                            {step === 1 ? "Etapa 1 de 2: Detalhes básicos do evento." : "Etapa 2 de 2: Configurações do banner do carrossel (opcional)."}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

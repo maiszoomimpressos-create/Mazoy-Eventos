@@ -22,6 +22,7 @@ interface EventFormData {
     capacity: number | string;
     duration: string;
     
+    // Carousel fields (now optional and pre-filled)
     is_featured_carousel: boolean;
     carousel_display_order: number | string;
     carousel_start_date: Date | undefined;
@@ -69,6 +70,17 @@ const ManagerEditEvent: React.FC = () => {
                 return;
             }
 
+            // Fetch associated carousel banner data
+            const { data: carouselBannerData, error: carouselError } = await supabase
+                .from('event_carousel_banners')
+                .select('*')
+                .eq('event_id', id)
+                .single();
+            
+            if (carouselError && carouselError.code !== 'PGRST116') {
+                console.error("Error fetching carousel banner for event:", carouselError);
+            }
+
             // Populate form data
             setInitialEventData({
                 title: eventData.title || '',
@@ -83,12 +95,13 @@ const ManagerEditEvent: React.FC = () => {
                 capacity: eventData.capacity || 0,
                 duration: eventData.duration || '',
                 
-                is_featured_carousel: eventData.is_featured_carousel || false,
-                carousel_display_order: eventData.carousel_display_order || 0,
-                carousel_start_date: eventData.carousel_start_date ? parseISO(eventData.carousel_start_date) : undefined,
-                carousel_end_date: eventData.carousel_end_date ? parseISO(eventData.carousel_end_date) : undefined,
-                carousel_headline: eventData.carousel_headline || '',
-                carousel_subheadline: eventData.carousel_subheadline || '',
+                // Populate carousel fields from event_carousel_banners if available
+                is_featured_carousel: !!carouselBannerData,
+                carousel_display_order: carouselBannerData?.display_order || 0,
+                carousel_start_date: carouselBannerData?.start_date ? parseISO(carouselBannerData.start_date) : undefined,
+                carousel_end_date: carouselBannerData?.end_date ? parseISO(carouselBannerData.end_date) : undefined,
+                carousel_headline: carouselBannerData?.headline || '',
+                carousel_subheadline: carouselBannerData?.subheadline || '',
             });
             setIsFetching(false);
         };

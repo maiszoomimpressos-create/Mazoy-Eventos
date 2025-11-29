@@ -34,7 +34,7 @@ import FinalizarCompra from "./pages/FinalizarCompra";
 import ManagerRegister from "./pages/ManagerRegister"; 
 import ManagerIndividualProfile from "./pages/ManagerIndividualProfile";
 import ManagerCompanyRegister from "./pages/ManagerCompanyRegister"; 
-import ManagerCarouselSettings from "./pages/ManagerCarouselSettings";
+import AdminCarouselSettings from "./pages/AdminCarouselSettings"; // RENOMEADO
 import AdminCreatePromotionalBanner from "./pages/AdminCreatePromotionalBanner"; // NOVO: Importação
 
 const queryClient = new QueryClient();
@@ -87,7 +87,7 @@ const App = () => (
           <Route element={<AdminMasterRouteGuard />}>
             <Route element={<ManagerLayout />}>
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                <Route path="/admin/settings/carousel" element={<ManagerCarouselSettings />} />
+                <Route path="/admin/settings/carousel" element={<AdminCarouselSettings />} /> {/* Rota RENOMEADA */}
                 <Route path="/admin/banners/create" element={<AdminCreatePromotionalBanner />} /> {/* NOVO: Rota para criar banners promocionais */}
                 <Route path="/manager/settings/advanced" element={<ManagerAdvancedSettings />} />
             </Route>

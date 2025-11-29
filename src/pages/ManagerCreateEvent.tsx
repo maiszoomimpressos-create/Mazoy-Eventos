@@ -32,7 +32,7 @@ const ManagerCreateEvent: React.FC = () => {
 
     const handleEmitirPulseiras = () => {
         setShowWristbandModal(false);
-        navigate('/manager/wristbands/create');
+        navigate('/manager/wristbands/create', { state: { eventId: newEventId } }); // Passa o ID do evento
     };
 
     const handleNaoEmitir = () => {

@@ -16,23 +16,14 @@ export interface PublicEvent {
     min_price_wristband_id: string | null;
     total_available_tickets: number; // New: total count of active wristbands for the event
     capacity: number; // New: event capacity from the 'events' table
-    // NOVOS CAMPOS DO CARROSSEL
-    is_featured_carousel: boolean;
-    carousel_display_order: number | null;
-    carousel_start_date: string | null; // Data formatada para exibição
-    carousel_end_date: string | null;   // Data formatada para exibição
-    carousel_headline: string | null;
-    carousel_subheadline: string | null;
 }
 
 const fetchPublicEvents = async (): Promise<PublicEvent[]> => {
-    // 1. Buscar todos os eventos com capacidade e os novos campos do carrossel
+    // 1. Buscar todos os eventos com capacidade
     const { data: eventsData, error: eventsError } = await supabase
         .from('events')
         .select(`
-            id, title, description, date, time, location, image_url, category, capacity,
-            is_featured_carousel, carousel_display_order, carousel_start_date, carousel_end_date,
-            carousel_headline, carousel_subheadline
+            id, title, description, date, time, location, image_url, category, capacity
         `)
         .order('date', { ascending: true });
 
@@ -91,13 +82,6 @@ const fetchPublicEvents = async (): Promise<PublicEvent[]> => {
             min_price_wristband_id: aggregates.min_price_wristband_id,
             total_available_tickets: aggregates.total_available_tickets,
             capacity: event.capacity,
-            // Mapeando os novos campos do carrossel
-            is_featured_carousel: event.is_featured_carousel,
-            carousel_display_order: event.carousel_display_order,
-            carousel_start_date: event.carousel_start_date ? new Date(event.carousel_start_date).toLocaleDateString('pt-BR') : null,
-            carousel_end_date: event.carousel_end_date ? new Date(event.carousel_end_date).toLocaleDateString('pt-BR') : null,
-            carousel_headline: event.carousel_headline,
-            carousel_subheadline: event.carousel_subheadline,
         };
     });
 };
