@@ -127,13 +127,13 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 transition = 'opacity 0.5s ease-in-out'; // No transform transition for the central slide
             } else if (normalizedDistance === -1) { // Slide to the left, appearing behind and to the right
                 scale = 0.95;
-                opacity = 1;
+                opacity = 0.7; // Ajustado para 0.7 para ser visível
                 zIndex = 10;
                 // Move it to the right, accounting for its smaller size and the peek amount
                 translateX = `${(SLIDE_WIDTH * (1 - scale)) / 2 + PEEK_AMOUNT}px`; 
             } else if (normalizedDistance === 1) { // Slide to the right, appearing behind and to the left
                 scale = 0.95;
-                opacity = 1;
+                opacity = 0.7; // Ajustado para 0.7 para ser visível
                 zIndex = 10;
                 // Move it to the left, accounting for its smaller size and the peek amount
                 translateX = `-${(SLIDE_WIDTH * (1 - scale)) / 2 + PEEK_AMOUNT}px`; 
