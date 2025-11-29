@@ -32,7 +32,8 @@ const getMinPriceDisplay = (price: number | null): string => {
 const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex: number }> = ({ event, onClick, slideIndex }) => {
     const minPriceDisplay = getMinPriceDisplay(event.min_price);
     
-    // Aplica transformação específica para o slide 3 (direita) e slide 5 (esquerda)
+    // Aplica transformação específica para o slide 3 (direita), slide 5 (esquerda) e slide 2 (esquerda, mais próximo)
+    const isSlide2 = slideIndex === 2;
     const isSlide3 = slideIndex === 3;
     const isSlide5 = slideIndex === 5;
     
@@ -52,6 +53,14 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
             transform: 'translateX(-510px) scale(0.90)', 
             zIndex: 10, 
             opacity: 0.6, 
+            transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
+        };
+    } else if (isSlide2) {
+        customStyle = {
+            // Move 40px para a esquerda e reduz a escala levemente
+            transform: 'translateX(-40px) scale(0.95)', 
+            zIndex: 15, 
+            opacity: 0.8, 
             transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
         };
     } else {
