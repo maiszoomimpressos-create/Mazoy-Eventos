@@ -126,26 +126,33 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 scale = 1;
                 opacity = 1;
                 zIndex = 30;
+                translateX = 0;
             } else if (normalizedDistance === 1) { // Slide adjacente à direita
                 scale = scale_adj;
                 opacity = 0.7; 
                 zIndex = 20;
-                translateX = PEEK_AMOUNT; // Desloca para a direita para aparecer por trás
+                // Move left to overlap the central slide, leaving PEEK_AMOUNT visible on the right
+                // The amount to shift left is the full width minus the desired peek amount
+                translateX = -(SLIDE_WIDTH - PEEK_AMOUNT); 
             } else if (normalizedDistance === -1) { // Slide adjacente à esquerda
                 scale = scale_adj;
                 opacity = 0.7; 
                 zIndex = 20;
-                translateX = -PEEK_AMOUNT; // Desloca para a esquerda para aparecer por trás
+                // Move right to overlap the central slide, leaving PEEK_AMOUNT visible on the left
+                // The amount to shift right is the full width minus the desired peek amount
+                translateX = (SLIDE_WIDTH - PEEK_AMOUNT); 
             } else if (normalizedDistance === 2) { // Segundo slide adjacente à direita
                 scale = scale_far;
                 opacity = 0.4; 
                 zIndex = 10;
-                translateX = 2 * PEEK_AMOUNT; // Desloca mais para a direita
+                // Shift further left, behind the first adjacent slide
+                translateX = -(SLIDE_WIDTH - PEEK_AMOUNT) * 2; 
             } else if (normalizedDistance === -2) { // Segundo slide adjacente à esquerda
                 scale = scale_far;
                 opacity = 0.4; 
                 zIndex = 10;
-                translateX = -2 * PEEK_AMOUNT; // Desloca mais para a esquerda
+                // Shift further right, behind the first adjacent slide
+                translateX = (SLIDE_WIDTH - PEEK_AMOUNT) * 2; 
             }
             
             styles.push({
