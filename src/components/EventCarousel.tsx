@@ -100,7 +100,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         align: 'center', 
         slidesToScroll: 1,
         watchDrag: true,
-        // No padding here, we'll manage spacing with translateX
     });
     
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -125,18 +124,32 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 opacity = 1;
                 zIndex = 30;
                 transition = 'opacity 0.5s ease-in-out'; // No transform transition for the central slide
-            } else if (normalizedDistance === -1) { // Slide to the left, appearing behind and to the right
+            } else if (normalizedDistance === -1) { // Immediate left adjacent
                 scale = 0.95;
-                opacity = 0.7; // Ajustado para 0.7 para ser visível
-                zIndex = 10;
-                // Move it to the right, accounting for its smaller size and the peek amount
-                translateX = `${(SLIDE_WIDTH * (1 - scale)) / 2 + PEEK_AMOUNT}px`; 
-            } else if (normalizedDistance === 1) { // Slide to the right, appearing behind and to the left
+                opacity = 0.7; 
+                zIndex = 20;
+                const offset = (SLIDE_WIDTH * (1 - scale)) / 2 + PEEK_AMOUNT;
+                translateX = `${offset}px`; 
+            } else if (normalizedDistance === 1) { // Immediate right adjacent
                 scale = 0.95;
-                opacity = 0.7; // Ajustado para 0.7 para ser visível
+                opacity = 0.7; 
+                zIndex = 20;
+                const offset = (SLIDE_WIDTH * (1 - scale)) / 2 + PEEK_AMOUNT;
+                translateX = `-${offset}px`; 
+            } else if (normalizedDistance === -2) { // Second left adjacent
+                scale = 0.9;
+                opacity = 0.4; 
                 zIndex = 10;
-                // Move it to the left, accounting for its smaller size and the peek amount
-                translateX = `-${(SLIDE_WIDTH * (1 - scale)) / 2 + PEEK_AMOUNT}px`; 
+                const offset1 = (SLIDE_WIDTH * (1 - 0.95)) / 2 + PEEK_AMOUNT; // Offset of first layer
+                const offset2 = (SLIDE_WIDTH * (1 - scale)) / 2 + PEEK_AMOUNT; // Offset of second layer relative to first
+                translateX = `${offset1 + offset2}px`; 
+            } else if (normalizedDistance === 2) { // Second right adjacent
+                scale = 0.9;
+                opacity = 0.4; 
+                zIndex = 10;
+                const offset1 = (SLIDE_WIDTH * (1 - 0.95)) / 2 + PEEK_AMOUNT; // Offset of first layer
+                const offset2 = (SLIDE_WIDTH * (1 - scale)) / 2 + PEEK_AMOUNT; // Offset of second layer relative to first
+                translateX = `-${offset1 + offset2}px`; 
             }
             
             styles.push({
@@ -199,7 +212,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                             maxWidth: '100%',
                             display: 'flex',
                             justifyContent: 'center',
-                            // No margins here, translateX will handle positioning
                         };
                         
                         const slideStyle = {
