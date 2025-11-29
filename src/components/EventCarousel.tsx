@@ -165,6 +165,22 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         );
     }
     
+    // Calculamos a margem lateral necessária para posicionar as setas
+    // O contêiner tem largura total, o slide tem 550px.
+    // A margem lateral é (Largura Total - 550px) / 2.
+    // Como não sabemos a largura total, usamos classes responsivas para centralizar.
+    // Para alinhar as setas com a borda do slide de 550px, usamos 'left-1/2' e 'right-1/2' e ajustamos com 'ml' e 'mr'.
+    
+    // Largura da seta é 48px (w-12). Queremos que a borda da seta esteja na borda do slide.
+    // O slide tem 550px de largura.
+    // A metade da largura do slide é 275px.
+    // A seta esquerda deve estar em: centro - 275px - (largura da seta / 2) -> Não, isso é muito complexo com Tailwind.
+    
+    // Vamos usar uma abordagem mais simples: posicionar as setas na borda do contêiner e usar media queries para garantir que elas não fiquem muito longe do slide em telas grandes.
+    // Para telas grandes (lg:), onde o slide de 550px é visível, vamos usar `calc(50% - 275px)` para o posicionamento.
+    
+    // Usaremos classes utilitárias para definir a posição das setas fora do Embla, mas dentro do contêiner relativo.
+
     return (
         <div className="relative pt-4 pb-10">
             <div className="overflow-hidden" ref={emblaRef}>
@@ -206,9 +222,10 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             </div>
             
             {/* Setas de Navegação Customizadas */}
+            {/* Usamos left-1/2 e transform -translate-x-1/2 para centralizar, e depois ajustamos com margem negativa para alinhar com a borda do slide de 550px */}
             <Button
                 variant="outline"
-                className="absolute left-0 top-1/2 transform -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex"
+                className="absolute left-1/2 transform -translate-x-1/2 -ml-[275px] top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex"
                 onClick={scrollPrev}
                 disabled={featuredEvents.length <= 1}
             >
@@ -216,7 +233,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             </Button>
             <Button
                 variant="outline"
-                className="absolute right-0 top-1/2 transform -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex"
+                className="absolute right-1/2 transform translate-x-1/2 -mr-[275px] top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex"
                 onClick={scrollNext}
                 disabled={featuredEvents.length <= 1}
             >
