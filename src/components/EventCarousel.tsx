@@ -96,7 +96,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 
                 const normalizedBanners: CarouselBanner[] = fetchedBanners.map((item: any) => ({
                     id: item.id,
-                    type: item.type || 'event',
+                    type: item.type || 'event', // Assume 'event' se não especificado
                     image_url: item.image_url,
                     headline: item.headline || item.title,
                     subheadline: item.subheadline || item.description,
@@ -159,16 +159,16 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                     clickable: true,
                 }}
                 navigation={true}
-                effect={'coverflow'} // NOVO: Efeito Coverflow
+                effect={'coverflow'} // Efeito Coverflow
                 grabCursor={true}
                 coverflowEffect={{
-                    rotate: 50, // Rotação dos slides adjacentes
-                    stretch: 0, // Esticamento
-                    depth: 100, // Profundidade
-                    modifier: 1, // Multiplicador
-                    slideShadows: true, // Sombras para efeito 3D
+                    rotate: 0, // Reduzindo a rotação para zero
+                    stretch: 0, 
+                    depth: 200, // Aumentando a profundidade para recuar mais
+                    modifier: 1, 
+                    slideShadows: true, // Mantendo sombras
                 }}
-                modules={[Autoplay, Pagination, Navigation, EffectCoverflow]} // Adicionando EffectCoverflow
+                modules={[Autoplay, Pagination, Navigation, EffectCoverflow]}
                 className="mySwiper w-full h-full event-carousel-perspective"
             >
                 {banners.map((banner) => (
@@ -177,7 +177,6 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                             <div 
                                 className={cn(
                                     "relative w-full h-full rounded-2xl overflow-hidden shadow-2xl transition-all duration-500",
-                                    // Removendo a lógica de escala manual, Coverflow fará isso
                                     isActive ? "shadow-yellow-500/30" : "shadow-none"
                                 )}
                                 onClick={() => navigate(banner.event_id ? `/events/${banner.event_id}` : banner.link_url || '/')}
