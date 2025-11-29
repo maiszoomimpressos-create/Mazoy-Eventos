@@ -17,7 +17,7 @@ const MAX_FEATURED_EVENTS = 7;
 
 const SLIDE_WIDTH = 550; // Max width for the content card
 const SLIDE_HEIGHT = 380;
-const PEEK_AMOUNT = 40; // How much the background banners peek out (in pixels)
+// PEEK_AMOUNT não é mais necessário
 
 const getMinPriceDisplay = (price: number | null): string => {
     if (price === null || price === 0) return 'Grátis';
@@ -108,58 +108,23 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
 
     const updateSlideStyles = useCallback((emblaApi: EmblaCarouselType) => {
         const styles: React.CSSProperties[] = [];
-        const currentSnap = emblaApi.selectedScrollSnap();
         
         emblaApi.slideNodes().forEach((slide, index) => {
-            const scale_adj = 0.95;
-            const scale_far = 0.9;
+            let scale = 1; // Todos os slides com a mesma escala
+            let opacity = 1; // Todos os slides totalmente opacos
+            let zIndex = 10; // Todos os slides com o mesmo z-index
+            let translateX = 0; // Sem translação padrão para sobreposição
 
-            let scale = 0.8; // Default for slides further away
-            let opacity = 0; 
-            let zIndex = 5;
-            let translateX = 0; 
-            let transition = 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out';
-
-            const normalizedDistance = index - currentSnap;
-
-            if (normalizedDistance === 0) {
-                scale = 1;
-                opacity = 1;
-                zIndex = 30;
-                translateX = 0;
-            } else if (normalizedDistance === 1) { // Slide adjacente à direita
-                scale = scale_adj;
-                opacity = 0.7; 
-                zIndex = 20;
-                // Move left to overlap the central slide, leaving PEEK_AMOUNT visible on the right
-                // The amount to shift left is the full width minus the desired peek amount
-                translateX = -(SLIDE_WIDTH - PEEK_AMOUNT); 
-            } else if (normalizedDistance === -1) { // Slide adjacente à esquerda
-                scale = scale_adj;
-                opacity = 0.7; 
-                zIndex = 20;
-                // Move right to overlap the central slide, leaving PEEK_AMOUNT visible on the left
-                // The amount to shift right is the full width minus the desired peek amount
-                translateX = (SLIDE_WIDTH - PEEK_AMOUNT); 
-            } else if (normalizedDistance === 2) { // Segundo slide adjacente à direita
-                scale = scale_far;
-                opacity = 0.4; 
-                zIndex = 10;
-                // Shift further left, behind the first adjacent slide
-                translateX = -(SLIDE_WIDTH - PEEK_AMOUNT) * 2; 
-            } else if (normalizedDistance === -2) { // Segundo slide adjacente à esquerda
-                scale = scale_far;
-                opacity = 0.4; 
-                zIndex = 10;
-                // Shift further right, behind the first adjacent slide
-                translateX = (SLIDE_WIDTH - PEEK_AMOUNT) * 2; 
+            // Aplica o deslocamento de 510px para a direita APENAS no banner 4 (índice 3)
+            if (index === 3) { 
+                translateX = 510; 
             }
             
             styles.push({
                 transform: `scale(${scale}) translateX(${translateX}px)`,
                 opacity: opacity,
                 zIndex: zIndex,
-                transition: transition,
+                transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out', // Mantém a transição para movimento suave
             });
         });
         setSlideStyles(styles);
