@@ -41,7 +41,17 @@ serve(async (req) => {
   );
 
   try {
-    const { user_id, user_latitude, user_longitude } = await req.json();
+    let body = {};
+    try {
+        // Tenta ler o corpo, mas se for GET ou o corpo estiver vazio, falha silenciosamente
+        if (req.headers.get('content-type')?.includes('application/json')) {
+            body = await req.json();
+        }
+    } catch (e) {
+        // Ignora erro de corpo vazio
+    }
+    
+    const { user_id, user_latitude, user_longitude } = body as { user_id?: string, user_latitude?: number, user_longitude?: number };
 
     // 1. Buscar configurações globais do carrossel
     const { data: settings, error: settingsError } = await supabase
