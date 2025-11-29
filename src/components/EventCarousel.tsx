@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
 import { PublicEvent } from '@/hooks/use-public-events';
@@ -12,7 +12,8 @@ interface EventCarouselProps {
     events: PublicEvent[];
 }
 
-const NUM_BANNERS_TO_DISPLAY = 7; // Agora esta constante define o número exato de banners que queremos exibir
+const NUM_BANNERS_TO_DISPLAY = 7; // Número fixo de banners que queremos exibir
+const AUTO_ADVANCE_INTERVAL = 8000; // 8 segundos
 
 const SLIDE_WIDTH = 550; // Largura máxima para o cartão de conteúdo
 const SLIDE_HEIGHT = 380; // Altura fixa para os cartões
@@ -90,47 +91,53 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
 
 const EventCarousel = ({ events }: EventCarouselProps) => {
     const navigate = useNavigate();
-    
-    // Agora pegamos exatamente o número de banners que queremos exibir
-    const featuredEvents = events.slice(0, NUM_BANNERS_TO_DISPLAY);
+    const [activeIndex, setActiveIndex] = useState(0); // Índice do evento central
+
+    // Cria uma lista de eventos para exibição, repetindo se houver menos de NUM_BANNERS_TO_DISPLAY
+    const displayEvents = events.length > 0 
+        ? Array.from({ length: NUM_BANNERS_TO_DISPLAY }, (_, i) => events[i % events.length])
+        : [];
+
+    useEffect(() => {
+        if (events.length === 0) return;
+
+        const interval = setInterval(() => {
+            setActiveIndex(prevIndex => (prevIndex + 1) % events.length);
+        }, AUTO_ADVANCE_INTERVAL);
+
+        return () => clearInterval(interval);
+    }, [events.length]);
 
     const handleEventClick = (event: PublicEvent) => {
         navigate(`/finalizar-compra`, { state: { eventId: event.id } });
     };
 
-    if (featuredEvents.length < NUM_BANNERS_TO_DISPLAY) { // Verifica se há eventos suficientes
+    if (events.length === 0) {
         return (
             <div className="flex items-center justify-center h-full bg-black/60 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/20" style={{ height: `${SLIDE_HEIGHT}px` }}>
                 <div className="text-center p-8">
                     <i className="fas fa-star text-yellow-500 text-4xl mb-4"></i>
                     <h2 className="text-xl sm:text-2xl font-serif text-white mb-2">Destaques Premium</h2>
-                    <p className="text-gray-400 text-sm">Não há eventos suficientes para o carrossel completo.</p>
+                    <p className="text-gray-400 text-sm">Nenhum evento disponível para o carrossel.</p>
                 </div>
             </div>
         );
     }
     
-    // Identifica os eventos para os banners 1, 2, 3, 4, 5, 6 e 7 (índices 0 a 6)
-    const prevPrevPrevEvent = featuredEvents[0]; // Banner 1
-    const prevPrevEvent = featuredEvents[1];     // Banner 2
-    const prevEvent = featuredEvents[2];         // Banner 3
-    const fixedEvent = featuredEvents[3];        // Banner 4 (central e fixo)
-    const nextEvent = featuredEvents[4];         // Banner 5
-    const nextNextEvent = featuredEvents[5];     // Banner 6
-    const nextNextNextEvent = featuredEvents[6]; // NOVO: Banner 7
+    // Calcula os índices dos 7 banners com base no activeIndex e na lista de eventos original
+    // Usamos o módulo para garantir que os índices girem (loop)
+    const getEventByIndex = (offset: number) => {
+        const index = (activeIndex + offset + events.length) % events.length;
+        return events[index];
+    };
 
-    // Se o evento central não existir, exibe uma mensagem de erro
-    if (!fixedEvent) {
-        return (
-            <div className="flex items-center justify-center h-full bg-black/60 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/20" style={{ height: `${SLIDE_HEIGHT}px` }}>
-                <div className="text-center p-8">
-                    <i className="fas fa-exclamation-circle text-red-500 text-4xl mb-4"></i>
-                    <h2 className="text-xl sm:text-2xl font-serif text-white mb-2">Evento Destacado Não Encontrado</h2>
-                    <p className="text-gray-400 text-sm">O evento principal (banner 4) não está disponível.</p>
-                </div>
-            </div>
-        );
-    }
+    const prevPrevPrevEvent = getEventByIndex(-3); // Banner 1
+    const prevPrevEvent = getEventByIndex(-2);     // Banner 2
+    const prevEvent = getEventByIndex(-1);         // Banner 3
+    const fixedEvent = getEventByIndex(0);         // Banner 4 (central e fixo)
+    const nextEvent = getEventByIndex(1);          // Banner 5
+    const nextNextEvent = getEventByIndex(2);      // Banner 6
+    const nextNextNextEvent = getEventByIndex(3);  // Banner 7
 
     // Calcula a largura efetiva do banner lateral após a escala
     const scaledWidth = SLIDE_WIDTH * 0.85;
@@ -140,7 +147,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     return (
         <div className="relative pt-4 pb-10 flex justify-center items-center overflow-hidden">
             <div className="flex items-center"> {/* Este div interno será centralizado pelo flex pai */}
-                {prevPrevPrevEvent && (
+                {events.length >= 7 && prevPrevPrevEvent && ( // Renderiza apenas se houver eventos suficientes para 7 banners distintos
                     <div 
                         className="relative hidden md:block" 
                         style={{ marginRight: `-${overlapAmount}px` }} 
@@ -153,7 +160,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                         />
                     </div>
                 )}
-                {prevPrevEvent && (
+                {events.length >= 5 && prevPrevEvent && ( // Renderiza apenas se houver eventos suficientes para 5 banners distintos
                     <div 
                         className="relative hidden md:block" 
                         style={{ marginRight: `-${overlapAmount}px` }} 
@@ -166,7 +173,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                         />
                     </div>
                 )}
-                {prevEvent && (
+                {events.length >= 3 && prevEvent && ( // Renderiza apenas se houver eventos suficientes para 3 banners distintos
                     <div 
                         className="relative hidden md:block" 
                         style={{ marginRight: `-${overlapAmount}px` }} 
@@ -189,7 +196,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                         />
                     </div>
                 )}
-                {nextEvent && (
+                {events.length >= 3 && nextEvent && ( // Renderiza apenas se houver eventos suficientes para 3 banners distintos
                     <div 
                         className="relative hidden md:block" 
                         style={{ marginLeft: `-${overlapAmount}px` }} 
@@ -202,7 +209,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                         />
                     </div>
                 )}
-                {nextNextEvent && ( // Banner 6
+                {events.length >= 5 && nextNextEvent && ( // Renderiza apenas se houver eventos suficientes para 5 banners distintos
                     <div 
                         className="relative hidden md:block" 
                         style={{ marginLeft: `-${overlapAmount}px` }} 
@@ -215,7 +222,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                         />
                     </div>
                 )}
-                {nextNextNextEvent && ( // NOVO: Banner 7
+                {events.length >= 7 && nextNextNextEvent && ( // Renderiza apenas se houver eventos suficientes para 7 banners distintos
                     <div 
                         className="relative hidden md:block" 
                         style={{ marginLeft: `-${overlapAmount}px` }} 
