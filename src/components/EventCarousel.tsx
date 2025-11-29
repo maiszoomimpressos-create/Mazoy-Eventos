@@ -127,51 +127,51 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         );
     }
 
-    // Calcula a largura efetiva do banner 3 após a escala
+    // Calcula a largura efetiva do banner lateral após a escala
     const scaledWidth = SLIDE_WIDTH * 0.85;
-    // Calcula o quanto precisa ser escondido para deixar 50px visíveis
-    const hiddenWidth = scaledWidth - 50;
+    const visiblePeek = 50; // Quantos pixels do banner lateral devem estar visíveis
+    const overlapAmount = scaledWidth - visiblePeek; // Quantidade de sobreposição
 
     return (
         <div className="relative pt-4 pb-10 flex justify-center items-center overflow-hidden">
-            {prevEvent && (
-                <div 
-                    className="relative z-10 hidden md:block" 
-                    style={{ marginRight: `-${hiddenWidth}px` }} // Ajusta a margem para esconder a maior parte
-                > {/* Banner 3 à esquerda, oculto em telas pequenas */}
-                    <EventSlide 
-                        event={prevEvent} 
-                        onClick={() => handleEventClick(prevEvent)}
-                        slideIndex={3} 
-                        customStyle={{ transform: 'scale(0.85)', opacity: 0.5, zIndex: 10 }} 
-                    />
-                </div>
-            )}
-            {fixedEvent && (
-                <div className="relative z-20"> {/* Banner 4 central e em destaque */}
-                    <EventSlide 
-                        event={fixedEvent} 
-                        onClick={() => handleEventClick(fixedEvent)}
-                        slideIndex={4} 
-                        customStyle={{ 
-                            opacity: 1, 
-                            zIndex: 20,
-                            width: `${SLIDE_WIDTH}px`, // Definindo largura explícita
-                            height: `${SLIDE_HEIGHT}px`, // Definindo altura explícita
-                        }} 
-                    />
-                </div>
-            )}
-            {nextEvent && (
-                <div className="relative -ml-20 z-10 hidden md:block"> {/* Banner 5 à direita, oculto em telas pequenas */}
-                    <EventSlide 
-                        event={nextEvent} 
-                        onClick={() => handleEventClick(nextEvent)}
-                        slideIndex={5} 
-                        customStyle={{ transform: 'scale(0.85)', opacity: 0.5, zIndex: 10 }} 
-                    />
-                </div>
-            )}
+            <div className="flex items-center"> {/* Este div interno será centralizado pelo flex pai */}
+                {prevEvent && (
+                    <div 
+                        className="relative z-10 hidden md:block" 
+                        style={{ marginRight: `-${overlapAmount}px` }} 
+                    >
+                        <EventSlide 
+                            event={prevEvent} 
+                            onClick={() => handleEventClick(prevEvent)}
+                            slideIndex={3} 
+                            customStyle={{ transform: 'scale(0.85)', opacity: 0.5 }} 
+                        />
+                    </div>
+                )}
+                {fixedEvent && (
+                    <div className="relative z-20">
+                        <EventSlide 
+                            event={fixedEvent} 
+                            onClick={() => handleEventClick(fixedEvent)}
+                            slideIndex={4} 
+                            customStyle={{ opacity: 1 }} 
+                        />
+                    </div>
+                )}
+                {nextEvent && (
+                    <div 
+                        className="relative z-10 hidden md:block" 
+                        style={{ marginLeft: `-${overlapAmount}px` }} 
+                    >
+                        <EventSlide 
+                            event={nextEvent} 
+                            onClick={() => handleEventClick(nextEvent)}
+                            slideIndex={5} 
+                            customStyle={{ transform: 'scale(0.85)', opacity: 0.5 }} 
+                        />
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
