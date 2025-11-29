@@ -31,8 +31,9 @@ import ManagerLayout from "./components/layouts/ManagerLayout";
 import ForgotPassword from "./pages/ForgotPassword";
 import FinalizarCompra from "./pages/FinalizarCompra";
 import ManagerRegister from "./pages/ManagerRegister"; 
-import ManagerIndividualProfile from "./pages/ManagerIndividualProfile"; // Importação atualizada
+import ManagerIndividualProfile from "./pages/ManagerIndividualProfile";
 import ManagerCompanyRegister from "./pages/ManagerCompanyRegister"; 
+import ManagerCarouselSettings from "./pages/ManagerCarouselSettings"; // NOVO: Importação
 
 const queryClient = new QueryClient();
 
@@ -71,7 +72,7 @@ const App = () => (
             <Route path="/manager/reports" element={<ManagerReports />} />
             <Route path="/manager/settings" element={<ManagerSettings />} />
             <Route path="/manager/settings/company-profile" element={<ManagerCompanyProfile />} />
-            <Route path="/manager/settings/individual-profile" element={<ManagerIndividualProfile />} /> {/* NOVA ROTA */}
+            <Route path="/manager/settings/individual-profile" element={<ManagerIndividualProfile />} />
             <Route path="/manager/settings/notifications" element={<ManagerNotifications />} />
             <Route path="/manager/settings/payment" element={<ManagerPaymentSettings />} />
           </Route>
@@ -79,6 +80,8 @@ const App = () => (
           {/* Admin Master Routes (tipo_usuario_id = 1) */}
           <Route element={<AdminMasterRouteGuard />}>
             <Route element={<ManagerLayout />}>
+                <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                <Route path="/admin/settings/carousel" element={<ManagerCarouselSettings />} /> {/* NOVO: Rota para configurações do carrossel */}
                 <Route path="/manager/settings/advanced" element={<ManagerAdvancedSettings />} />
             </Route>
           </Route>

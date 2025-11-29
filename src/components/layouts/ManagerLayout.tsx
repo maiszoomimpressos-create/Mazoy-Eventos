@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Menu, X, Loader2, Crown, LogOut, User, Settings, QrCode, BarChart3, CalendarDays, ChevronDown } from 'lucide-react';
+import { Menu, X, Loader2, Crown, LogOut, User, Settings, QrCode, BarChart3, CalendarDays, ChevronDown, SlidersHorizontal } from 'lucide-react'; // NOVO: SlidersHorizontal
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from '@/integrations/supabase/client';
@@ -88,6 +88,10 @@ const ManagerLayout: React.FC = () => {
     // Add Admin Dashboard link if the user is an Admin Master
     if (isAdminMaster) {
         allNavItems.splice(1, 0, { path: '/admin/dashboard', label: 'Dashboard Admin', icon: <Crown className="mr-2 h-4 w-4" /> });
+        // NOVO: Adicionar link para configurações do carrossel para Admin Master
+        allNavItems.splice(allNavItems.findIndex(item => item.path === '/manager/settings') + 1, 0, 
+            { path: '/admin/settings/carousel', label: 'Config. Carrossel', icon: <SlidersHorizontal className="mr-2 h-4 w-4" /> }
+        );
     }
     
     // FILTRAGEM: Remove o item cuja rota é a rota atual
