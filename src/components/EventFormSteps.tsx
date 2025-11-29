@@ -256,7 +256,7 @@ const EventFormSteps: React.FC<EventFormStepsProps> = ({ eventId, initialData, o
                     .from('events')
                     .update(eventDataToSave)
                     .eq('id', eventId)
-                    .eq('company_id', company.id)
+                    // .eq('company_id', company.id) // REMOVIDO: Esta linha foi removida
                     .select('id')
                     .single();
             } else {
