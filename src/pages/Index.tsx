@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { categories } from '@/data/events'; // Mantendo categories
+import { categories } from '@/data/events';
 import AuthStatusMenu from '@/components/AuthStatusMenu';
 import { Input } from "@/components/ui/input";
 import MobileMenu from '@/components/MobileMenu';
@@ -10,14 +10,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { trackAdvancedFilterUse } from '@/utils/metrics';
 import { usePublicEvents, PublicEvent } from '@/hooks/use-public-events';
 import { Loader2 } from 'lucide-react';
-import FixedEventCarousel from '@/components/FixedEventCarousel'; // Importando o componente fixo
+import EventCarousel from '@/components/EventCarousel';
 
 const EVENTS_PER_PAGE = 12;
 
-// Helper function to get the minimum price display
 const getMinPriceDisplay = (price: number | null): string => {
     if (price === null || price === 0) return 'Grátis';
-    // Formata para R$ X.XX, usando vírgula como separador decimal
     return `R$ ${price.toFixed(2).replace('.', ',')}`;
 };
 
@@ -25,21 +23,17 @@ const Index: React.FC = () => {
     const navigate = useNavigate();
     const [userId, setUserId] = useState<string | undefined>(undefined);
     
-    // Carregamento de eventos do Supabase
     const { events: allEvents, isLoading: isLoadingEvents, isError: isErrorEvents } = usePublicEvents();
     
-    // Paginação
     const [currentPage, setCurrentPage] = useState(1);
     const totalPages = Math.ceil(allEvents.length / EVENTS_PER_PAGE);
 
-    // Fetch user ID on mount
     useEffect(() => {
         supabase.auth.getUser().then(({ data: { user } }) => {
             setUserId(user?.id);
         });
     }, []);
 
-    // ALTERADO: Redireciona para a tela de finalização de compra, passando o ID do evento
     const handleEventClick = (event: PublicEvent) => {
         navigate(`/finalizar-compra`, { state: { eventId: event.id } });
     };
@@ -58,7 +52,6 @@ const Index: React.FC = () => {
             
             const eventsSection = document.getElementById('eventos');
             if (eventsSection) {
-                // Ajusta o scroll para o topo da seção de eventos, compensando o header fixo (80px)
                 const offset = 80; 
                 const topPosition = eventsSection.getBoundingClientRect().top + window.scrollY - offset;
                 
@@ -70,7 +63,6 @@ const Index: React.FC = () => {
         }
     };
 
-    // Lógica de Paginação
     const startIndex = (currentPage - 1) * EVENTS_PER_PAGE;
     const endIndex = startIndex + EVENTS_PER_PAGE;
     const displayedEvents = allEvents.slice(startIndex, endIndex);
@@ -93,17 +85,16 @@ const Index: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-black text-white overflow-x-hidden">
-            {/* Componente Fixo do Carrossel */}
-            <FixedEventCarousel />
-
             <header className="fixed top-0 left-0 right-0 z-[100] bg-black/80 backdrop-blur-md border-b border-yellow-500/20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center space-x-4 sm:space-x-8">
-                        <div className="text-xl sm:text-2xl font-serif text-yellow-500 font-bold">
+                        <div 
+                            className="text-xl sm:text-2xl font-serif text-yellow-500 font-bold cursor-pointer"
+                            onClick={() => navigate('/')}
+                        >
                             Mazoy
                         </div>
                         <nav className="hidden md:flex items-center space-x-8">
-                            {/* Ajustando links para rolar para a seção de eventos */}
                             <a href="#eventos" className="text-white hover:text-yellow-500 transition-colors duration-300 cursor-pointer">Eventos</a>
                             <a href="#categorias" className="text-white hover:text-yellow-500 transition-colors duration-300 cursor-pointer">Categorias</a>
                             <a href="#contato" className="text-white hover:text-yellow-500 transition-colors duration-300 cursor-pointer">Contato</a>
@@ -126,14 +117,18 @@ const Index: React.FC = () => {
                 </div>
             </header>
             
-            {/* Ajuste de Padding para compensar o header (80px) e o carrossel fixo (450px) */}
-            <section id="eventos" className="pt-[530px] pb-12 sm:pb-20 px-4 sm:px-6">
+            <section id="eventos" className="pt-20 pb-12 sm:pb-20 px-4 sm:px-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-10 sm:mb-16">
                         <h2 className="text-3xl sm:text-5xl font-serif text-yellow-500 mb-4">Lista de Eventos</h2>
                         <div className="w-16 sm:w-24 h-px bg-yellow-500 mx-auto"></div>
                     </div>
+                    
                     <div className="mb-12">
+                        <div className="mb-8">
+                            <EventCarousel events={allEvents} />
+                        </div>
+                        
                         <div className="flex flex-col lg:flex-row gap-6 mb-8">
                             <div className="flex-1">
                                 <div className="relative">
