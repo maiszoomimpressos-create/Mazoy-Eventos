@@ -223,6 +223,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                         let distance = index - selectedIndex;
                         
                         // Ajusta a distância para o loop infinito (se o carrossel for loop)
+                        // Adicionando a verificação de emblaApi aqui
                         if (emblaApi && emblaApi.options.loop) {
                             const slideCount = featuredEvents.length;
                             if (distance > slideCount / 2) {
