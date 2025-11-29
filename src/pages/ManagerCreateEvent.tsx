@@ -21,6 +21,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Plus, ArrowLeft, ImageOff } from 'lucide-react';
 import { format } from 'date-fns';
 import { DatePicker } from '@/components/DatePicker';
+import ImageUploadPicker from '@/components/ImageUploadPicker'; // Importando o novo componente
 
 // Define the structure for the form data
 interface EventFormData {
@@ -54,7 +55,8 @@ const ManagerCreateEvent: React.FC = () => {
     });
     const [isLoading, setIsLoading] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
-    
+    const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({}); // Para validação de campos
+
     // Estado para o modal de pulseiras
     const [showWristbandModal, setShowWristbandModal] = useState(false);
     const [newEventId, setNewEventId] = useState<string | null>(null);
@@ -72,42 +74,59 @@ const ManagerCreateEvent: React.FC = () => {
         });
     }, [navigate]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | React.ChangeEvent<HTMLTextAreaElement>>) => {
         const { id, value, type } = e.target;
         
-        if (type === 'number') {
-            setFormData(prev => ({ 
+        setFormData(prev => {
+            if (!prev) return null;
+            const updatedValue = type === 'number' ? (value === '' ? '' : Number(value)) : value;
+            return { 
                 ...prev, 
-                [id]: value === '' ? '' : Number(value) 
-            }));
-        } else {
-            setFormData(prev => ({ ...prev, [id]: value }));
+                [id]: updatedValue 
+            };
+        });
+        // Limpa o erro do campo ao digitar
+        if (formErrors[id]) {
+            setFormErrors(prev => ({ ...prev, [id]: '' }));
         }
     };
     
     const handleDateChange = (date: Date | undefined) => {
         setFormData(prev => ({ ...prev, date }));
+        if (formErrors.date) {
+            setFormErrors(prev => ({ ...prev, date: '' }));
+        }
     };
 
     const handleSelectChange = (value: string) => {
         setFormData(prev => ({ ...prev, category: value }));
+        if (formErrors.category) {
+            setFormErrors(prev => ({ ...prev, category: '' }));
+        }
+    };
+
+    const handleImageUpload = (url: string) => {
+        setFormData(prev => ({ ...prev, image_url: url }));
+        if (formErrors.image_url) {
+            setFormErrors(prev => ({ ...prev, image_url: '' }));
+        }
     };
 
     const validateForm = (): { isValid: boolean, isoDate: string | null } => {
-        const errors: string[] = [];
+        const errors: { [key: string]: string } = {};
         let isoDate: string | null = null;
         
-        if (!formData.title) errors.push("Título é obrigatório.");
-        if (!formData.description) errors.push("Descrição é obrigatória.");
-        if (!formData.time) errors.push("Horário é obrigatório.");
-        if (!formData.location) errors.push("Localização é obrigatória.");
-        if (!formData.address) errors.push("Endereço detalhado é obrigatório.");
-        if (!formData.image_url) errors.push("URL da Imagem/Banner é obrigatória.");
-        if (!formData.duration) errors.push("Duração é obrigatória.");
+        if (!formData.title) errors.title = "Título é obrigatório.";
+        if (!formData.description) errors.description = "Descrição é obrigatória.";
+        if (!formData.time) errors.time = "Horário é obrigatório.";
+        if (!formData.location) errors.location = "Localização é obrigatória.";
+        if (!formData.address) errors.address = "Endereço detalhado é obrigatório.";
+        if (!formData.image_url) errors.image_url = "URL da Imagem/Banner é obrigatória.";
+        if (!formData.duration) errors.duration = "Duração é obrigatória.";
         
         // Validação da Data (agora é um objeto Date)
         if (!formData.date) {
-            errors.push("Data é obrigatória.");
+            errors.date = "Data é obrigatória.";
         } else {
             // Converte para o formato ISO (YYYY-MM-DD) para salvar no Supabase
             isoDate = format(formData.date, 'yyyy-MM-dd');
@@ -115,28 +134,28 @@ const ManagerCreateEvent: React.FC = () => {
 
         const minAge = Number(formData.min_age);
         if (formData.min_age === '' || formData.min_age === null || isNaN(minAge) || minAge < 0) {
-            errors.push("Idade Mínima é obrigatória e deve ser 0 ou maior.");
+            errors.min_age = "Idade Mínima é obrigatória e deve ser 0 ou maior.";
         }
         
         const capacity = Number(formData.capacity);
         if (formData.capacity === '' || formData.capacity === null || isNaN(capacity) || capacity <= 0) {
-            errors.push("Capacidade é obrigatória e deve ser maior que zero.");
+            errors.capacity = "Capacidade é obrigatória e deve ser maior que zero.";
         }
 
-        if (!formData.category) errors.push("Categoria é obrigatória.");
+        if (!formData.category) errors.category = "Categoria é obrigatória.";
 
-        if (errors.length > 0) {
-            showError(`Por favor, preencha todos os campos corretamente.`);
-            return { isValid: false, isoDate: null };
-        }
-        return { isValid: true, isoDate };
+        setFormErrors(errors);
+        return { isValid: Object.keys(errors).length === 0, isoDate };
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const validationResult = validateForm();
         
-        if (!validationResult.isValid || !userId || !validationResult.isoDate) return;
+        if (!validationResult.isValid || !userId || !validationResult.isoDate) {
+            showError("Por favor, preencha todos os campos obrigatórios corretamente.");
+            return;
+        }
 
         const toastId = showLoading("Publicando evento...");
         setIsLoading(true);
@@ -221,9 +240,10 @@ const ManagerCreateEvent: React.FC = () => {
                                     value={formData.title} 
                                     onChange={handleChange} 
                                     placeholder="Ex: Concerto Sinfônico Premium"
-                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 ${formErrors.title ? 'border-red-500' : ''}`}
                                     required
                                 />
+                                {formErrors.title && <p className="text-red-500 text-xs mt-1">{formErrors.title}</p>}
                             </div>
                             <div>
                                 <label htmlFor="location" className="block text-sm font-medium text-white mb-2">Localização (Nome do Local) *</label>
@@ -232,9 +252,10 @@ const ManagerCreateEvent: React.FC = () => {
                                     value={formData.location} 
                                     onChange={handleChange} 
                                     placeholder="Ex: Teatro Municipal"
-                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 ${formErrors.location ? 'border-red-500' : ''}`}
                                     required
                                 />
+                                {formErrors.location && <p className="text-red-500 text-xs mt-1">{formErrors.location}</p>}
                             </div>
                         </div>
 
@@ -246,9 +267,10 @@ const ManagerCreateEvent: React.FC = () => {
                                 value={formData.address} 
                                 onChange={handleChange} 
                                 placeholder="Ex: Praça Ramos de Azevedo, s/n - República, São Paulo - SP"
-                                className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 ${formErrors.address ? 'border-red-500' : ''}`}
                                 required
                             />
+                            {formErrors.address && <p className="text-red-500 text-xs mt-1">{formErrors.address}</p>}
                         </div>
 
                         {/* Linha 3: Descrição */}
@@ -259,50 +281,30 @@ const ManagerCreateEvent: React.FC = () => {
                                 value={formData.description} 
                                 onChange={handleChange} 
                                 placeholder="Descreva o evento, destaques e público-alvo."
-                                className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 min-h-[100px]"
+                                className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 min-h-[100px] ${formErrors.description ? 'border-red-500' : ''}`}
                                 required
                             />
+                            {formErrors.description && <p className="text-red-500 text-xs mt-1">{formErrors.description}</p>}
                         </div>
                         
-                        {/* Linha 4: Imagem/Banner Preview */}
+                        {/* Linha 4: Imagem/Banner com ImageUploadPicker */}
                         <div className="space-y-4 pt-4 border-t border-yellow-500/20">
-                            <h3 className="text-xl font-semibold text-white">Banner do Evento</h3>
-                            
-                            {/* Preview da Imagem */}
-                            <div className="w-full h-48 bg-black/60 border border-yellow-500/30 rounded-xl overflow-hidden flex items-center justify-center">
-                                {formData.image_url ? (
-                                    <img 
-                                        src={formData.image_url} 
-                                        alt="Preview do Banner" 
-                                        className="w-full h-full object-cover object-center"
-                                        onError={(e) => {
-                                            // Fallback se a URL da imagem estiver quebrada
-                                            e.currentTarget.onerror = null; 
-                                            e.currentTarget.src = 'placeholder.svg'; // Usar um placeholder local
-                                            e.currentTarget.className = "w-16 h-16 text-gray-500";
-                                        }}
-                                    />
-                                ) : (
-                                    <div className="text-center text-gray-500">
-                                        <ImageOff className="h-8 w-8 mx-auto mb-2" />
-                                        Nenhuma URL de imagem fornecida.
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Campo URL da Imagem */}
-                            <div>
-                                <label htmlFor="image_url" className="block text-sm font-medium text-white mb-2">URL da Imagem/Banner *</label>
-                                <Input 
-                                    id="image_url" 
-                                    value={formData.image_url} 
-                                    onChange={handleChange} 
-                                    placeholder="Ex: https://readdy.ai/api/search-image?query=..."
-                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
-                                    required
+                            <h3 className="text-xl font-semibold text-white">Banner do Evento *</h3>
+                            {userId && (
+                                <ImageUploadPicker
+                                    userId={userId}
+                                    currentImageUrl={formData.image_url}
+                                    onImageUpload={handleImageUpload}
+                                    width={1200} // Largura recomendada
+                                    height={400} // Altura recomendada
+                                    placeholderText="Clique para enviar ou arraste e solte uma imagem"
+                                    bucketName="event-banners" // Nome do bucket no Supabase
+                                    folderPath="banners" // Pasta dentro do bucket
+                                    maxFileSizeMB={5} // Tamanho máximo do arquivo
+                                    isInvalid={!!formErrors.image_url} // Passa o estado de erro
                                 />
-                                <p className="text-xs text-gray-500 mt-1">Cole a URL da imagem do banner aqui para pré-visualizar acima.</p>
-                            </div>
+                            )}
+                            {formErrors.image_url && <p className="text-red-500 text-xs mt-1">{formErrors.image_url}</p>}
                         </div>
 
                         {/* Linha 5: Data, Horário, Categoria */}
@@ -314,6 +316,7 @@ const ManagerCreateEvent: React.FC = () => {
                                     setDate={handleDateChange}
                                     placeholder="DD/MM/AAAA ou Selecione"
                                 />
+                                {formErrors.date && <p className="text-red-500 text-xs mt-1">{formErrors.date}</p>}
                             </div>
                             <div>
                                 <label htmlFor="time" className="block text-sm font-medium text-white mb-2">Horário *</label>
@@ -322,14 +325,15 @@ const ManagerCreateEvent: React.FC = () => {
                                     type="time"
                                     value={formData.time} 
                                     onChange={handleChange} 
-                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 ${formErrors.time ? 'border-red-500' : ''}`}
                                     required
                                 />
+                                {formErrors.time && <p className="text-red-500 text-xs mt-1">{formErrors.time}</p>}
                             </div>
                             <div>
                                 <label htmlFor="category" className="block text-sm font-medium text-white mb-2">Categoria *</label>
                                 <Select onValueChange={handleSelectChange} value={formData.category}>
-                                    <SelectTrigger className="w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500">
+                                    <SelectTrigger className={`w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500 ${formErrors.category ? 'border-red-500' : ''}`}>
                                         <SelectValue placeholder="Selecione a Categoria" />
                                     </SelectTrigger>
                                     <SelectContent className="bg-black border-yellow-500/30 text-white">
@@ -340,6 +344,7 @@ const ManagerCreateEvent: React.FC = () => {
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                {formErrors.category && <p className="text-red-500 text-xs mt-1">{formErrors.category}</p>}
                             </div>
                         </div>
                         
@@ -353,11 +358,12 @@ const ManagerCreateEvent: React.FC = () => {
                                     value={formData.capacity} 
                                     onChange={handleChange} 
                                     placeholder="Ex: 500"
-                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 ${formErrors.capacity ? 'border-red-500' : ''}`}
                                     min="1"
                                     required
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Número máximo de pessoas permitidas.</p>
+                                {formErrors.capacity && <p className="text-red-500 text-xs mt-1">{formErrors.capacity}</p>}
                             </div>
                             <div>
                                 <label htmlFor="duration" className="block text-sm font-medium text-white mb-2">Duração (Ex: 2h30min) *</label>
@@ -367,10 +373,11 @@ const ManagerCreateEvent: React.FC = () => {
                                     value={formData.duration} 
                                     onChange={handleChange} 
                                     placeholder="Ex: 3 horas ou 2h30min"
-                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 ${formErrors.duration ? 'border-red-500' : ''}`}
                                     required
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Duração estimada do evento.</p>
+                                {formErrors.duration && <p className="text-red-500 text-xs mt-1">{formErrors.duration}</p>}
                             </div>
                             <div>
                                 <label htmlFor="min_age" className="block text-sm font-medium text-white mb-2">Idade Mínima (Anos) *</label>
@@ -380,11 +387,12 @@ const ManagerCreateEvent: React.FC = () => {
                                     value={formData.min_age} 
                                     onChange={handleChange} 
                                     placeholder="0 (Livre)"
-                                    className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
+                                    className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 ${formErrors.min_age ? 'border-red-500' : ''}`}
                                     min="0"
                                     required
                                 />
                                 <p className="text-xs text-gray-500 mt-1">Defina 0 para classificação livre.</p>
+                                {formErrors.min_age && <p className="text-red-500 text-xs mt-1">{formErrors.min_age}</p>}
                             </div>
                         </div>
 
