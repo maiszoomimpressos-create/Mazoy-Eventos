@@ -145,7 +145,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                             event={prevPrevEvent} 
                             onClick={() => handleEventClick(prevPrevEvent)}
                             slideIndex={2} 
-                            customStyle={{ transform: 'scale(0.85)', opacity: 0.3, zIndex: 10 }} // Menor opacidade e zIndex para ficar mais atrás
+                            customStyle={{ transform: 'scale(0.7)', opacity: 0.15, zIndex: 10 }} // Escala e opacidade ajustadas para mais profundidade
                         />
                     </div>
                 )}
