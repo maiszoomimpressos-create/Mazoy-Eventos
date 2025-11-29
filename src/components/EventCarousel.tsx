@@ -180,6 +180,10 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         return Math.min(diff, 3);
     };
 
+    // Larguras fixas para o efeito de profundidade
+    const CENTRAL_WIDTH = 550; // Largura do slide central
+    const SIDE_WIDTH = 300;    // Largura dos slides laterais
+
     return (
         <div className="relative pt-4 pb-10">
             <div className="overflow-hidden" ref={emblaRef}>
@@ -188,8 +192,8 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                         const distance = getSlideDistance(index);
                         const isCentral = index === selectedIndex;
                         
-                        // Ajuste de Largura: Central 550px, Laterais 350px
-                        const slideWidth = isCentral ? '550px' : '350px';
+                        // Define a largura do slide
+                        const width = isCentral ? CENTRAL_WIDTH : SIDE_WIDTH;
                         
                         // Define a profundidade (z-index) e a transformação de escala/opacidade
                         let zIndex = 10 - distance;
@@ -198,18 +202,18 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                         
                         if (!isCentral) {
                             // Escala e opacidade decrescem mais agressivamente
-                            scale = 1 - (distance * 0.1); // 0.9, 0.8, etc.
-                            opacity = 1 - (distance * 0.3); // 0.7, 0.4, etc.
+                            scale = 1 - (distance * 0.15); // 0.85, 0.70, etc.
+                            opacity = 1 - (distance * 0.35); // 0.65, 0.30, etc.
                             zIndex = 10 - distance;
                         }
                         
-                        // Ajusta a largura do slide para o efeito de empilhamento
+                        // Ajusta a largura do slide e usa margem negativa para sobreposição
                         const slideStyle = {
-                            flex: `0 0 ${slideWidth}`,
-                            minWidth: slideWidth,
-                            maxWidth: slideWidth,
-                            // Reduz o margin para que os slides se sobreponham mais
-                            margin: '0 5px', 
+                            flex: `0 0 ${width}px`,
+                            minWidth: `${width}px`,
+                            maxWidth: `${width}px`,
+                            // Margem negativa para sobrepor os slides laterais ao central
+                            margin: isCentral ? '0 10px' : '0 -50px', 
                             zIndex: zIndex,
                             opacity: opacity,
                             transform: `scale(${scale})`,
