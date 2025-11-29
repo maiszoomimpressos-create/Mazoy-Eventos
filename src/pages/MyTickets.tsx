@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { purchasedTickets } from '@/data/tickets';
 import AuthStatusMenu from '@/components/AuthStatusMenu';
 import { Input } from '@/components/ui/input';
+import { useMyTickets, TicketData } from '@/hooks/use-my-tickets';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2, Calendar, MapPin, QrCode, History } from 'lucide-react';
 
 interface TicketCardProps {
-    ticket: typeof purchasedTickets[0];
+    ticket: TicketData;
 }
 
 const TicketCard: React.FC<TicketCardProps> = ({ ticket }) => {
@@ -16,51 +18,72 @@ const TicketCard: React.FC<TicketCardProps> = ({ ticket }) => {
     const statusClasses = {
         active: 'bg-green-500/20 text-green-400 border-green-500/30',
         used: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+        lost: 'bg-red-500/20 text-red-400 border-red-500/30',
         cancelled: 'bg-red-500/20 text-red-400 border-red-500/30',
+        purchase: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30', // Status temporário de compra
     };
 
     const statusText = {
         active: 'Ativo',
         used: 'Utilizado',
+        lost: 'Perdido',
         cancelled: 'Cancelado',
+        purchase: 'Comprado',
     };
+    
+    const eventDetails = ticket.wristbands?.events;
+    const ticketType = ticket.wristbands?.access_type || 'Tipo Desconhecido';
+    const eventName = eventDetails?.title || 'Evento Desconhecido';
+    const eventLocation = eventDetails?.location || 'Local Desconhecido';
+    const eventDate = eventDetails?.date ? new Date(eventDetails.date).toLocaleDateString('pt-BR') : 'Data Desconhecida';
+    const unitPrice = ticket.wristbands?.price || 0;
+    
+    // Nota: Como cada registro de analytics representa 1 ingresso, a quantidade é 1.
+    // Para agrupar por tipo, precisaríamos de uma lógica mais complexa no frontend ou no backend.
+    // Por enquanto, exibimos 1x e o preço unitário.
+    const totalValue = unitPrice; 
+
+    const isActive = ticket.status === 'active' || ticket.status === 'purchase';
 
     return (
         <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-4 sm:p-6 flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0 hover:border-yellow-500/60 transition-all duration-300">
             <div className="flex-1 space-y-2">
                 <div className="flex flex-wrap items-center space-x-3">
-                    <CardTitle className="text-white text-lg sm:text-xl font-semibold hover:text-yellow-500 transition-colors cursor-pointer" onClick={() => navigate(`/events/${ticket.eventId}`)}>
-                        {ticket.eventName}
+                    <CardTitle 
+                        className="text-white text-lg sm:text-xl font-semibold hover:text-yellow-500 transition-colors cursor-pointer" 
+                        onClick={() => eventDetails?.id && navigate(`/events/${eventDetails.id}`)}
+                    >
+                        {eventName}
                     </CardTitle>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusClasses[ticket.status]}`}>
                         {statusText[ticket.status]}
                     </span>
                 </div>
-                <p className="text-gray-400 text-sm">{ticket.ticketType} ({ticket.quantity}x)</p>
+                <p className="text-gray-400 text-sm">{ticketType} (1x)</p>
                 <div className="flex flex-wrap items-center space-x-4 sm:space-x-6 text-xs sm:text-sm text-gray-300 pt-2">
                     <div className="flex items-center">
-                        <i className="fas fa-calendar-alt text-yellow-500 mr-2"></i>
-                        <span>{ticket.date}</span>
+                        <Calendar className="text-yellow-500 mr-2 h-4 w-4" />
+                        <span>{eventDate}</span>
                     </div>
                     <div className="flex items-center">
-                        <i className="fas fa-map-marker-alt text-yellow-500 mr-2"></i>
-                        <span>{ticket.location}</span>
+                        <MapPin className="text-yellow-500 mr-2 h-4 w-4" />
+                        <span>{eventLocation}</span>
                     </div>
                 </div>
             </div>
             
             <div className="w-full md:w-auto flex flex-row md:flex-col items-center md:items-end justify-between pt-4 md:pt-0 border-t border-yellow-500/20 md:border-t-0">
                 <div className="text-left md:text-right">
-                    <span className="text-xs sm:text-sm text-gray-400">Valor Total</span>
-                    <div className="text-xl sm:text-2xl font-bold text-yellow-500">R$ {(ticket.price * ticket.quantity).toLocaleString('pt-BR')}</div>
+                    <span className="text-xs sm:text-sm text-gray-400">Valor Unitário</span>
+                    <div className="text-xl sm:text-2xl font-bold text-yellow-500">R$ {totalValue.toFixed(2).replace('.', ',')}</div>
                 </div>
                 <Button 
                     className="bg-yellow-500 text-black hover:bg-yellow-600 transition-all duration-300 cursor-pointer px-4 sm:px-6 text-sm sm:text-base"
                     onClick={() => alert(`Exibindo QR Code para o ingresso ${ticket.id}`)}
-                    disabled={ticket.status !== 'active'}
+                    disabled={!isActive}
                 >
-                    <i className="fas fa-qrcode mr-2"></i>
-                    {ticket.status === 'active' ? 'Ver QR Code' : 'Ingresso Inativo'}
+                    <QrCode className="mr-2 h-4 w-4" />
+                    {isActive ? 'Ver QR Code' : 'Ingresso Inativo'}
                 </Button>
             </div>
         </Card>
@@ -69,8 +92,47 @@ const TicketCard: React.FC<TicketCardProps> = ({ ticket }) => {
 
 const MyTickets: React.FC = () => {
     const navigate = useNavigate();
-    const activeTickets = purchasedTickets.filter(t => t.status === 'active');
-    const pastTickets = purchasedTickets.filter(t => t.status !== 'active');
+    const [userId, setUserId] = useState<string | undefined>(undefined);
+    const [loadingSession, setLoadingSession] = useState(true);
+
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            setUserId(user?.id);
+            setLoadingSession(false);
+        });
+    }, []);
+    
+    const { tickets, isLoading, isError } = useMyTickets(userId);
+
+    if (loadingSession || isLoading) {
+        return (
+            <div className="min-h-screen bg-black text-white flex items-center justify-center pt-20">
+                <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
+                <p className="text-gray-400 ml-4">Carregando seus ingressos...</p>
+            </div>
+        );
+    }
+    
+    if (!userId) {
+        // Redirecionamento se a sessão expirar ou não estiver logado
+        navigate('/login');
+        return null;
+    }
+
+    if (isError) {
+        return (
+            <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center pt-20 px-4">
+                <i className="fas fa-exclamation-triangle text-4xl text-red-500 mb-4"></i>
+                <p className="text-xl text-gray-400 mb-6">Erro ao carregar seus ingressos.</p>
+                <Button onClick={() => window.location.reload()} className="bg-yellow-500 text-black hover:bg-yellow-600">
+                    Tentar Novamente
+                </Button>
+            </div>
+        );
+    }
+
+    const activeTickets = tickets.filter(t => t.status === 'active' || t.status === 'purchase');
+    const pastTickets = tickets.filter(t => t.status !== 'active' && t.status !== 'purchase');
 
     return (
         <div className="min-h-screen bg-black text-white">
@@ -142,7 +204,7 @@ const MyTickets: React.FC = () => {
                     {/* Histórico de Ingressos */}
                     <div>
                         <h2 className="text-2xl sm:text-3xl font-serif text-white mb-6 border-b border-yellow-500/30 pb-3 flex items-center">
-                            <i className="fas fa-history mr-3 text-yellow-500"></i>
+                            <History className="mr-3 h-6 w-6 text-yellow-500" />
                             Histórico de Ingressos ({pastTickets.length})
                         </h2>
                         {pastTickets.length > 0 ? (
