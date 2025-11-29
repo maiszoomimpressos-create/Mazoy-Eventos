@@ -19,11 +19,12 @@ import { Switch } from "@/components/ui/switch"; // Importando Switch
 import { categories } from '@/data/events';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, ArrowLeft, ImageOff, Loader2, MapPin, CalendarDays, ListOrdered, Heading, Subtitles, SlidersHorizontal } from 'lucide-react'; // Novos ícones
+import { Plus, ArrowLeft, ImageOff, Loader2, MapPin, CalendarDays, ListOrdered, Heading, Subtitles, SlidersHorizontal, Magic } from 'lucide-react'; // Novos ícones, incluindo Magic
 import { format } from 'date-fns';
 import { DatePicker } from '@/components/DatePicker';
 import ImageUploadPicker from '@/components/ImageUploadPicker';
 import { useManagerCompany } from '@/hooks/use-manager-company'; // Importando o hook da empresa
+import { useProfile } from '@/hooks/use-profile'; // Importando useProfile para verificar o tipo de usuário
 
 // Define the structure for the form data
 interface EventFormData {
@@ -49,6 +50,8 @@ interface EventFormData {
     carousel_headline: string;
     carousel_subheadline: string;
 }
+
+const ADMIN_MASTER_USER_TYPE_ID = 1;
 
 const ManagerCreateEvent: React.FC = () => {
     const navigate = useNavigate();
@@ -96,8 +99,11 @@ const ManagerCreateEvent: React.FC = () => {
         });
     }, [navigate]);
 
-    // Obter o ID da empresa do gestor
+    // Obter o ID da empresa do gestor e o perfil do usuário
     const { company, isLoading: isLoadingCompany } = useManagerCompany(userId || undefined);
+    const { profile, isLoading: isLoadingProfile } = useProfile(userId || undefined);
+
+    const isAdminMaster = profile?.tipo_usuario_id === ADMIN_MASTER_USER_TYPE_ID;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | React.ChangeEvent<HTMLTextAreaElement>>) => {
         const { id, value, type } = e.target;
@@ -283,7 +289,37 @@ const ManagerCreateEvent: React.FC = () => {
         navigate('/manager/dashboard');
     };
 
-    if (isLoadingCompany || !userId) {
+    // Dados de exemplo para auto-preenchimento
+    const dummyEventData: EventFormData = {
+        title: 'Concerto de Jazz Noturno',
+        description: 'Uma noite relaxante com os melhores músicos de jazz da cidade, em um ambiente intimista e sofisticado. Desfrute de clássicos e novas composições.',
+        date: new Date(2025, 11, 20), // 20 de Dezembro de 2025
+        time: '21:00',
+        location: 'Jazz Club Elite',
+        address: 'Rua Augusta, 2690 - Jardim Paulista, São Paulo - SP',
+        image_url: 'https://readdy.ai/api/search-image?query=luxury%20jazz%20club%20with%20black%20and%20gold%20interior%20design%2C%20premium%20music%20venue%20with%20sophisticated%20ambiance%20and%20golden%20accent%20lighting&width=750&height=450&seq=banner8&orientation=landscape',
+        min_age: 18,
+        category: 'Música',
+        capacity: 120,
+        duration: '3 horas',
+        latitude: -23.5600,
+        longitude: -46.6600,
+        is_featured_carousel: true,
+        carousel_display_order: 1,
+        carousel_start_date: new Date(2025, 11, 1), // 1 de Dezembro de 2025
+        carousel_end_date: new Date(2025, 11, 31), // 31 de Dezembro de 2025
+        carousel_headline: 'Noite de Jazz Inesquecível',
+        carousel_subheadline: 'Música ao vivo, ambiente sofisticado e drinks exclusivos.',
+    };
+
+    const handleAutoFill = () => {
+        setFormData(dummyEventData);
+        showSuccess("Formulário preenchido com dados de teste!");
+        // Limpa os erros do formulário, se houver
+        setFormErrors({});
+    };
+
+    if (isLoadingCompany || isLoadingProfile || !userId) {
         return (
             <div className="max-w-4xl mx-auto px-4 sm:px-0 text-center py-20">
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
@@ -314,14 +350,27 @@ const ManagerCreateEvent: React.FC = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-0">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
                 <h1 className="text-2xl sm:text-3xl font-serif text-yellow-500 mb-4 sm:mb-0">Criar Novo Evento</h1>
-                <Button 
-                    onClick={() => navigate('/manager/dashboard')}
-                    variant="outline"
-                    className="bg-black/60 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 text-sm"
-                >
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Voltar ao Dashboard
-                </Button>
+                <div className="flex space-x-3">
+                    {isAdminMaster && (
+                        <Button 
+                            onClick={handleAutoFill}
+                            variant="secondary"
+                            className="bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 text-sm"
+                            disabled={isSaving}
+                        >
+                            <Magic className="mr-2 h-4 w-4" />
+                            Auto-Preencher para Teste
+                        </Button>
+                    )}
+                    <Button 
+                        onClick={() => navigate('/manager/dashboard')}
+                        variant="outline"
+                        className="bg-black/60 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 text-sm"
+                    >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Voltar ao Dashboard
+                    </Button>
+                </div>
             </div>
 
             <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
