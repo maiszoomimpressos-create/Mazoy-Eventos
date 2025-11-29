@@ -18,10 +18,11 @@ import {
 import { categories } from '@/data/events';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, ArrowLeft, ImageOff } from 'lucide-react';
+import { Plus, ArrowLeft, ImageOff, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { DatePicker } from '@/components/DatePicker';
-import ImageUploadPicker from '@/components/ImageUploadPicker'; // Importando o novo componente
+import ImageUploadPicker from '@/components/ImageUploadPicker';
+import { useManagerCompany } from '@/hooks/use-manager-company'; // Importando o hook da empresa
 
 // Define the structure for the form data
 interface EventFormData {
@@ -53,7 +54,7 @@ const ManagerCreateEvent: React.FC = () => {
         capacity: '', // Inicializado como string vazia
         duration: '', // Inicializado como string vazia
     });
-    const [isLoading, setIsLoading] = useState(false);
+    const [isSaving, setIsSaving] = useState(false); // Renomeado de isLoading para isSaving para clareza
     const [userId, setUserId] = useState<string | null>(null);
     const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({}); // Para validação de campos
 
@@ -61,8 +62,8 @@ const ManagerCreateEvent: React.FC = () => {
     const [showWristbandModal, setShowWristbandModal] = useState(false);
     const [newEventId, setNewEventId] = useState<string | null>(null);
 
+    // Fetch current user ID
     useEffect(() => {
-        // Fetch current user ID
         supabase.auth.getUser().then(({ data: { user } }) => {
             if (user) {
                 setUserId(user.id);
@@ -73,6 +74,9 @@ const ManagerCreateEvent: React.FC = () => {
             }
         });
     }, [navigate]);
+
+    // Obter o ID da empresa do gestor
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId || undefined);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | React.ChangeEvent<HTMLTextAreaElement>>) => {
         const { id, value, type } = e.target;
@@ -157,15 +161,20 @@ const ManagerCreateEvent: React.FC = () => {
             return;
         }
 
+        if (!company?.id) {
+            showError("Você precisa ter um perfil de empresa cadastrado para criar eventos.");
+            return;
+        }
+
         const toastId = showLoading("Publicando evento...");
-        setIsLoading(true);
+        setIsSaving(true);
 
         try {
             const { data, error } = await supabase
                 .from('events')
                 .insert([
                     {
-                        user_id: userId,
+                        company_id: company.id, // Usando company_id em vez de user_id
                         title: formData.title,
                         description: formData.description,
                         date: validationResult.isoDate, // Usando a data formatada para ISO
@@ -197,7 +206,7 @@ const ManagerCreateEvent: React.FC = () => {
             console.error("Erro ao criar evento:", error);
             showError(`Falha ao publicar evento: ${error.message || 'Erro desconhecido'}`);
         } finally {
-            setIsLoading(false);
+            setIsSaving(false);
         }
     };
     
@@ -210,6 +219,33 @@ const ManagerCreateEvent: React.FC = () => {
         setShowWristbandModal(false);
         navigate('/manager/dashboard');
     };
+
+    if (isLoadingCompany || !userId) {
+        return (
+            <div className="max-w-4xl mx-auto px-4 sm:px-0 text-center py-20">
+                <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
+                <p className="text-gray-400">Carregando dados do gestor...</p>
+            </div>
+        );
+    }
+
+    if (!company?.id) {
+        return (
+            <div className="max-w-4xl mx-auto px-4 sm:px-0 text-center py-20">
+                <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-6 rounded-xl mb-8">
+                    <i className="fas fa-exclamation-triangle text-2xl mb-3"></i>
+                    <h3 className="font-semibold text-white mb-2">Perfil da Empresa Necessário</h3>
+                    <p className="text-sm">Você precisa cadastrar o Perfil da Empresa antes de criar eventos.</p>
+                    <Button 
+                        onClick={() => navigate('/manager/settings/company-profile')}
+                        className="mt-4 bg-yellow-500 text-black hover:bg-yellow-600"
+                    >
+                        Ir para Perfil da Empresa
+                    </Button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-4xl mx-auto px-4 sm:px-0">
@@ -398,12 +434,12 @@ const ManagerCreateEvent: React.FC = () => {
 
                         <Button
                             type="submit"
-                            disabled={isLoading || !userId}
+                            disabled={isSaving || !userId || !company?.id}
                             className="w-full bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
                         >
-                            {isLoading ? (
+                            {isSaving ? (
                                 <div className="flex items-center justify-center">
-                                    <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin mr-2"></div>
+                                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
                                     Salvando Evento...
                                 </div>
                             ) : (

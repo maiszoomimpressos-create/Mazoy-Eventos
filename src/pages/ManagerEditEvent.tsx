@@ -9,7 +9,8 @@ import { categories } from '@/data/events';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, ImageOff } from 'lucide-react';
-import ImageUploadPicker from '@/components/ImageUploadPicker'; // Importando o novo componente
+import ImageUploadPicker from '@/components/ImageUploadPicker';
+import { useManagerCompany } from '@/hooks/use-manager-company'; // Importando o hook da empresa
 
 // Define the structure for the form data
 interface EventFormData {
@@ -94,6 +95,9 @@ const ManagerEditEvent: React.FC = () => {
         fetchEventAndUser();
     }, [id, navigate]);
 
+    // Obter o ID da empresa do gestor
+    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId || undefined);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { id, value, type } = e.target;
         setFormData(prev => {
@@ -165,6 +169,11 @@ const ManagerEditEvent: React.FC = () => {
             return;
         }
 
+        if (!company?.id) {
+            showError("Você precisa ter um perfil de empresa cadastrado para editar eventos.");
+            return;
+        }
+
         const toastId = showLoading("Atualizando evento...");
         setIsLoading(true);
 
@@ -184,8 +193,8 @@ const ManagerEditEvent: React.FC = () => {
                     capacity: Number(formData.capacity), // SALVANDO CAPACIDADE
                     duration: formData.duration, // SALVANDO DURAÇÃO
                 })
-                .eq('id', id);
-                // .eq('user_id', userId); // RLS já garante que apenas o proprietário pode atualizar
+                .eq('id', id)
+                .eq('company_id', company.id); // Filtrando por company_id para garantir que o gestor edite apenas eventos da sua empresa
 
             if (error) {
                 throw error;
@@ -204,11 +213,29 @@ const ManagerEditEvent: React.FC = () => {
         }
     };
 
-    if (isFetching || !formData) {
+    if (isFetching || !formData || isLoadingCompany || !userId) {
         return (
             <div className="max-w-4xl mx-auto px-4 sm:px-0 text-center py-20">
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
                 <p className="text-gray-400">Carregando detalhes do evento...</p>
+            </div>
+        );
+    }
+
+    if (!company?.id) {
+        return (
+            <div className="max-w-4xl mx-auto px-4 sm:px-0 text-center py-20">
+                <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-6 rounded-xl mb-8">
+                    <i className="fas fa-exclamation-triangle text-2xl mb-3"></i>
+                    <h3 className="font-semibold text-white mb-2">Perfil da Empresa Necessário</h3>
+                    <p className="text-sm">Você precisa cadastrar o Perfil da Empresa antes de editar eventos.</p>
+                    <Button 
+                        onClick={() => navigate('/manager/settings/company-profile')}
+                        className="mt-4 bg-yellow-500 text-black hover:bg-yellow-600"
+                    >
+                        Ir para Perfil da Empresa
+                    </Button>
+                </div>
             </div>
         );
     }
@@ -404,7 +431,7 @@ const ManagerEditEvent: React.FC = () => {
                         <div className="flex items-center space-x-4 pt-4">
                             <Button
                                 type="submit"
-                                disabled={isLoading || !userId}
+                                disabled={isLoading || !userId || !company?.id}
                                 className="flex-1 bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
                             >
                                 {isLoading ? (

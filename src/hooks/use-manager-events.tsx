@@ -8,21 +8,20 @@ export interface ManagerEvent {
     // Removendo campos não essenciais para a listagem inicial
 }
 
-const fetchManagerEvents = async (userId: string): Promise<ManagerEvent[]> => {
-    if (!userId) {
-        console.warn("Attempted to fetch manager events without a userId.");
+const fetchManagerEvents = async (companyId: string): Promise<ManagerEvent[]> => {
+    if (!companyId) {
+        console.warn("Attempted to fetch manager events without a companyId.");
         return [];
     }
 
-    // Filtra explicitamente os eventos onde o user_id é igual ao userId logado.
-    // Isso garante que, mesmo que haja uma política RLS pública, o gestor veja apenas os seus.
+    // Filtra explicitamente os eventos onde o company_id é igual ao companyId logado.
     const { data, error } = await supabase
         .from('events')
         .select(`
             id,
             title
         `)
-        .eq('user_id', userId) // FILTRO ADICIONADO AQUI
+        .eq('company_id', companyId) // FILTRO ATUALIZADO AQUI
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -34,13 +33,13 @@ const fetchManagerEvents = async (userId: string): Promise<ManagerEvent[]> => {
     return data as ManagerEvent[];
 };
 
-export const useManagerEvents = (userId: string | undefined) => {
+export const useManagerEvents = (companyId: string | undefined) => {
     const queryClient = useQueryClient();
 
     const query = useQuery({
-        queryKey: ['managerEvents', userId],
-        queryFn: () => fetchManagerEvents(userId!),
-        enabled: !!userId,
+        queryKey: ['managerEvents', companyId],
+        queryFn: () => fetchManagerEvents(companyId!),
+        enabled: !!companyId, // Só executa se tiver o companyId
         staleTime: 1000 * 60 * 1, // 1 minute
         // Adicionando tratamento de erro para exibir o toast
         onError: (error) => {
@@ -52,6 +51,6 @@ export const useManagerEvents = (userId: string | undefined) => {
     return {
         ...query,
         events: query.data || [],
-        invalidateEvents: () => queryClient.invalidateQueries({ queryKey: ['managerEvents', userId] }),
+        invalidateEvents: () => queryClient.invalidateQueries({ queryKey: ['managerEvents', companyId] }),
     };
 };
