@@ -109,10 +109,11 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         );
     }
     
-    // Identifica os eventos para os banners 3, 4 e 5 (índices 2, 3 e 4)
-    const prevEvent = featuredEvents[2]; // Banner 3
-    const fixedEvent = featuredEvents[3]; // Banner 4 (central e fixo)
-    const nextEvent = featuredEvents[4]; // Banner 5
+    // Identifica os eventos para os banners 2, 3, 4 e 5 (índices 1, 2, 3 e 4)
+    const prevPrevEvent = featuredEvents[1]; // Novo Banner 2
+    const prevEvent = featuredEvents[2];     // Banner 3
+    const fixedEvent = featuredEvents[3];    // Banner 4 (central e fixo)
+    const nextEvent = featuredEvents[4];     // Banner 5
 
     // Se o evento central não existir, exibe uma mensagem de erro
     if (!fixedEvent) {
@@ -135,39 +136,52 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     return (
         <div className="relative pt-4 pb-10 flex justify-center items-center overflow-hidden">
             <div className="flex items-center"> {/* Este div interno será centralizado pelo flex pai */}
+                {prevPrevEvent && (
+                    <div 
+                        className="relative hidden md:block" 
+                        style={{ marginRight: `-${overlapAmount}px` }} 
+                    >
+                        <EventSlide 
+                            event={prevPrevEvent} 
+                            onClick={() => handleEventClick(prevPrevEvent)}
+                            slideIndex={2} 
+                            customStyle={{ transform: 'scale(0.85)', opacity: 0.3, zIndex: 10 }} // Menor opacidade e zIndex para ficar mais atrás
+                        />
+                    </div>
+                )}
                 {prevEvent && (
                     <div 
-                        className="relative z-10 hidden md:block" 
+                        className="relative hidden md:block" 
                         style={{ marginRight: `-${overlapAmount}px` }} 
                     >
                         <EventSlide 
                             event={prevEvent} 
                             onClick={() => handleEventClick(prevEvent)}
                             slideIndex={3} 
-                            customStyle={{ transform: 'scale(0.85)', opacity: 0.5 }} 
+                            customStyle={{ transform: 'scale(0.85)', opacity: 0.5, zIndex: 15 }} // zIndex intermediário
                         />
                     </div>
                 )}
                 {fixedEvent && (
-                    <div className="relative z-20">
+                    <div className="relative z-20"> {/* Banner 4 central e em destaque */}
                         <EventSlide 
                             event={fixedEvent} 
                             onClick={() => handleEventClick(fixedEvent)}
                             slideIndex={4} 
-                            customStyle={{ opacity: 1 }} 
+                            customStyle={{ opacity: 1, zIndex: 20 }} 
                         />
                     </div>
                 )}
                 {nextEvent && (
                     <div 
-                        className="relative z-10 hidden md:block" 
+                        className="relative hidden md:block" 
                         style={{ marginLeft: `-${overlapAmount}px` }} 
                     >
                         <EventSlide 
                             event={nextEvent} 
                             onClick={() => handleEventClick(nextEvent)}
                             slideIndex={5} 
-                            customStyle={{ transform: 'scale(0.85)', opacity: 0.5 }} 
+                            customStyle={{ transform: 'scale(0.85)', opacity: 0.5, zIndex: 15 }} 
                         />
                     </div>
                 )}
