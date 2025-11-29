@@ -19,6 +19,14 @@ export interface EventData {
     min_price: number | null; // NOVO: Preço mínimo calculado
     min_price_wristband_id: string | null; // NOVO: ID da pulseira mais barata
     
+    // NOVOS CAMPOS PARA CARROSSEL
+    is_featured_carousel: boolean;
+    carousel_display_order: number | null;
+    carousel_start_date: string | null;
+    carousel_end_date: string | null;
+    carousel_headline: string | null;
+    carousel_subheadline: string | null;
+
     // Dados do Organizador (JOIN)
     companies: {
         corporate_name: string;
@@ -43,11 +51,13 @@ export interface EventDetailsData {
 const fetchEventDetails = async (eventId: string): Promise<EventDetailsData | null> => {
     if (!eventId) return null;
 
-    // 1. Buscar detalhes do Evento, incluindo capacidade, duração e o nome da empresa organizadora
+    // 1. Buscar detalhes do Evento, incluindo capacidade, duração, nome da empresa e campos do carrossel
     const { data: eventDataRaw, error: eventError } = await supabase
         .from('events')
         .select(`
             id, title, description, date, time, location, address, image_url, min_age, category, capacity, duration,
+            is_featured_carousel, carousel_display_order, carousel_start_date, carousel_end_date,
+            carousel_headline, carousel_subheadline,
             companies (corporate_name)
         `)
         .eq('id', eventId)
@@ -105,11 +115,13 @@ const fetchEventDetails = async (eventId: string): Promise<EventDetailsData | nu
 
     const ticketTypes = Object.values(groupedTickets).sort((a, b) => a.price - b.price);
     
-    // 4. Combinar dados
+    // 4. Combinar dados e formatar datas do carrossel para exibição
     const event: EventData = {
         ...eventDataRaw,
         min_price: minPrice,
         min_price_wristband_id: minPriceWristbandId,
+        carousel_start_date: eventDataRaw.carousel_start_date ? new Date(eventDataRaw.carousel_start_date).toLocaleDateString('pt-BR') : null,
+        carousel_end_date: eventDataRaw.carousel_end_date ? new Date(eventDataRaw.carousel_end_date).toLocaleDateString('pt-BR') : null,
     } as EventData;
 
 

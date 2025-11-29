@@ -202,6 +202,34 @@ const EventDetails: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
+                            
+                            {/* NOVO: Seção de Informações do Carrossel, se o evento for destaque */}
+                            {event.is_featured_carousel && (
+                                <div>
+                                    <h3 className="text-xl sm:text-2xl font-serif text-yellow-500 mb-4 sm:mb-6">Informações do Carrossel</h3>
+                                    <div className="bg-black/60 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6 sm:p-8">
+                                        <div className="space-y-3 sm:space-y-4 text-sm sm:text-base">
+                                            <div className="flex items-center">
+                                                <i className="fas fa-heading text-yellow-500 mr-3"></i>
+                                                <span className="text-white">Título do Banner: {event.carousel_headline || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex items-center">
+                                                <i className="fas fa-subtitles text-yellow-500 mr-3"></i>
+                                                <span className="text-white">Subtítulo do Banner: {event.carousel_subheadline || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex items-center">
+                                                <i className="fas fa-calendar-days text-yellow-500 mr-3"></i>
+                                                <span className="text-white">Exibição: {event.carousel_start_date || 'N/A'} a {event.carousel_end_date || 'N/A'}</span>
+                                            </div>
+                                            <div className="flex items-center">
+                                                <i className="fas fa-list-ol text-yellow-500 mr-3"></i>
+                                                <span className="text-white">Ordem de Exibição: {event.carousel_display_order !== null ? event.carousel_display_order : 'N/A'}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             <div>
                                 <h3 className="text-xl sm:text-2xl font-serif text-yellow-500 mb-4 sm:mb-6">Destaques do Evento</h3>
                                 <div className="bg-black/60 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6 sm:p-8">
