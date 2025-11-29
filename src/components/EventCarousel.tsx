@@ -19,7 +19,7 @@ const MAX_FEATURED_EVENTS = 7; // Limita a 7 eventos conforme solicitado
 // Dimensões fixas
 const SLIDE_WIDTH = 550;
 const SLIDE_HEIGHT = 380;
-const PEEK_WIDTH = 40; // 40px de visibilidade parcial
+const OVERLAP_AMOUNT = 40; // 40px de sobreposição/deslocamento
 
 // Helper function to get the minimum price display
 const getMinPriceDisplay = (price: number | null): string => {
@@ -108,7 +108,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         align: 'center', // Centraliza o slide principal
         slidesToScroll: 1,
         watchDrag: true,
-        padding: { left: PEEK_WIDTH, right: PEEK_WIDTH },
+        // Removendo padding para gerenciar o peek com margem negativa
     });
     
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -133,67 +133,62 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         };
     }, [emblaApi, autoplay]);
 
-    // --- Lógica de Estilo Dinâmico (Corrigida para Profundidade) ---
+    // --- Lógica de Estilo Dinâmico (Usando Margem Negativa e Z-Index) ---
     const updateSlideStyles = useCallback((emblaApi: EmblaCarouselType) => {
-        const scrollProgress = emblaApi.scrollProgress();
         const styles: React.CSSProperties[] = [];
+        const currentSnap = emblaApi.selectedScrollSnap();
         
         emblaApi.slideNodes().forEach((slide, index) => {
-            const slideCenter = emblaApi.scrollSnapList()[index];
-            const distance = slideCenter - scrollProgress;
-            
-            // Normaliza a distância para um valor entre -1 e 1 (aproximadamente)
-            const normalizedDistance = Math.min(Math.max(distance, -1), 1);
-            
             let scale = 1;
             let opacity = 1;
-            let translateX = 0;
             let zIndex = 20;
+            let marginLeft = 0;
+            let marginRight = 0;
 
-            // Slide central (distância próxima de 0)
-            if (Math.abs(normalizedDistance) < 0.1) {
+            // Calcula a distância circular (para loop)
+            const distance = (index - currentSnap + featuredEvents.length) % featuredEvents.length;
+            const normalizedDistance = distance > featuredEvents.length / 2 ? distance - featuredEvents.length : distance;
+
+            // Slide Central
+            if (normalizedDistance === 0) {
                 scale = 1;
                 opacity = 1;
                 zIndex = 30;
-                translateX = 0;
             } 
-            // Slide à esquerda (normalizedDistance é positivo)
-            else if (normalizedDistance > 0.1 && normalizedDistance < 1.5) {
-                // Slide que está atrás do slide principal (esquerda)
+            // Slide Imediatamente à Direita (normalizedDistance = 1 ou -featuredEvents.length + 1)
+            else if (normalizedDistance === 1 || normalizedDistance === -featuredEvents.length + 1) {
                 scale = 0.95;
                 opacity = 0.8;
-                // Move 40px para a esquerda (para que ele pareça estar atrás do slide principal)
-                translateX = -40; 
                 zIndex = 15;
+                // Puxa o slide para a esquerda para sobrepor o slide central
+                marginLeft = -OVERLAP_AMOUNT; 
             }
-            // Slide à direita (normalizedDistance é negativo)
-            else if (normalizedDistance < -0.1 && normalizedDistance > -1.5) {
-                // Slide que está atrás do slide principal (direita)
+            // Slide Imediatamente à Esquerda (normalizedDistance = -1 ou featuredEvents.length - 1)
+            else if (normalizedDistance === -1 || normalizedDistance === featuredEvents.length - 1) {
                 scale = 0.95;
                 opacity = 0.8;
-                // Move 40px para a direita (simetria)
-                translateX = 40; 
                 zIndex = 15;
+                // Puxa o slide para a direita para sobrepor o slide central
+                marginRight = -OVERLAP_AMOUNT; 
             }
             // Slides mais distantes
             else {
                 scale = 0.90;
                 opacity = 0.6;
-                // Move para fora da tela para simular profundidade extrema
-                translateX = normalizedDistance > 0 ? -510 : 510; 
                 zIndex = 10;
             }
             
             styles.push({
-                // Aplicamos o translateX para o deslocamento de 40px e o scale para o efeito de profundidade
-                transform: `translateX(${translateX}px) scale(${scale})`,
+                transform: `scale(${scale})`,
                 opacity: opacity,
                 zIndex: zIndex,
-                transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
+                marginLeft: `${marginLeft}px`,
+                marginRight: `${marginRight}px`,
+                transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out, margin 0.5s ease-in-out',
             });
         });
         setSlideStyles(styles);
-    }, []);
+    }, [featuredEvents.length]);
 
 
     // --- Lógica de Navegação e Indicadores ---
@@ -215,8 +210,8 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         onSelect(emblaApi);
         emblaApi.on('reInit', onInit);
         emblaApi.on('select', onSelect);
-        emblaApi.on('scroll', updateSlideStyles); // Atualiza estilos durante o scroll
-    }, [emblaApi, onInit, onSelect, updateSlideStyles]);
+        // Não usamos 'scroll' para evitar jitter, apenas 'select'
+    }, [emblaApi, onInit, onSelect]);
 
     const scrollTo = useCallback((index: number) => {
         emblaApi && emblaApi.scrollTo(index);
@@ -247,7 +242,8 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         );
     }
     
-    const arrowOffset = SLIDE_WIDTH / 2 + PEEK_WIDTH; // 275 + 40 = 315
+    // O offset da seta agora é baseado na metade da largura do slide + a sobreposição
+    const arrowOffset = SLIDE_WIDTH / 2 + OVERLAP_AMOUNT; 
 
     return (
         <div className="relative pt-4 pb-10">
@@ -257,14 +253,13 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                         
                         // Estilo para limitar a largura do slide e centralizar
                         const slideContainerStyle = {
-                            // Ocupa a largura do slide + 2 * PEEK_WIDTH para o Embla calcular o alinhamento
-                            flex: `0 0 ${SLIDE_WIDTH + PEEK_WIDTH * 2}px`, 
-                            minWidth: `${SLIDE_WIDTH + PEEK_WIDTH * 2}px`,
-                            maxWidth: `${SLIDE_WIDTH + PEEK_WIDTH * 2}px`,
+                            // Ocupa a largura do slide + a sobreposição (para que o Embla calcule o alinhamento)
+                            flex: `0 0 ${SLIDE_WIDTH}px`, 
+                            minWidth: `${SLIDE_WIDTH}px`,
+                            maxWidth: `${SLIDE_WIDTH}px`,
                             display: 'flex',
                             justifyContent: 'center', // Centraliza o conteúdo dentro do slide
-                            paddingLeft: `${PEEK_WIDTH}px`, // Adiciona padding para o peek
-                            paddingRight: `${PEEK_WIDTH}px`, // Adiciona padding para o peek
+                            // Removendo padding aqui
                         };
                         
                         // Estilo para o slide em si (largura fixa)
@@ -297,8 +292,8 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             {/* Setas de Navegação Customizadas (Posicionamento ajustado) */}
             <Button
                 variant="outline"
-                className={`absolute left-1/2 transform -translate-x-1/2 top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex`}
-                style={{ marginLeft: `-${arrowOffset}px` }} // Move para a borda esquerda do slide + peek
+                className={`absolute left-1/2 transform -translate-x-1/2 top-1/2 -translate-y-1/2 z-40 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex`}
+                style={{ marginLeft: `-${arrowOffset}px` }} // Move para a borda esquerda do slide + sobreposição
                 onClick={scrollPrev}
                 disabled={featuredEvents.length <= 1}
             >
@@ -306,8 +301,8 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             </Button>
             <Button
                 variant="outline"
-                className={`absolute right-1/2 transform translate-x-1/2 top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex`}
-                style={{ marginRight: `-${arrowOffset}px` }} // Move para a borda direita do slide + peek
+                className={`absolute right-1/2 transform translate-x-1/2 top-1/2 -translate-y-1/2 z-40 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex`}
+                style={{ marginRight: `-${arrowOffset}px` }} // Move para a borda direita do slide + sobreposição
                 onClick={scrollNext}
                 disabled={featuredEvents.length <= 1}
             >
