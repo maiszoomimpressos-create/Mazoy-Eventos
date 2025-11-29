@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { trackAdvancedFilterUse } from '@/utils/metrics';
 import { usePublicEvents, PublicEvent } from '@/hooks/use-public-events';
 import { Loader2 } from 'lucide-react';
-import EventCarousel from '@/components/EventCarousel';
+// import EventCarousel from '@/components/EventCarousel'; // Removido
 
 const EVENTS_PER_PAGE = 12;
 
@@ -125,9 +125,9 @@ const Index: React.FC = () => {
                     </div>
                     
                     <div className="mb-12">
-                        <div className="mb-8">
+                        {/* <div className="mb-8">
                             <EventCarousel events={allEvents} />
-                        </div>
+                        </div> */}
                         
                         <div className="flex flex-col lg:flex-row gap-6 mb-8">
                             <div className="flex-1">
