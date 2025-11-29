@@ -17,6 +17,7 @@ const AUTO_ADVANCE_INTERVAL = 8000; // 8 segundos
 
 const SLIDE_WIDTH = 550; // Largura máxima para o cartão de conteúdo
 const SLIDE_HEIGHT = 380; // Altura fixa para os cartões
+const VISIBLE_PEEK = 50; // Quantos pixels do banner lateral devem estar visíveis
 
 const getMinPriceDisplay = (price: number | null): string => {
     if (price === null || price === 0) return 'Grátis';
@@ -40,12 +41,7 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
                 ...customStyle
             }} 
         >
-            <div className="absolute top-4 left-4 z-30 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-bold border border-yellow-500">
-                {slideIndex}
-            </div>
-            <div className="absolute top-4 right-4 z-30 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-bold border border-yellow-500">
-                {slideIndex}
-            </div>
+            {/* Removendo os números de slide dos cantos, pois não são parte do design desejado */}
             
             <CardContent className="flex flex-col p-0 h-full">
                 <div className="relative h-full overflow-hidden">
@@ -93,11 +89,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     const navigate = useNavigate();
     const [activeIndex, setActiveIndex] = useState(0); // Índice do evento central
 
-    // Cria uma lista de eventos para exibição, repetindo se houver menos de NUM_BANNERS_TO_DISPLAY
-    const displayEvents = events.length > 0 
-        ? Array.from({ length: NUM_BANNERS_TO_DISPLAY }, (_, i) => events[i % events.length])
-        : [];
-
     useEffect(() => {
         if (events.length === 0) return;
 
@@ -127,67 +118,78 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     // Calcula os índices dos 7 banners com base no activeIndex e na lista de eventos original
     // Usamos o módulo para garantir que os índices girem (loop)
     const getEventByIndex = (offset: number) => {
-        const index = (activeIndex + offset + events.length) % events.length;
+        // Garante que o índice sempre seja positivo e dentro dos limites da lista de eventos
+        const index = (activeIndex + offset % events.length + events.length) % events.length;
         return events[index];
     };
 
-    const prevPrevPrevEvent = getEventByIndex(-3); // Banner 1
-    const prevPrevEvent = getEventByIndex(-2);     // Banner 2
-    const prevEvent = getEventByIndex(-1);         // Banner 3
     const fixedEvent = getEventByIndex(0);         // Banner 4 (central e fixo)
+    const prevEvent = getEventByIndex(-1);         // Banner 3
+    const prevPrevEvent = getEventByIndex(-2);     // Banner 2
+    const prevPrevPrevEvent = getEventByIndex(-3); // Banner 1
     const nextEvent = getEventByIndex(1);          // Banner 5
     const nextNextEvent = getEventByIndex(2);      // Banner 6
     const nextNextNextEvent = getEventByIndex(3);  // Banner 7
 
     // Calcula a largura efetiva do banner lateral após a escala
-    const scaledWidth = SLIDE_WIDTH * 0.85;
-    const visiblePeek = 50; // Quantos pixels do banner lateral devem estar visíveis
-    const overlapAmount = scaledWidth - visiblePeek; // Quantidade de sobreposição
+    const scaledWidthAdjacent = SLIDE_WIDTH * 0.85; // Escala para banners 3 e 5
+    const overlapAmountAdjacent = scaledWidthAdjacent - VISIBLE_PEEK; 
+    
+    const scaledWidthFurther = SLIDE_WIDTH * 0.7; // Escala para banners 2 e 6
+    const overlapAmountFurther = scaledWidthFurther - VISIBLE_PEEK;
+
+    const scaledWidthOutermost = SLIDE_WIDTH * 0.55; // Escala para banners 1 e 7
+    const overlapAmountOutermost = scaledWidthOutermost - VISIBLE_PEEK;
+
 
     return (
         <div className="relative pt-4 pb-10 flex justify-center items-center overflow-hidden">
             <div className="flex items-center"> {/* Este div interno será centralizado pelo flex pai */}
-                {events.length >= 7 && prevPrevPrevEvent && ( // Renderiza apenas se houver eventos suficientes para 7 banners distintos
+                {/* Banner 1 (mais à esquerda) */}
+                {events.length >= 7 && prevPrevPrevEvent && ( 
                     <div 
                         className="relative hidden md:block" 
-                        style={{ marginRight: `-${overlapAmount}px` }} 
+                        style={{ marginRight: `-${overlapAmountOutermost}px` }} 
                     >
                         <EventSlide 
                             event={prevPrevPrevEvent} 
                             onClick={() => handleEventClick(prevPrevPrevEvent)}
                             slideIndex={1} 
-                            customStyle={{ transform: 'scale(0.55)', opacity: 0.05, zIndex: 5 }} // Escala e opacidade ainda menores para o banner 1
+                            customStyle={{ transform: 'scale(0.55)', opacity: 0.05, zIndex: 5 }} 
                         />
                     </div>
                 )}
-                {events.length >= 5 && prevPrevEvent && ( // Renderiza apenas se houver eventos suficientes para 5 banners distintos
+                {/* Banner 2 */}
+                {events.length >= 5 && prevPrevEvent && ( 
                     <div 
                         className="relative hidden md:block" 
-                        style={{ marginRight: `-${overlapAmount}px` }} 
+                        style={{ marginRight: `-${overlapAmountFurther}px` }} 
                     >
                         <EventSlide 
                             event={prevPrevEvent} 
                             onClick={() => handleEventClick(prevPrevEvent)}
                             slideIndex={2} 
-                            customStyle={{ transform: 'scale(0.7)', opacity: 0.15, zIndex: 10 }} // Escala e opacidade ajustadas para mais profundidade
+                            customStyle={{ transform: 'scale(0.7)', opacity: 0.15, zIndex: 10 }} 
                         />
                     </div>
                 )}
-                {events.length >= 3 && prevEvent && ( // Renderiza apenas se houver eventos suficientes para 3 banners distintos
+                {/* Banner 3 */}
+                {events.length >= 3 && prevEvent && ( 
                     <div 
                         className="relative hidden md:block" 
-                        style={{ marginRight: `-${overlapAmount}px` }} 
+                        style={{ marginRight: `-${overlapAmountAdjacent}px` }} 
                     >
                         <EventSlide 
                             event={prevEvent} 
                             onClick={() => handleEventClick(prevEvent)}
                             slideIndex={3} 
-                            customStyle={{ transform: 'scale(0.85)', opacity: 0.5, zIndex: 15 }} // zIndex intermediário
+                            customStyle={{ transform: 'scale(0.85)', opacity: 0.5, zIndex: 15 }} 
                         />
                     </div>
                 )}
+                {/* Banner 4 (central e em destaque) */}
                 {fixedEvent && (
-                    <div className="relative z-20"> {/* Banner 4 central e em destaque */}
+                    <div className="relative z-20"> 
                         <EventSlide 
                             event={fixedEvent} 
                             onClick={() => handleEventClick(fixedEvent)}
@@ -196,10 +198,11 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                         />
                     </div>
                 )}
-                {events.length >= 3 && nextEvent && ( // Renderiza apenas se houver eventos suficientes para 3 banners distintos
+                {/* Banner 5 */}
+                {events.length >= 3 && nextEvent && ( 
                     <div 
                         className="relative hidden md:block" 
-                        style={{ marginLeft: `-${overlapAmount}px` }} 
+                        style={{ marginLeft: `-${overlapAmountAdjacent}px` }} 
                     >
                         <EventSlide 
                             event={nextEvent} 
@@ -209,29 +212,31 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                         />
                     </div>
                 )}
-                {events.length >= 5 && nextNextEvent && ( // Renderiza apenas se houver eventos suficientes para 5 banners distintos
+                {/* Banner 6 */}
+                {events.length >= 5 && nextNextEvent && ( 
                     <div 
                         className="relative hidden md:block" 
-                        style={{ marginLeft: `-${overlapAmount}px` }} 
+                        style={{ marginLeft: `-${overlapAmountFurther}px` }} 
                     >
                         <EventSlide 
                             event={nextNextEvent} 
                             onClick={() => handleEventClick(nextNextEvent)}
                             slideIndex={6} 
-                            customStyle={{ transform: 'scale(0.7)', opacity: 0.15, zIndex: 10 }} // Espelha o estilo do banner 2
+                            customStyle={{ transform: 'scale(0.7)', opacity: 0.15, zIndex: 10 }} 
                         />
                     </div>
                 )}
-                {events.length >= 7 && nextNextNextEvent && ( // Renderiza apenas se houver eventos suficientes para 7 banners distintos
+                {/* Banner 7 (mais à direita) */}
+                {events.length >= 7 && nextNextNextEvent && ( 
                     <div 
                         className="relative hidden md:block" 
-                        style={{ marginLeft: `-${overlapAmount}px` }} 
+                        style={{ marginLeft: `-${overlapAmountOutermost}px` }} 
                     >
                         <EventSlide 
                             event={nextNextNextEvent} 
                             onClick={() => handleEventClick(nextNextNextEvent)}
                             slideIndex={7} 
-                            customStyle={{ transform: 'scale(0.55)', opacity: 0.05, zIndex: 5 }} // Espelha o estilo do banner 1
+                            customStyle={{ transform: 'scale(0.55)', opacity: 0.05, zIndex: 5 }} 
                         />
                     </div>
                 )}
