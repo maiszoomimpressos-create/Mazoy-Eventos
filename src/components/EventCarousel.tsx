@@ -212,7 +212,9 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         );
     }
     
-    const arrowOffset = SLIDE_WIDTH / 2 + PEEK_WIDTH; // 275 + 40 = 315
+    // Novo cálculo para posicionar a seta na borda do slide principal
+    // SLIDE_WIDTH / 2 (275px) + Button Half Width (24px) = 299px
+    const ARROW_POSITION_OFFSET = SLIDE_WIDTH / 2 + 24; 
 
     return (
         <div className="relative pt-4 pb-10">
@@ -262,7 +264,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             <Button
                 variant="outline"
                 className={`absolute left-1/2 transform -translate-x-1/2 top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex`}
-                style={{ marginLeft: `-${arrowOffset}px` }} // Move para a borda esquerda do slide + peek
+                style={{ marginLeft: `-${ARROW_POSITION_OFFSET}px` }} // Move para a borda esquerda do slide
                 onClick={scrollPrev}
                 disabled={featuredEvents.length <= 1}
             >
@@ -271,7 +273,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             <Button
                 variant="outline"
                 className={`absolute right-1/2 transform translate-x-1/2 top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex`}
-                style={{ marginRight: `-${arrowOffset}px` }} // Move para a borda direita do slide + peek
+                style={{ marginRight: `-${ARROW_POSITION_OFFSET}px` }} // Move para a borda direita do slide
                 onClick={scrollNext}
                 disabled={featuredEvents.length <= 1}
             >
