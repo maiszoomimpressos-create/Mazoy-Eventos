@@ -98,8 +98,16 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
 const EventCarousel = ({ events }: EventCarouselProps) => {
     const navigate = useNavigate();
     
-    // Limita a 7 eventos
-    const featuredEvents = events.slice(0, MAX_FEATURED_EVENTS);
+    // 1. Limita a 7 eventos
+    let featuredEvents = events.slice(0, MAX_FEATURED_EVENTS);
+
+    // 2. Lógica para trocar a posição do evento 3 e 4 (índices 2 e 3)
+    if (featuredEvents.length >= 4) {
+        const event3 = featuredEvents[2];
+        const event4 = featuredEvents[3];
+        featuredEvents[2] = event4;
+        featuredEvents[3] = event3;
+    }
 
     const [emblaRef, emblaApi] = useEmblaCarousel({ 
         loop: true,
@@ -112,7 +120,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
-    // Removendo estados de desabilitação de botões
     const [slideStyles, setSlideStyles] = useState<React.CSSProperties[]>([]);
 
     // --- Lógica de Auto-Play ---
@@ -217,7 +224,8 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         );
     }
     
-    // Removendo o cálculo de arrowOffset, pois as setas serão removidas
+    // O offset da seta agora é baseado na metade da largura do slide + o PEEK_WIDTH
+    // As setas foram removidas no passo anterior, mas a variável não é mais necessária.
 
     return (
         <div className="relative pt-4 pb-10">
@@ -265,8 +273,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 </div>
             </div>
             
-            {/* Setas de Navegação Customizadas REMOVIDAS */}
-
             {/* Indicadores (Bolinhas) */}
             <div className="absolute bottom-0 left-0 right-0 flex justify-center space-x-2 z-10">
                 {scrollSnaps.map((_, index) => (
