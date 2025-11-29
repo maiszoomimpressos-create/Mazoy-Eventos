@@ -13,9 +13,6 @@ interface EventCarouselProps {
     events: PublicEvent[];
 }
 
-const AUTOPLAY_DELAY = 6000; // 6 segundos
-const MAX_FEATURED_EVENTS = 7; // Limita a 7 eventos
-
 // Dimensões fixas
 const SLIDE_WIDTH = 550;
 const SLIDE_HEIGHT = 380;
@@ -98,37 +95,20 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
 const EventCarousel = ({ events }: EventCarouselProps) => {
     const navigate = useNavigate();
     
-    // 1. Limita a 7 eventos e remove a lógica de troca para manter a ordem original (1, 2, 3, 4, 5, ...)
+    // 1. Limita a 7 eventos e mantém a ordem original
     let featuredEvents = events.slice(0, MAX_FEATURED_EVENTS);
 
     const [emblaRef, emblaApi] = useEmblaCarousel({ 
-        loop: true,
+        loop: false, // Desativando o loop
         align: 'center', // Centraliza o slide principal
         slidesToScroll: 1,
         watchDrag: true,
-        // Usamos o PEEK_WIDTH como padding para garantir que os slides laterais sejam visíveis
         padding: { left: PEEK_WIDTH, right: PEEK_WIDTH }, 
     });
     
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
     const [slideStyles, setSlideStyles] = useState<React.CSSProperties[]>([]);
-
-    // --- Lógica de Auto-Play ---
-    const autoplay = useCallback(() => {
-        if (!emblaApi) return;
-        emblaApi.scrollNext();
-    }, [emblaApi]);
-
-    useEffect(() => {
-        if (!emblaApi) return;
-
-        const timer = setInterval(autoplay, AUTOPLAY_DELAY);
-
-        return () => {
-            clearInterval(timer);
-        };
-    }, [emblaApi, autoplay]);
 
     // --- Lógica de Estilo Dinâmico (Apenas Scale, Opacity e Z-Index) ---
     const updateSlideStyles = useCallback((emblaApi: EmblaCarouselType) => {
@@ -139,33 +119,30 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             let scale = 1;
             let opacity = 1;
             let zIndex = 20;
-            let translateX = '0'; // Novo: para manipulação manual
+            let translateX = '0'; 
 
-            // Calcula a distância circular (para loop)
-            const distance = (index - currentSnap + featuredEvents.length) % featuredEvents.length;
-            const normalizedDistance = distance > featuredEvents.length / 2 ? distance - featuredEvents.length : distance;
+            // Calcula a distância simples (sem loop)
+            const normalizedDistance = index - currentSnap;
 
-            // Slide Central (Ex: Slide 4)
+            // Slide Central (Ex: Slide 4, index 3)
             if (normalizedDistance === 0) {
                 scale = 1;
                 opacity = 1;
                 zIndex = 30;
             } 
-            // Slide à esquerda (Ex: Slide 3, que queremos mover para a direita)
+            // Slide à esquerda (Ex: Slide 3, index 2, normalizedDistance -1)
             else if (normalizedDistance === -1) { 
-                // Cálculo: O slide está em -550px. Para que ele apareça 40px à direita do centro (550/2 = 275), 
-                // ele precisa estar em 275 - 40 = 235px (borda esquerda).
-                // O centro do slide precisa estar em 235 + 275 = 510px.
-                // Movimento total necessário: 510px - (-550px) = 1060px.
+                // Move o slide 3 para a direita, atrás do slide 4.
+                // O slide 3 está posicionado em -SLIDE_WIDTH. Para que ele termine em +40px (borda direita),
+                // ele precisa de um deslocamento total de SLIDE_WIDTH + (SLIDE_WIDTH - PEEK_WIDTH)
+                // SLIDE_WIDTH (550) + (550 - 40) = 1060px
                 
                 scale = 0.95;
-                opacity = 0.6; // Mais escuro para parecer atrás
-                zIndex = 10; // ZIndex mais baixo para ficar atrás do slide central (30) e do slide à direita (15)
-                
-                // Move o slide 3 (que está na posição -1) para a direita, atrás do slide 4
-                translateX = '1060px'; 
+                opacity = 0.6; 
+                zIndex = 10; 
+                translateX = `${SLIDE_WIDTH + (SLIDE_WIDTH - PEEK_WIDTH)}px`; // 550 + 510 = 1060px
             }
-            // Slide à direita (Ex: Slide 5)
+            // Slide à direita (Ex: Slide 5, index 4, normalizedDistance 1)
             else if (normalizedDistance === 1) { 
                 scale = 0.95;
                 opacity = 0.8;
@@ -193,12 +170,12 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     // --- Lógica de Navegação e Indicadores ---
     const onSelect = useCallback((emblaApi: EmblaCarouselType) => {
         setSelectedIndex(emblaApi.selectedScrollSnap());
-        updateSlideStyles(emblaApi); // Atualiza estilos ao selecionar
+        updateSlideStyles(emblaApi); 
     }, [updateSlideStyles]);
 
     const onInit = useCallback((emblaApi: EmblaCarouselType) => {
         setScrollSnaps(emblaApi.scrollSnapList());
-        updateSlideStyles(emblaApi); // Atualiza estilos na inicialização
+        updateSlideStyles(emblaApi); 
     }, [updateSlideStyles]);
 
     useEffect(() => {
@@ -207,7 +184,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         onSelect(emblaApi);
         emblaApi.on('reInit', onInit);
         emblaApi.on('select', onSelect);
-        emblaApi.on('scroll', updateSlideStyles); // Atualiza estilos durante o scroll para transições suaves
+        emblaApi.on('scroll', updateSlideStyles); 
     }, [emblaApi, onInit, onSelect, updateSlideStyles]);
 
     const scrollTo = useCallback((index: number) => {
@@ -231,9 +208,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         );
     }
     
-    // O offset da seta agora é baseado na metade da largura do slide + o PEEK_WIDTH
-    // As setas foram removidas no passo anterior, mas a variável não é mais necessária.
-
     return (
         <div className="relative pt-4 pb-10">
             <div className="overflow-hidden" ref={emblaRef}>
@@ -248,7 +222,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                             maxWidth: `${SLIDE_WIDTH}px`,
                             display: 'flex',
                             justifyContent: 'center', // Centraliza o conteúdo dentro do slide
-                            // Adicionamos uma margem lateral para compensar o PEEK_WIDTH do Embla
+                            // Ajuste de margem para compensar o padding do Embla
                             marginLeft: index === 0 ? `-${PEEK_WIDTH}px` : '0',
                             marginRight: index === featuredEvents.length - 1 ? `-${PEEK_WIDTH}px` : '0',
                         };
@@ -293,6 +267,22 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                     />
                 ))}
             </div>
+            
+            {/* Botões de Navegação (Adicionados de volta, mas sem loop) */}
+            <button
+                className="absolute top-1/2 left-0 transform -translate-y-1/2 p-3 bg-black/50 rounded-full text-yellow-500 hover:bg-black/80 transition-colors z-40 ml-4 disabled:opacity-30"
+                onClick={() => emblaApi?.scrollPrev()}
+                disabled={!emblaApi || emblaApi.canScrollPrev() === false}
+            >
+                <ChevronLeft className="h-6 w-6" />
+            </button>
+            <button
+                className="absolute top-1/2 right-0 transform -translate-y-1/2 p-3 bg-black/50 rounded-full text-yellow-500 hover:bg-black/80 transition-colors z-40 mr-4 disabled:opacity-30"
+                onClick={() => emblaApi?.scrollNext()}
+                disabled={!emblaApi || emblaApi.canScrollNext() === false}
+            >
+                <ChevronRight className="h-6 w-6" />
+            </button>
         </div>
     );
 };
