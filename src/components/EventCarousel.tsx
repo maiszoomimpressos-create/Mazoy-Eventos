@@ -166,16 +166,18 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     // Calcula a distância de cada slide para o slide central (selectedIndex)
     const getSlideDistance = (index: number) => {
         if (!emblaApi) return 0;
-        const scrollSnap = emblaApi.scrollSnapList();
-        const slideIndex = emblaApi.slidesInView().includes(index) ? index : emblaApi.slidesInScroll().includes(index) ? index : -1;
+        const totalSlides = featuredEvents.length;
         
-        if (slideIndex === -1) return 3; // Fora de vista, empilha mais atrás
-
-        // Calcula a distância circular (loop)
-        const diff = Math.abs(index - selectedIndex);
-        const distance = Math.min(diff, featuredEvents.length - diff);
+        // Calcula a diferença absoluta
+        let diff = Math.abs(index - selectedIndex);
         
-        return distance;
+        // Ajusta para loop (distância circular)
+        if (emblaApi.options.loop) {
+            diff = Math.min(diff, totalSlides - diff);
+        }
+        
+        // Limita a distância máxima para 3 (para o efeito visual)
+        return Math.min(diff, 3);
     };
 
     return (
@@ -187,6 +189,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                         const isCentral = index === selectedIndex;
                         
                         // Define a largura do slide (Central: 550px, Outros: 450px)
+                        // Usamos classes Tailwind para responsividade e fallback
                         const slideWidth = isCentral ? '550px' : '450px';
                         
                         // Define a profundidade (z-index) e a transformação de escala/opacidade
