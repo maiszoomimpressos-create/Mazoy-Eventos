@@ -29,64 +29,23 @@ const getMinPriceDisplay = (price: number | null): string => {
 };
 
 // Componente para o Slide de Evento
-const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex: number }> = ({ event, onClick, slideIndex }) => {
+const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex: number, customStyle: React.CSSProperties }> = ({ event, onClick, slideIndex, customStyle }) => {
     const minPriceDisplay = getMinPriceDisplay(event.min_price);
     
-    // Aplica transformação específica para o slide 3 (direita), slide 5 (esquerda) e slide 2 (esquerda, mais próximo)
-    const isSlide2 = slideIndex === 2;
-    const isSlide3 = slideIndex === 3;
-    const isSlide5 = slideIndex === 5;
-    
-    let customStyle = {};
-
-    if (isSlide3) {
-        customStyle = {
-            // Move 510px para a direita e reduz a escala para simular profundidade
-            transform: 'translateX(510px) scale(0.90)', 
-            zIndex: 10, 
-            opacity: 0.6, 
-            transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
-        };
-    } else if (isSlide5) {
-        customStyle = {
-            // Move 510px para a esquerda e reduz a escala para simular profundidade
-            transform: 'translateX(-510px) scale(0.90)', 
-            zIndex: 10, 
-            opacity: 0.6, 
-            transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
-        };
-    } else if (isSlide2) {
-        customStyle = {
-            // Move 40px para a esquerda e reduz a escala levemente
-            transform: 'translateX(-40px) scale(0.95)', 
-            zIndex: 15, 
-            opacity: 0.8, 
-            transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
-        };
-    } else {
-        customStyle = {
-            zIndex: 20, // ZIndex padrão para slides normais
-            transform: 'translateX(0) scale(1)',
-            opacity: 1,
-            transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
-        };
-    }
-
-
     return (
         <Card 
             className={cn(
                 "bg-black/60 backdrop-blur-sm border rounded-2xl overflow-hidden h-full cursor-pointer transition-all duration-500 ease-in-out relative",
-                "border-yellow-500/80 shadow-2xl shadow-yellow-500/30 scale-100" // Mantendo o estilo de destaque
+                "border-yellow-500/80 shadow-2xl shadow-yellow-500/30"
             )}
             onClick={onClick}
             style={{ 
                 height: `${SLIDE_HEIGHT}px`, 
                 width: `${SLIDE_WIDTH}px`,
-                ...customStyle // Aplica o estilo customizado
+                ...customStyle // Aplica o estilo customizado dinâmico
             }} 
         >
-            {/* Identificadores de Borda */}
+            {/* Identificadores de Borda (Removidos ou ajustados se necessário, mantendo o original) */}
             <div className="absolute top-4 left-4 z-30 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-bold border border-yellow-500">
                 {slideIndex}
             </div>
@@ -156,6 +115,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
     const [prevBtnDisabled, setPrevBtnDisabled] = useState(true);
     const [nextBtnDisabled, setNextBtnDisabled] = useState(true);
+    const [slideStyles, setSlideStyles] = useState<React.CSSProperties[]>([]);
 
     // --- Lógica de Auto-Play ---
     const autoplay = useCallback(() => {
@@ -173,16 +133,78 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         };
     }, [emblaApi, autoplay]);
 
+    // --- Lógica de Estilo Dinâmico ---
+    const updateSlideStyles = useCallback((emblaApi: EmblaCarouselType) => {
+        const scrollProgress = emblaApi.scrollProgress();
+        const styles: React.CSSProperties[] = [];
+        
+        // Calcula a posição de cada slide em relação ao centro (0)
+        emblaApi.scrollSnapList().forEach((snap, index) => {
+            const diff = emblaApi.scrollProgress() - emblaApi.scrollSnapList()[emblaApi.selectedScrollSnap()];
+            const distance = emblaApi.scrollSnapList()[index] - scrollProgress;
+            
+            // Normaliza a distância para um valor entre -1 e 1 (aproximadamente)
+            const normalizedDistance = Math.min(Math.max(distance, -1), 1);
+            
+            let scale = 1;
+            let opacity = 1;
+            let translateX = 0;
+            let zIndex = 20;
+
+            // Slide central (distância próxima de 0)
+            if (Math.abs(normalizedDistance) < 0.1) {
+                scale = 1;
+                opacity = 1;
+                zIndex = 20;
+            } 
+            // Slide imediatamente à esquerda (distância próxima de 1)
+            else if (normalizedDistance > 0.5 && normalizedDistance < 1.5) {
+                // Slide que está atrás do slide principal (esquerda)
+                scale = 0.95;
+                opacity = 0.8;
+                translateX = -40; // Deslocamento de 40px para a esquerda
+                zIndex = 15;
+            }
+            // Slide imediatamente à direita (distância próxima de -1)
+            else if (normalizedDistance < -0.5 && normalizedDistance > -1.5) {
+                // Slide que está atrás do slide principal (direita)
+                scale = 0.95;
+                opacity = 0.8;
+                translateX = 40; // Deslocamento de 40px para a direita (simetria)
+                zIndex = 15;
+            }
+            // Slides mais distantes (efeito de profundidade maior)
+            else {
+                scale = 0.90;
+                opacity = 0.6;
+                // Move para fora da tela para simular profundidade extrema
+                translateX = normalizedDistance > 0 ? 510 : -510; 
+                zIndex = 10;
+            }
+            
+            styles.push({
+                transform: `translateX(${translateX}px) scale(${scale})`,
+                opacity: opacity,
+                zIndex: zIndex,
+                transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
+            });
+        });
+        setSlideStyles(styles);
+    }, []);
+
+
     // --- Lógica de Navegação e Indicadores ---
     const onSelect = useCallback((emblaApi: EmblaCarouselType) => {
         setSelectedIndex(emblaApi.selectedScrollSnap());
         setPrevBtnDisabled(!emblaApi.canScrollPrev());
         setNextBtnDisabled(!emblaApi.canScrollNext());
-    }, []);
+        updateSlideStyles(emblaApi); // Atualiza estilos ao selecionar
+    }, [updateSlideStyles]);
 
     const onInit = useCallback((emblaApi: EmblaCarouselType) => {
         setScrollSnaps(emblaApi.scrollSnapList());
-    }, []);
+        updateSlideStyles(emblaApi); // Atualiza estilos na inicialização
+    }, [updateSlideStyles]);
 
     useEffect(() => {
         if (!emblaApi) return;
@@ -190,7 +212,8 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         onSelect(emblaApi);
         emblaApi.on('reInit', onInit);
         emblaApi.on('select', onSelect);
-    }, [emblaApi, onInit, onSelect]);
+        emblaApi.on('scroll', updateSlideStyles); // Atualiza estilos durante o scroll
+    }, [emblaApi, onInit, onSelect, updateSlideStyles]);
 
     const scrollTo = useCallback((index: number) => {
         emblaApi && emblaApi.scrollTo(index);
@@ -258,7 +281,8 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                                     <EventSlide 
                                         event={event} 
                                         onClick={() => handleEventClick(event)}
-                                        slideIndex={index + 1} // Adicionando o índice do slide
+                                        slideIndex={index + 1} 
+                                        customStyle={slideStyles[index] || {}} // Aplica o estilo dinâmico
                                     />
                                 </div>
                             </div>
