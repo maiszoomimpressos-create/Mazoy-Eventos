@@ -30,7 +30,7 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
     return (
         <Card 
             className={cn(
-                "bg-black/60 backdrop-blur-sm border rounded-2xl overflow-hidden h-full cursor-pointer transition-all duration-500 ease-in-out relative",
+                "bg-black/60 backdrop-blur-sm border rounded-2xl overflow-hidden h-full cursor-pointer relative",
                 "border-yellow-500/80 shadow-2xl shadow-yellow-500/30"
             )}
             onClick={onClick}
@@ -116,6 +116,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             let opacity = 0; 
             let zIndex = 5;
             let translateX = '0'; 
+            let transition = 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out'; // Default transition
 
             const normalizedDistance = index - currentSnap;
 
@@ -123,6 +124,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 scale = 1;
                 opacity = 1;
                 zIndex = 30;
+                transition = 'opacity 0.5s ease-in-out'; // No transform transition for the central slide
             } else if (normalizedDistance === -1) { // Slide to the left, appearing behind and to the right
                 scale = 0.95;
                 opacity = 1;
@@ -141,7 +143,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 transform: `scale(${scale}) translateX(${translateX})`,
                 opacity: opacity,
                 zIndex: zIndex,
-                transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
+                transition: transition, // Apply conditional transition
             });
         });
         setSlideStyles(styles);
