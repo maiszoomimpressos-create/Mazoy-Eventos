@@ -165,7 +165,8 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     
     // Calcula a distância de cada slide para o slide central (selectedIndex)
     const getSlideDistance = (index: number) => {
-        if (!emblaApi) return 0;
+        if (!emblaApi || !emblaApi.options) return 0; // Adicionando verificação para options
+        
         const totalSlides = featuredEvents.length;
         
         // Calcula a diferença absoluta
