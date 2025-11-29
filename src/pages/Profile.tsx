@@ -16,6 +16,7 @@ import AvatarUpload from '@/components/AvatarUpload';
 import { useProfileStatus } from '@/hooks/use-profile-status';
 import { useProfile, ProfileData } from '@/hooks/use-profile';
 import { useQueryClient } from '@tanstack/react-query';
+import MultiLineEditor from '@/components/MultiLineEditor'; // Importando o editor
 
 const GENDER_OPTIONS = [
     "Masculino",
@@ -64,6 +65,7 @@ const Profile: React.FC = () => {
     const [formLoading, setFormLoading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [isCepLoading, setIsCepLoading] = useState(false);
+    const [agreedToTerms, setAgreedToTerms] = useState(false); // NOVO: Estado de concordância
 
     useEffect(() => {
         const checkSession = async () => {
@@ -228,6 +230,13 @@ const Profile: React.FC = () => {
 
     const onSubmit = async (values: z.infer<typeof profileSchema>) => {
         if (!session) return;
+        
+        // Se estiver editando, exige a concordância com os termos
+        if (isEditing && !agreedToTerms) {
+            showError("Você deve concordar com os Termos e Condições para salvar as alterações.");
+            return;
+        }
+        
         setFormLoading(true);
 
         // Limpeza e conversão para salvar no DB
@@ -305,6 +314,7 @@ const Profile: React.FC = () => {
         // O reset agora usa os valores do 'profile' carregado pelo useQuery
         form.reset();
         setIsEditing(false);
+        setAgreedToTerms(false); // Reseta a concordância
     };
 
     if (loading) {
@@ -681,9 +691,25 @@ const Profile: React.FC = () => {
                                                 />
                                             </div>
                                             
+                                            {/* --- NOVO: MultiLineEditor para Termos e Condições --- */}
+                                            {isEditing && (
+                                                <div className="pt-6 border-t border-yellow-500/20">
+                                                    <MultiLineEditor 
+                                                        onAgree={setAgreedToTerms} 
+                                                        initialAgreedState={agreedToTerms}
+                                                        showAgreementCheckbox={true}
+                                                        termsType="general"
+                                                    />
+                                                </div>
+                                            )}
+
                                             {isEditing ? (
                                                 <div className="flex items-center space-x-4 pt-4">
-                                                    <Button type="submit" disabled={formLoading} className="bg-yellow-500 text-black hover:bg-yellow-600 transition-all duration-300 cursor-pointer">
+                                                    <Button 
+                                                        type="submit" 
+                                                        disabled={formLoading || !agreedToTerms} 
+                                                        className="bg-yellow-500 text-black hover:bg-yellow-600 transition-all duration-300 cursor-pointer disabled:opacity-50"
+                                                    >
                                                         {formLoading ? (
                                                             <div className="flex items-center justify-center">
                                                                 <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin mr-2"></div>
