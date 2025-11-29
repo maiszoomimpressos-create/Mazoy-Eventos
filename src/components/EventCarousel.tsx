@@ -111,11 +111,14 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         const currentSnap = emblaApi.selectedScrollSnap();
         
         emblaApi.slideNodes().forEach((slide, index) => {
-            let scale = 0.8; 
+            const scale_adj = 0.95;
+            const scale_far = 0.9;
+
+            let scale = 0.8; // Default for slides further away
             let opacity = 0; 
             let zIndex = 5;
-            let translateX = '0'; 
-            let transition = 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out'; // Default transition
+            let translateX = 0; 
+            let transition = 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out';
 
             const normalizedDistance = index - currentSnap;
 
@@ -123,50 +126,37 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 scale = 1;
                 opacity = 1;
                 zIndex = 30;
-                transition = 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out'; 
-            } else if (normalizedDistance === -1) { // Slide adjacente à esquerda
-                scale = 0.95;
-                opacity = 0.7; 
-                zIndex = 20;
-                // Calcula o translateX para que 40px do slide adjacente fiquem visíveis à esquerda do slide central
-                // Deslocamento = (metade da largura do slide principal) - PEEK_AMOUNT + (metade da largura do slide escalado) - (largura total do slide)
-                translateX = `${(0.5 * SLIDE_WIDTH - PEEK_AMOUNT + 0.5 * scale * SLIDE_WIDTH) - SLIDE_WIDTH}px`; 
             } else if (normalizedDistance === 1) { // Slide adjacente à direita
-                scale = 0.95;
+                scale = scale_adj;
                 opacity = 0.7; 
                 zIndex = 20;
-                // Calcula o translateX para que 40px do slide adjacente fiquem visíveis à direita do slide central
-                // Deslocamento = (metade da largura do slide principal) - PEEK_AMOUNT + (metade da largura do slide escalado)
-                translateX = `${(0.5 * SLIDE_WIDTH - PEEK_AMOUNT + 0.5 * scale * SLIDE_WIDTH) - SLIDE_WIDTH}px`; 
-                // Para o lado direito, o translateX deve ser negativo para puxar o slide para a esquerda
-                translateX = `-${translateX.replace('-', '')}`; // Garante que seja negativo
-            } else if (normalizedDistance === -2) { // Segundo slide adjacente à esquerda
-                scale = 0.9;
-                opacity = 0.4; 
-                zIndex = 10;
-                // Calcula o deslocamento total para o segundo slide adjacente
-                const shift1 = (0.5 * SLIDE_WIDTH - PEEK_AMOUNT + 0.5 * 0.95 * SLIDE_WIDTH) - SLIDE_WIDTH; // Shift do primeiro adjacente
-                const shift2 = (0.5 * 0.95 * SLIDE_WIDTH + 0.5 * scale * SLIDE_WIDTH) - PEEK_AMOUNT; // Shift do segundo em relação ao primeiro
-                translateX = `${shift1 + shift2}px`; 
+                translateX = PEEK_AMOUNT; // Desloca para a direita para aparecer por trás
+            } else if (normalizedDistance === -1) { // Slide adjacente à esquerda
+                scale = scale_adj;
+                opacity = 0.7; 
+                zIndex = 20;
+                translateX = -PEEK_AMOUNT; // Desloca para a esquerda para aparecer por trás
             } else if (normalizedDistance === 2) { // Segundo slide adjacente à direita
-                scale = 0.9;
+                scale = scale_far;
                 opacity = 0.4; 
                 zIndex = 10;
-                // Calcula o deslocamento total para o segundo slide adjacente
-                const shift1 = (0.5 * SLIDE_WIDTH - PEEK_AMOUNT + 0.5 * 0.95 * SLIDE_WIDTH) - SLIDE_WIDTH; // Shift do primeiro adjacente
-                const shift2 = (0.5 * 0.95 * SLIDE_WIDTH + 0.5 * scale * SLIDE_WIDTH) - PEEK_AMOUNT; // Shift do segundo em relação ao primeiro
-                translateX = `-${shift1 + shift2}px`; 
+                translateX = 2 * PEEK_AMOUNT; // Desloca mais para a direita
+            } else if (normalizedDistance === -2) { // Segundo slide adjacente à esquerda
+                scale = scale_far;
+                opacity = 0.4; 
+                zIndex = 10;
+                translateX = -2 * PEEK_AMOUNT; // Desloca mais para a esquerda
             }
             
             styles.push({
-                transform: `scale(${scale}) translateX(${translateX})`,
+                transform: `scale(${scale}) translateX(${translateX}px)`,
                 opacity: opacity,
                 zIndex: zIndex,
-                transition: transition, // Apply conditional transition
+                transition: transition,
             });
         });
         setSlideStyles(styles);
-    }, [featuredEvents.length]); // Dependency on featuredEvents.length to re-run if events change
+    }, [featuredEvents.length]);
 
     const onSelect = useCallback((emblaApi: EmblaCarouselType) => {
         setSelectedIndex(emblaApi.selectedScrollSnap());
