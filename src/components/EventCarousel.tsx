@@ -160,6 +160,12 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 zIndex = 5;
             }
             
+            // Lógica específica para esconder o slide 3 (índice 2) atrás do slide 4 (índice 3)
+            // Quando o slide 4 é o central (currentSnap === 3), o slide 3 deve ficar atrás (zIndex menor)
+            if (currentSnap === 3 && index === 2) {
+                zIndex = 5; // Fica atrás do slide central (zIndex 30) e do slide 5 (zIndex 15)
+            }
+            
             styles.push({
                 // Aplicamos scale e o custom translation combinado
                 transform: `scale(${scale}) translateX(${translateX})`,
