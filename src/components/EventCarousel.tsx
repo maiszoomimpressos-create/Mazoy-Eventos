@@ -6,7 +6,7 @@ import useEmblaCarousel, { EmblaCarouselType } from 'embla-carousel-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { PublicEvent } from '@/hooks/use-public-events';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react'; // Removido ChevronLeft e ChevronRight
 import { cn } from '@/lib/utils';
 
 interface EventCarouselProps {
@@ -221,20 +221,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 ))}
             </div>
             
-            <button
-                className="absolute top-1/2 left-0 transform -translate-y-1/2 p-3 bg-black/50 rounded-full text-yellow-500 hover:bg-black/80 transition-colors z-40 ml-4 disabled:opacity-30"
-                onClick={() => emblaApi?.scrollPrev()}
-                disabled={!emblaApi || emblaApi.canScrollPrev() === false}
-            >
-                <ChevronLeft className="h-6 w-6" />
-            </button>
-            <button
-                className="absolute top-1/2 right-0 transform -translate-y-1/2 p-3 bg-black/50 rounded-full text-yellow-500 hover:bg-black/80 transition-colors z-40 mr-4 disabled:opacity-30"
-                onClick={() => emblaApi?.scrollNext()}
-                disabled={!emblaApi || emblaApi.canScrollNext() === false}
-            >
-                <ChevronRight className="h-6 w-6" />
-            </button>
+            {/* Botões de navegação removidos */}
         </div>
     );
 };
