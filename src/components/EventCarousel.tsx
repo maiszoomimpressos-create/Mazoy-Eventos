@@ -32,29 +32,50 @@ const getMinPriceDisplay = (price: number | null): string => {
 const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex: number }> = ({ event, onClick, slideIndex }) => {
     const minPriceDisplay = getMinPriceDisplay(event.min_price);
     
-    // Aplica transformação específica para o slide 3 (direita) e slide 5 (esquerda)
+    // Slides de profundidade 1 (mais próximos)
     const isSlide3 = slideIndex === 3;
     const isSlide5 = slideIndex === 5;
+    
+    // Slides de profundidade 2 (mais distantes)
+    const isSlide4 = slideIndex === 4;
+    const isSlide6 = slideIndex === 6;
     
     let customStyle = {};
 
     if (isSlide3) {
+        // Profundidade 1: Direita
         customStyle = {
-            // Move 510px para a direita e reduz a escala para simular profundidade
             transform: 'translateX(510px) scale(0.90)', 
             zIndex: 10, 
             opacity: 0.6, 
             transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
         };
     } else if (isSlide5) {
+        // Profundidade 1: Esquerda
         customStyle = {
-            // Move 510px para a esquerda e reduz a escala para simular profundidade
             transform: 'translateX(-510px) scale(0.90)', 
             zIndex: 10, 
             opacity: 0.6, 
             transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
         };
+    } else if (isSlide4) {
+        // Profundidade 2: Direita (Atrás do Slide 3)
+        customStyle = {
+            transform: 'translateX(1020px) scale(0.80)', // Dobro do deslocamento, escala menor
+            zIndex: 5, // ZIndex menor
+            opacity: 0.3, // Opacidade menor
+            transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
+        };
+    } else if (isSlide6) {
+        // Profundidade 2: Esquerda (Atrás do Slide 5)
+        customStyle = {
+            transform: 'translateX(-1020px) scale(0.80)', // Dobro do deslocamento, escala menor
+            zIndex: 5, // ZIndex menor
+            opacity: 0.3, // Opacidade menor
+            transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
+        };
     } else {
+        // Slide Central (2) e Slides Fora de Vista (1 e 7)
         customStyle = {
             zIndex: 20, // ZIndex padrão para slides normais
             transform: 'translateX(0) scale(1)',
