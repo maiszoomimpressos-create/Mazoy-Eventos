@@ -37,9 +37,9 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
     
     const customStyle = isSlide3 ? {
         // Move 510px para a direita e reduz a escala para simular profundidade
-        transform: 'translateX(510px) scale(0.95)',
-        zIndex: 10, // Garante que ele fique atrás do slide 4 (que terá zIndex padrão ou maior)
-        opacity: 0.8,
+        transform: 'translateX(510px) scale(0.85)', // Scale reduzido para 0.85
+        zIndex: 10, // Garante que ele fique atrás dos slides vizinhos
+        opacity: 0.6, // Opacidade reduzida para 0.6
         transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
     } : {
         zIndex: 20, // ZIndex padrão para slides normais
