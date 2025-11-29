@@ -6,7 +6,7 @@ import useEmblaCarousel, { EmblaCarouselType } from 'embla-carousel-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { PublicEvent } from '@/hooks/use-public-events';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react'; // Removido ChevronLeft e ChevronRight
+import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface EventCarouselProps {
@@ -115,10 +115,10 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             let zIndex = 10; // Todos os slides com o mesmo z-index
             let translateX = 0; // Sem translação padrão para sobreposição
 
-            // Aplica o deslocamento de 510px para a direita APENAS no banner 4 (índice 3)
-            if (index === 3) { 
-                translateX = 510; 
-            }
+            // REMOVIDO: Aplica o deslocamento de 510px para a direita APENAS no banner 4 (índice 3)
+            // if (index === 3) { 
+            //     translateX = 510; 
+            // }
             
             styles.push({
                 transform: `scale(${scale}) translateX(${translateX}px)`,
