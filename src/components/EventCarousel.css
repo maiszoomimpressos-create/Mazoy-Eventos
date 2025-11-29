@@ -4,11 +4,10 @@
   height: 100%;
 }
 
-/* Define a largura do slide para o modo 'auto' */
+/* Define a largura e altura exatas para o slide central (600x400) */
 .swiper-slide {
-  width: 70%; /* O slide central ocupa 70% da largura do contêiner */
-  max-width: 600px; /* Limite máximo para o slide central */
-  height: 100%;
+  width: 600px; 
+  height: 400px; 
   text-align: center;
   font-size: 18px;
   background: #000; 
@@ -19,11 +18,13 @@
   align-items: center;
 }
 
-/* Ajuste para telas maiores */
-@media (min-width: 768px) {
+/* Ajuste para telas menores: usa 90% da largura da viewport, mantendo a proporção 6:4 */
+@media (max-width: 768px) {
     .swiper-slide {
-        width: 50%; /* Em telas maiores, o slide central ocupa 50% */
-        max-width: 800px;
+        width: 90vw; 
+        height: 60vw; 
+        max-width: 600px;
+        max-height: 400px;
     }
 }
 
@@ -68,14 +69,6 @@
 .swiper-button-prev::after {
   font-size: 18px;
   font-weight: bold;
-}
-
-/* Esconder botões de navegação em telas pequenas */
-@media (max-width: 768px) {
-  .swiper-button-next,
-  .swiper-button-prev {
-    /* Mantemos os botões visíveis, mas ajustamos a posição se necessário */
-  }
 }
 
 /* Ajuste para a posição da paginação */
