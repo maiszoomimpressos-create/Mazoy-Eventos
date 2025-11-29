@@ -13,20 +13,17 @@ interface EventCarouselProps {
     events: PublicEvent[];
 }
 
-const MAX_FEATURED_EVENTS = 7; // Definindo a constante
+const MAX_FEATURED_EVENTS = 7;
 
-// Dimensões fixas
 const SLIDE_WIDTH = 550;
 const SLIDE_HEIGHT = 380;
-const PEEK_WIDTH = 40; // 40px de visibilidade parcial
+const PEEK_WIDTH = 40;
 
-// Helper function to get the minimum price display
 const getMinPriceDisplay = (price: number | null): string => {
     if (price === null || price === 0) return 'Grátis';
     return `R$ ${price.toFixed(2).replace('.', ',')}`;
 };
 
-// Componente para o Slide de Evento
 const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex: number, customStyle: React.CSSProperties }> = ({ event, onClick, slideIndex, customStyle }) => {
     const minPriceDisplay = getMinPriceDisplay(event.min_price);
     
@@ -40,7 +37,7 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
             style={{ 
                 height: `${SLIDE_HEIGHT}px`, 
                 width: `${SLIDE_WIDTH}px`,
-                ...customStyle // Aplica o estilo customizado dinâmico
+                ...customStyle
             }} 
         >
             <div className="absolute top-4 left-4 z-30 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-bold border border-yellow-500">
@@ -72,7 +69,6 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
                                 <span className="text-sm text-gray-400">A partir de</span>
                                 <span className="text-xl font-bold text-yellow-500 whitespace-nowrap">
                                     {minPriceDisplay}
-                                
                                 </span>
                             </div>
                             <Button 
@@ -93,11 +89,9 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
     );
 };
 
-
 const EventCarousel = ({ events }: EventCarouselProps) => {
     const navigate = useNavigate();
     
-    // 1. Limita a 7 eventos e mantém a ordem original
     const featuredEvents = events.slice(0, MAX_FEATURED_EVENTS);
 
     const [emblaRef, emblaApi] = useEmblaCarousel({ 
@@ -105,7 +99,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         align: 'center', 
         slidesToScroll: 1,
         watchDrag: true,
-        // Reintroduzindo padding para permitir a visualização parcial
         padding: { left: SLIDE_WIDTH / 2 - PEEK_WIDTH, right: SLIDE_WIDTH / 2 - PEEK_WIDTH }, 
     });
     
@@ -113,7 +106,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
     const [slideStyles, setSlideStyles] = useState<React.CSSProperties[]>([]);
 
-    // --- Lógica de Estilo Dinâmico (Para sobreposição) ---
     const updateSlideStyles = useCallback((emblaApi: EmblaCarouselType) => {
         const styles: React.CSSProperties[] = [];
         const currentSnap = emblaApi.selectedScrollSnap();
@@ -124,50 +116,38 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             let zIndex = 10;
             let translateX = '0'; 
 
-            // Calcula a distância simples (sem loop)
             const normalizedDistance = index - currentSnap;
 
-            // Slide Central (Ex: Slide 4, index 3)
             if (normalizedDistance === 0) {
                 scale = 1;
                 opacity = 1;
                 zIndex = 30;
             } 
-            // Slide à esquerda (Ex: Slide 3, index 2, normalizedDistance -1)
             else if (normalizedDistance === -1) { 
                 scale = 0.95;
                 opacity = 0.8; 
                 zIndex = 10; 
-                // Move o slide para a direita para que ele fique parcialmente visível atrás do slide central.
-                // O Embla já moveu o slide para a esquerda. Precisamos movê-lo de volta para a direita
-                // o suficiente para que apenas PEEK_WIDTH (40px) fique visível.
-                // Deslocamento necessário: SLIDE_WIDTH - PEEK_WIDTH = 550 - 40 = 510px
                 translateX = `${SLIDE_WIDTH - PEEK_WIDTH}px`; 
             }
-            // Slide à direita (Ex: Slide 5, index 4, normalizedDistance 1)
             else if (normalizedDistance === 1) { 
                 scale = 0.95;
                 opacity = 0.8;
-                zIndex = 15; // Fica na frente do slide anterior, mas atrás do central
-                // Move o slide para a esquerda para que ele fique parcialmente visível.
-                // Deslocamento necessário: - (SLIDE_WIDTH - PEEK_WIDTH) = -510px
+                zIndex = 15;
                 translateX = `-${SLIDE_WIDTH - PEEK_WIDTH}px`;
             }
-            // Slides mais distantes
             else {
                 scale = 0.90;
                 opacity = 0.6;
                 zIndex = 5;
             }
             
-            // Lógica específica para esconder o slide 3 (índice 2) atrás do slide 4 (índice 3)
-            // Quando o slide 4 é o central (currentSnap === 3), o slide 3 deve ficar atrás (zIndex menor)
+            // Ajuste específico para garantir que o slide 3 (índice 2) fique atrás do slide 4 (índice 3)
+            // quando o slide 4 é o central (currentSnap === 3)
             if (currentSnap === 3 && index === 2) {
-                zIndex = 5; // Fica atrás do slide central (zIndex 30) e do slide 5 (zIndex 15)
+                zIndex = 5; // Garante que o slide 3 fique atrás do slide 4 (zIndex 30) e do slide 5 (zIndex 15)
             }
             
             styles.push({
-                // Aplicamos scale e o custom translation combinado
                 transform: `scale(${scale}) translateX(${translateX})`,
                 opacity: opacity,
                 zIndex: zIndex,
@@ -177,8 +157,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         setSlideStyles(styles);
     }, [featuredEvents.length]);
 
-
-    // --- Lógica de Navegação e Indicadores ---
     const onSelect = useCallback((emblaApi: EmblaCarouselType) => {
         setSelectedIndex(emblaApi.selectedScrollSnap());
         updateSlideStyles(emblaApi); 
@@ -206,7 +184,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         navigate(`/finalizar-compra`, { state: { eventId: event.id } });
     };
 
-
     if (featuredEvents.length === 0) {
         return (
             <div className="flex items-center justify-center h-full bg-black/60 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/20" style={{ height: `${SLIDE_HEIGHT}px` }}>
@@ -224,21 +201,16 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             <div className="overflow-hidden" ref={emblaRef}>
                 <div className="flex touch-pan-y">
                     {featuredEvents.map((event, index) => {
-                        
-                        // Estilo para limitar a largura do slide e centralizar
                         const slideContainerStyle = {
-                            // Ocupa a largura do slide (550px)
                             flex: `0 0 ${SLIDE_WIDTH}px`, 
                             minWidth: `${SLIDE_WIDTH}px`,
                             maxWidth: `${SLIDE_WIDTH}px`,
                             display: 'flex',
-                            justifyContent: 'center', // Centraliza o conteúdo dentro do slide
-                            // Removendo margens de compensação
+                            justifyContent: 'center',
                             marginLeft: '0',
                             marginRight: '0',
                         };
                         
-                        // Estilo para o slide em si (largura fixa)
                         const slideStyle = {
                             width: `${SLIDE_WIDTH}px`,
                             maxWidth: '100%', 
@@ -256,7 +228,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                                         event={event} 
                                         onClick={() => handleEventClick(event)}
                                         slideIndex={index + 1} 
-                                        customStyle={slideStyles[index] || {}} // Aplica o estilo dinâmico
+                                        customStyle={slideStyles[index] || {}} 
                                     />
                                 </div>
                             </div>
@@ -265,7 +237,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 </div>
             </div>
             
-            {/* Indicadores (Bolinhas) */}
             <div className="absolute bottom-0 left-0 right-0 flex justify-center space-x-2 z-10">
                 {scrollSnaps.map((_, index) => (
                     <button
@@ -279,7 +250,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 ))}
             </div>
             
-            {/* Botões de Navegação */}
             <button
                 className="absolute top-1/2 left-0 transform -translate-y-1/2 p-3 bg-black/50 rounded-full text-yellow-500 hover:bg-black/80 transition-colors z-40 ml-4 disabled:opacity-30"
                 onClick={() => emblaApi?.scrollPrev()}
