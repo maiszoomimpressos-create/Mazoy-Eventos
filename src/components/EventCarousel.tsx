@@ -128,26 +128,31 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 scale = 0.95;
                 opacity = 0.7; 
                 zIndex = 20;
-                // Ajustado para mostrar exatamente PEEK_AMOUNT (40px)
-                translateX = `${PEEK_AMOUNT}px`; 
+                // Calcula o translateX para que 40px do slide adjacente fiquem visíveis à esquerda do slide central
+                // (SLIDE_WIDTH / 2) * (1 + scale_adj) - PEEK_AMOUNT
+                translateX = `${-((SLIDE_WIDTH / 2) * (1 + scale) - PEEK_AMOUNT)}px`; 
             } else if (normalizedDistance === 1) { // Immediate right adjacent
                 scale = 0.95;
                 opacity = 0.7; 
                 zIndex = 20;
-                // Ajustado para mostrar exatamente PEEK_AMOUNT (40px)
-                translateX = `-${PEEK_AMOUNT}px`; 
+                // Calcula o translateX para que 40px do slide adjacente fiquem visíveis à direita do slide central
+                translateX = `${(SLIDE_WIDTH / 2) * (1 + scale) - PEEK_AMOUNT}px`; 
             } else if (normalizedDistance === -2) { // Second left adjacent
                 scale = 0.9;
                 opacity = 0.4; 
                 zIndex = 10;
-                // Ajustado para empilhamento consistente
-                translateX = `${2 * PEEK_AMOUNT}px`; 
+                // Posição do centro do primeiro slide adjacente
+                const xCenter1 = -((SLIDE_WIDTH / 2) * (1 + 0.95) - PEEK_AMOUNT);
+                // Posição do centro do segundo slide adjacente
+                translateX = `${xCenter1 - (SLIDE_WIDTH / 2) * (0.95 + scale) - PEEK_AMOUNT}px`; 
             } else if (normalizedDistance === 2) { // Second right adjacent
                 scale = 0.9;
                 opacity = 0.4; 
                 zIndex = 10;
-                // Ajustado para empilhamento consistente
-                translateX = `-${2 * PEEK_AMOUNT}px`; 
+                // Posição do centro do primeiro slide adjacente
+                const xCenter1 = (SLIDE_WIDTH / 2) * (1 + 0.95) - PEEK_AMOUNT;
+                // Posição do centro do segundo slide adjacente
+                translateX = `${xCenter1 + (SLIDE_WIDTH / 2) * (0.95 + scale) + PEEK_AMOUNT}px`; 
             }
             
             styles.push({
