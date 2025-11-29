@@ -18,7 +18,7 @@ const MAX_FEATURED_EVENTS = 7; // Definindo a constante
 // Dimensões fixas
 const SLIDE_WIDTH = 550;
 const SLIDE_HEIGHT = 380;
-const PEEK_WIDTH = 40; // 40px de visibilidade parcial
+// Removendo PEEK_WIDTH
 
 // Helper function to get the minimum price display
 const getMinPriceDisplay = (price: number | null): string => {
@@ -101,81 +101,44 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     const featuredEvents = events.slice(0, MAX_FEATURED_EVENTS);
 
     const [emblaRef, emblaApi] = useEmblaCarousel({ 
-        loop: false, // Desativando o loop
-        align: 'center', // Centraliza o slide principal
+        loop: false, 
+        align: 'center', 
         slidesToScroll: 1,
         watchDrag: true,
-        padding: { left: PEEK_WIDTH, right: PEEK_WIDTH }, 
+        // Removendo padding para não mostrar slides adjacentes
     });
     
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
     const [slideStyles, setSlideStyles] = useState<React.CSSProperties[]>([]);
 
-    // --- Lógica de Estilo Dinâmico (Apenas Scale, Opacity e Z-Index) ---
+    // --- Lógica de Estilo Dinâmico (Simplificada) ---
     const updateSlideStyles = useCallback((emblaApi: EmblaCarouselType) => {
         const styles: React.CSSProperties[] = [];
         const currentSnap = emblaApi.selectedScrollSnap();
         
         emblaApi.slideNodes().forEach((slide, index) => {
-            let scale = 1;
-            let opacity = 1;
-            let zIndex = 20;
+            let scale = 0.9;
+            let opacity = 0.6;
+            let zIndex = 10;
             let translateX = '0'; 
 
-            // Calcula a distância simples (sem loop)
-            const normalizedDistance = index - currentSnap;
-
-            // Slide Central (Ex: Slide 4, index 3)
-            if (normalizedDistance === 0) {
+            // Slide Central
+            if (index === currentSnap) {
                 scale = 1;
                 opacity = 1;
                 zIndex = 30;
             } 
-            // Slide à esquerda (Ex: Slide 3, index 2, normalizedDistance -1)
-            else if (normalizedDistance === -1) { 
-                // O Embla já posiciona o slide -1 em -SLIDE_WIDTH.
-                // Para que ele apareça 40px à direita do centro (SLIDE_WIDTH / 2),
-                // precisamos movê-lo para a direita em:
-                // (SLIDE_WIDTH - PEEK_WIDTH) = 550 - 40 = 510px
-                // O Embla já moveu -550px. Se aplicarmos +510px, ele termina em -40px.
-                // Precisamos que ele termine em + (SLIDE_WIDTH - PEEK_WIDTH) / 2
-                
-                // Vamos usar a translação para compensar o movimento do Embla e posicionar o slide
-                // no local desejado (40px visíveis à esquerda do slide central).
-                
-                // Se o slide central está em 0, o slide anterior está em -100% (ou -550px).
-                // Queremos que ele termine em: -550px + (550 - 40) = -40px (relativo ao centro do container)
-                
-                // O Embla aplica a translação principal. Nossa translação deve ser relativa ao slide.
-                // Para que o slide anterior (que está à esquerda) apareça 40px à direita do centro,
-                // precisamos movê-lo para a direita em: SLIDE_WIDTH - PEEK_WIDTH = 510px.
-                
-                scale = 0.95;
-                opacity = 0.6; 
-                zIndex = 10; 
-                // Move o slide 510px para a direita (550 - 40)
-                translateX = `${SLIDE_WIDTH - PEEK_WIDTH}px`; 
-            }
-            // Slide à direita (Ex: Slide 5, index 4, normalizedDistance 1)
-            else if (normalizedDistance === 1) { 
-                scale = 0.95;
-                opacity = 0.8;
-                zIndex = 15;
-                // Move o slide para a esquerda para que ele fique parcialmente visível
-                // Deslocamento: - (SLIDE_WIDTH - PEEK_WIDTH) = -510px
-                translateX = `-${SLIDE_WIDTH - PEEK_WIDTH}px`;
-            }
-            // Slides mais distantes
+            // Slides adjacentes e distantes
             else {
-                scale = 0.90;
+                scale = 0.9;
                 opacity = 0.6;
                 zIndex = 10;
             }
             
             styles.push({
-                // Aplicamos scale e o custom translation combinado
-                transform: `scale(${scale}) translateX(${translateX})`,
+                // Aplicamos apenas scale e zIndex. Removemos a translação customizada.
+                transform: `scale(${scale})`,
                 opacity: opacity,
                 zIndex: zIndex,
                 transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
@@ -240,9 +203,9 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                             maxWidth: `${SLIDE_WIDTH}px`,
                             display: 'flex',
                             justifyContent: 'center', // Centraliza o conteúdo dentro do slide
-                            // Ajuste de margem para compensar o padding do Embla
-                            marginLeft: index === 0 ? `-${PEEK_WIDTH}px` : '0',
-                            marginRight: index === featuredEvents.length - 1 ? `-${PEEK_WIDTH}px` : '0',
+                            // Removendo margens de compensação
+                            marginLeft: '0',
+                            marginRight: '0',
                         };
                         
                         // Estilo para o slide em si (largura fixa)
@@ -286,7 +249,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 ))}
             </div>
             
-            {/* Botões de Navegação (Adicionados de volta, mas sem loop) */}
+            {/* Botões de Navegação */}
             <button
                 className="absolute top-1/2 left-0 transform -translate-y-1/2 p-3 bg-black/50 rounded-full text-yellow-500 hover:bg-black/80 transition-colors z-40 ml-4 disabled:opacity-30"
                 onClick={() => emblaApi?.scrollPrev()}
