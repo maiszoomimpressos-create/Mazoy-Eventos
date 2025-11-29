@@ -12,7 +12,7 @@ interface EventCarouselProps {
     events: PublicEvent[];
 }
 
-const NUM_BANNERS_TO_DISPLAY = 6; // Agora esta constante define o número exato de banners que queremos exibir
+const NUM_BANNERS_TO_DISPLAY = 7; // Agora esta constante define o número exato de banners que queremos exibir
 
 const SLIDE_WIDTH = 550; // Largura máxima para o cartão de conteúdo
 const SLIDE_HEIGHT = 380; // Altura fixa para os cartões
@@ -110,13 +110,14 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         );
     }
     
-    // Identifica os eventos para os banners 1, 2, 3, 4, 5 e 6 (índices 0, 1, 2, 3, 4 e 5)
+    // Identifica os eventos para os banners 1, 2, 3, 4, 5, 6 e 7 (índices 0 a 6)
     const prevPrevPrevEvent = featuredEvents[0]; // Banner 1
     const prevPrevEvent = featuredEvents[1];     // Banner 2
     const prevEvent = featuredEvents[2];         // Banner 3
     const fixedEvent = featuredEvents[3];        // Banner 4 (central e fixo)
     const nextEvent = featuredEvents[4];         // Banner 5
     const nextNextEvent = featuredEvents[5];     // Banner 6
+    const nextNextNextEvent = featuredEvents[6]; // NOVO: Banner 7
 
     // Se o evento central não existir, exibe uma mensagem de erro
     if (!fixedEvent) {
@@ -201,7 +202,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                         />
                     </div>
                 )}
-                {nextNextEvent && ( // NOVO: Banner 6
+                {nextNextEvent && ( // Banner 6
                     <div 
                         className="relative hidden md:block" 
                         style={{ marginLeft: `-${overlapAmount}px` }} 
@@ -211,6 +212,19 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                             onClick={() => handleEventClick(nextNextEvent)}
                             slideIndex={6} 
                             customStyle={{ transform: 'scale(0.7)', opacity: 0.15, zIndex: 10 }} // Espelha o estilo do banner 2
+                        />
+                    </div>
+                )}
+                {nextNextNextEvent && ( // NOVO: Banner 7
+                    <div 
+                        className="relative hidden md:block" 
+                        style={{ marginLeft: `-${overlapAmount}px` }} 
+                    >
+                        <EventSlide 
+                            event={nextNextNextEvent} 
+                            onClick={() => handleEventClick(nextNextNextEvent)}
+                            slideIndex={7} 
+                            customStyle={{ transform: 'scale(0.55)', opacity: 0.05, zIndex: 5 }} // Espelha o estilo do banner 1
                         />
                     </div>
                 )}
