@@ -6,7 +6,7 @@ import useEmblaCarousel, { EmblaCarouselType } from 'embla-carousel-react';
 import { Card, CardContent } from "@/components/ui/card";
 import { PublicEvent } from '@/hooks/use-public-events';
 import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, ArrowLeft } from 'lucide-react'; // Importando ArrowLeft
 import { cn } from '@/lib/utils';
 
 interface EventCarouselProps {
@@ -108,6 +108,8 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     const [selectedIndex, setSelectedIndex] = useState(3); 
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
     const [slideStyles, setSlideStyles] = useState<React.CSSProperties[]>([]);
+    const [prevBtnEnabled, setPrevBtnEnabled] = useState(false); // Estado para botão Anterior
+    const [nextBtnEnabled, setNextBtnEnabled] = useState(false); // Estado para botão Próximo
 
     const updateSlideStyles = useCallback((emblaApi: EmblaCarouselType) => {
         const styles: React.CSSProperties[] = [];
@@ -137,11 +139,15 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
 
     const onSelect = useCallback((emblaApi: EmblaCarouselType) => {
         setSelectedIndex(emblaApi.selectedScrollSnap());
+        setPrevBtnEnabled(emblaApi.canScrollPrev());
+        setNextBtnEnabled(emblaApi.canScrollNext());
         updateSlideStyles(emblaApi); 
     }, [updateSlideStyles]);
 
     const onInit = useCallback((emblaApi: EmblaCarouselType) => {
         setScrollSnaps(emblaApi.scrollSnapList());
+        setPrevBtnEnabled(emblaApi.canScrollPrev());
+        setNextBtnEnabled(emblaApi.canScrollNext());
         updateSlideStyles(emblaApi); 
     }, [updateSlideStyles]);
 
@@ -158,6 +164,14 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         emblaApi && emblaApi.scrollTo(index);
     }, [emblaApi]);
     
+    const scrollPrev = useCallback(() => {
+        emblaApi && emblaApi.scrollPrev();
+    }, [emblaApi]);
+
+    const scrollNext = useCallback(() => {
+        emblaApi && emblaApi.scrollNext();
+    }, [emblaApi]);
+
     const handleEventClick = (event: PublicEvent) => {
         navigate(`/finalizar-compra`, { state: { eventId: event.id } });
     };
@@ -213,6 +227,22 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 </div>
             </div>
             
+            {/* Botões de navegação */}
+            <Button
+                onClick={scrollPrev}
+                disabled={!prevBtnEnabled}
+                className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-black/60 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/20 hover:border-yellow-500 rounded-full w-10 h-10 flex items-center justify-center z-20 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <Button
+                onClick={scrollNext}
+                disabled={!nextBtnEnabled}
+                className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-black/60 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/20 hover:border-yellow-500 rounded-full w-10 h-10 flex items-center justify-center z-20 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+                <ArrowRight className="h-5 w-5" />
+            </Button>
+
             <div className="absolute bottom-0 left-0 right-0 flex justify-center space-x-2 z-10">
                 {scrollSnaps.map((_, index) => (
                     <button
@@ -225,8 +255,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                     />
                 ))}
             </div>
-            
-            {/* Botões de navegação removidos */}
         </div>
     );
 };
