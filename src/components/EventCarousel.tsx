@@ -165,8 +165,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     
     // Calcula a distância de cada slide para o slide central (selectedIndex)
     const getSlideDistance = (index: number) => {
-        if (!emblaApi || !emblaApi.options) return 0; // Adicionando verificação para options
-        
+        if (!emblaApi || !emblaApi.options) return 0;
         const totalSlides = featuredEvents.length;
         
         // Calcula a diferença absoluta
@@ -189,9 +188,8 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                         const distance = getSlideDistance(index);
                         const isCentral = index === selectedIndex;
                         
-                        // Define a largura do slide (Central: 550px, Outros: 450px)
-                        // Usamos classes Tailwind para responsividade e fallback
-                        const slideWidth = isCentral ? '550px' : '450px';
+                        // Ajuste de Largura: Central 550px, Laterais 350px
+                        const slideWidth = isCentral ? '550px' : '350px';
                         
                         // Define a profundidade (z-index) e a transformação de escala/opacidade
                         let zIndex = 10 - distance;
@@ -199,9 +197,9 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                         let scale = 1;
                         
                         if (!isCentral) {
-                            // Escala e opacidade decrescem com a distância
-                            scale = 1 - (distance * 0.05); // 0.95, 0.90, etc.
-                            opacity = 1 - (distance * 0.2); // 0.8, 0.6, etc.
+                            // Escala e opacidade decrescem mais agressivamente
+                            scale = 1 - (distance * 0.1); // 0.9, 0.8, etc.
+                            opacity = 1 - (distance * 0.3); // 0.7, 0.4, etc.
                             zIndex = 10 - distance;
                         }
                         
@@ -210,7 +208,8 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                             flex: `0 0 ${slideWidth}`,
                             minWidth: slideWidth,
                             maxWidth: slideWidth,
-                            margin: '0 10px', // Espaçamento entre slides
+                            // Reduz o margin para que os slides se sobreponham mais
+                            margin: '0 5px', 
                             zIndex: zIndex,
                             opacity: opacity,
                             transform: `scale(${scale})`,
