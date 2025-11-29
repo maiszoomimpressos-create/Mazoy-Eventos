@@ -12,7 +12,7 @@ interface EventCarouselProps {
     events: PublicEvent[];
 }
 
-const MAX_FEATURED_EVENTS = 8; // Aumentado para 8 para acomodar 6 banners (índices 0 a 5)
+const NUM_BANNERS_TO_DISPLAY = 6; // Agora esta constante define o número exato de banners que queremos exibir
 
 const SLIDE_WIDTH = 550; // Largura máxima para o cartão de conteúdo
 const SLIDE_HEIGHT = 380; // Altura fixa para os cartões
@@ -91,14 +91,14 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
 const EventCarousel = ({ events }: EventCarouselProps) => {
     const navigate = useNavigate();
     
-    // Agora pegamos 6 eventos para os 6 banners
-    const featuredEvents = events.slice(0, MAX_FEATURED_EVENTS);
+    // Agora pegamos exatamente o número de banners que queremos exibir
+    const featuredEvents = events.slice(0, NUM_BANNERS_TO_DISPLAY);
 
     const handleEventClick = (event: PublicEvent) => {
         navigate(`/finalizar-compra`, { state: { eventId: event.id } });
     };
 
-    if (featuredEvents.length < 6) { // Ajusta a verificação para garantir que temos pelo menos 6 eventos para exibir
+    if (featuredEvents.length < NUM_BANNERS_TO_DISPLAY) { // Verifica se há eventos suficientes
         return (
             <div className="flex items-center justify-center h-full bg-black/60 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/20" style={{ height: `${SLIDE_HEIGHT}px` }}>
                 <div className="text-center p-8">
@@ -116,7 +116,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     const prevEvent = featuredEvents[2];         // Banner 3
     const fixedEvent = featuredEvents[3];        // Banner 4 (central e fixo)
     const nextEvent = featuredEvents[4];         // Banner 5
-    const nextNextEvent = featuredEvents[5];     // NOVO: Banner 6
+    const nextNextEvent = featuredEvents[5];     // Banner 6
 
     // Se o evento central não existir, exibe uma mensagem de erro
     if (!fixedEvent) {
