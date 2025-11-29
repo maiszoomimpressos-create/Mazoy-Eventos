@@ -19,7 +19,7 @@ import { Switch } from "@/components/ui/switch"; // Importando Switch
 import { categories } from '@/data/events';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, ArrowLeft, ImageOff, Loader2, MapPin, CalendarDays, ListOrdered, Heading, Subtitles } from 'lucide-react'; // Novos ícones
+import { Plus, ArrowLeft, ImageOff, Loader2, MapPin, CalendarDays, ListOrdered, Heading, Subtitles, SlidersHorizontal } from 'lucide-react'; // Novos ícones
 import { format } from 'date-fns';
 import { DatePicker } from '@/components/DatePicker';
 import ImageUploadPicker from '@/components/ImageUploadPicker';
