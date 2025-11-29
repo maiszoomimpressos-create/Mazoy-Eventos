@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { trackAdvancedFilterUse } from '@/utils/metrics';
 import { usePublicEvents, PublicEvent } from '@/hooks/use-public-events';
 import { Loader2 } from 'lucide-react';
-// import EventCarousel from '@/components/EventCarousel'; // Removido
+import EventCarousel from '@/components/EventCarousel'; // Importado o EventCarousel
 
 const EVENTS_PER_PAGE = 12;
 
@@ -35,7 +35,7 @@ const Index: React.FC = () => {
     }, []);
 
     const handleEventClick = (event: PublicEvent) => {
-        navigate(`/finalizar-compra`, { state: { eventId: event.id } });
+        navigate(`/events/${event.id}`); // Navega para a página de detalhes do evento
     };
     
     const handleApplyFilters = () => {
@@ -117,6 +117,18 @@ const Index: React.FC = () => {
                 </div>
             </header>
             
+            <section id="home" className="pt-20 pb-12 sm:pb-20 px-4 sm:px-6">
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-center mb-10 sm:mb-16">
+                        <h2 className="text-3xl sm:text-5xl font-serif text-yellow-500 mb-4">Eventos em Destaque</h2>
+                        <div className="w-16 sm:w-24 h-px bg-yellow-500 mx-auto"></div>
+                    </div>
+                    <div className="mb-8">
+                        <EventCarousel userId={userId} />
+                    </div>
+                </div>
+            </section>
+
             <section id="eventos" className="pt-20 pb-12 sm:pb-20 px-4 sm:px-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-10 sm:mb-16">
@@ -125,10 +137,6 @@ const Index: React.FC = () => {
                     </div>
                     
                     <div className="mb-12">
-                        {/* <div className="mb-8">
-                            <EventCarousel events={allEvents} />
-                        </div> */}
-                        
                         <div className="flex flex-col lg:flex-row gap-6 mb-8">
                             <div className="flex-1">
                                 <div className="relative">

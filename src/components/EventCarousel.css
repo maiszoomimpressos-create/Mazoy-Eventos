@@ -1,0 +1,67 @@
+/* Estilos para o Swiper */
+.swiper {
+  width: 100%;
+  height: 100%;
+}
+
+.swiper-slide {
+  text-align: center;
+  font-size: 18px;
+  background: #000; /* Fundo escuro para slides */
+
+  /* Center slide text vertically */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.swiper-slide img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Estilos para a paginação (bolinhas) */
+.swiper-pagination-bullet {
+  background: rgba(255, 255, 255, 0.5); /* Bolinhas brancas semi-transparentes */
+  opacity: 1;
+}
+
+.swiper-pagination-bullet-active {
+  background: #fbbf24; /* Bolinha ativa amarela */
+}
+
+/* Estilos para os botões de navegação (setas) */
+.swiper-button-next,
+.swiper-button-prev {
+  color: #fbbf24; /* Setas amarelas */
+  background-color: rgba(0, 0, 0, 0.5); /* Fundo escuro semi-transparente */
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease;
+}
+
+.swiper-button-next:hover,
+.swiper-button-prev:hover {
+  background-color: rgba(0, 0, 0, 0.8); /* Fundo mais escuro ao passar o mouse */
+}
+
+/* Ajuste do tamanho do ícone da seta */
+.swiper-button-next::after,
+.swiper-button-prev::after {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Esconder botões de navegação em telas pequenas */
+@media (max-width: 768px) {
+  .swiper-button-next,
+  .swiper-button-prev {
+    display: none;
+  }
+}
