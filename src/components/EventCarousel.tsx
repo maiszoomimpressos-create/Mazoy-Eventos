@@ -16,6 +16,10 @@ interface EventCarouselProps {
 const AUTOPLAY_DELAY = 6000; // 6 segundos
 const MAX_FEATURED_EVENTS = 7; // Limita a 7 eventos conforme solicitado
 
+// Dimensões fixas
+const SLIDE_WIDTH = 550;
+const SLIDE_HEIGHT = 380;
+
 // Helper function to get the minimum price display
 const getMinPriceDisplay = (price: number | null): string => {
     if (price === null || price === 0) return 'Grátis';
@@ -34,7 +38,7 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void }> = ({ eve
                 "border-yellow-500/80 shadow-2xl shadow-yellow-500/30 scale-100" // Mantendo o estilo de destaque
             )}
             onClick={onClick}
-            style={{ height: '380px' }} // Altura fixa
+            style={{ height: `${SLIDE_HEIGHT}px` }} // Altura fixa
         >
             <CardContent className="flex flex-col p-0 h-full">
                 <div className="relative h-full overflow-hidden">
@@ -88,7 +92,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
 
     const [emblaRef, emblaApi] = useEmblaCarousel({ 
         loop: true,
-        align: 'start', // Alinha ao início para garantir que apenas um slide seja visível
+        align: 'center', // Centraliza o slide
         slidesToScroll: 1,
         watchDrag: true,
     });
@@ -151,7 +155,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
 
     if (featuredEvents.length === 0) {
         return (
-            <div className="flex items-center justify-center h-full bg-black/60 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/20">
+            <div className="flex items-center justify-center h-full bg-black/60 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/20" style={{ height: `${SLIDE_HEIGHT}px` }}>
                 <div className="text-center p-8">
                     <i className="fas fa-star text-yellow-500 text-4xl mb-4"></i>
                     <h2 className="text-xl sm:text-2xl font-serif text-white mb-2">Destaques Premium</h2>
@@ -167,28 +171,34 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 <div className="flex touch-pan-y">
                     {featuredEvents.map((event) => {
                         
-                        // Estilo para ocupar 100% da largura do contêiner
-                        const slideStyle = {
-                            flex: '0 0 100%',
+                        // Estilo para limitar a largura do slide e centralizar
+                        const slideContainerStyle = {
+                            flex: '0 0 100%', // Ocupa 100% do espaço do viewport do Embla
                             minWidth: '100%',
                             maxWidth: '100%',
+                            display: 'flex',
+                            justifyContent: 'center', // Centraliza o conteúdo dentro do slide
+                        };
+                        
+                        // Estilo para o slide em si (limitando a largura)
+                        const slideStyle = {
+                            width: `${SLIDE_WIDTH}px`,
+                            maxWidth: '100%', // Garante responsividade em telas menores que 550px
                             margin: '0', 
-                            zIndex: 10,
-                            opacity: 1,
-                            transform: 'scale(1)',
-                            transition: 'all 0.5s ease-in-out',
                         };
 
                         return (
                             <div 
                                 key={event.id} 
-                                className="flex-shrink-0 min-w-0 px-2" // Adicionando um pequeno padding horizontal para evitar que o slide toque as setas
-                                style={slideStyle}
+                                className="flex-shrink-0 min-w-0"
+                                style={slideContainerStyle}
                             >
-                                <EventSlide 
-                                    event={event} 
-                                    onClick={() => handleEventClick(event)}
-                                />
+                                <div style={slideStyle}>
+                                    <EventSlide 
+                                        event={event} 
+                                        onClick={() => handleEventClick(event)}
+                                    />
+                                </div>
                             </div>
                         );
                     })}
