@@ -96,7 +96,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 
                 const normalizedBanners: CarouselBanner[] = fetchedBanners.map((item: any) => ({
                     id: item.id,
-                    type: item.type || 'event', // Assume 'event' se não especificado
+                    type: item.type || 'event',
                     image_url: item.image_url,
                     headline: item.headline || item.title,
                     subheadline: item.subheadline || item.description,
@@ -162,11 +162,11 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 effect={'coverflow'} // Efeito Coverflow
                 grabCursor={true}
                 coverflowEffect={{
-                    rotate: 0, // Reduzindo a rotação para zero
-                    stretch: 0, 
-                    depth: 200, // Aumentando a profundidade para recuar mais
+                    rotate: 0, // ZERANDO ROTAÇÃO
+                    stretch: 50, // Aumentando o stretch para separar e nivelar as extremidades
+                    depth: 200, // Profundidade para recuo
                     modifier: 1, 
-                    slideShadows: true, // Mantendo sombras
+                    slideShadows: true, 
                 }}
                 modules={[Autoplay, Pagination, Navigation, EffectCoverflow]}
                 className="mySwiper w-full h-full event-carousel-perspective"
