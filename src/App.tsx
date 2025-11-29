@@ -28,12 +28,14 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminRouteGuard from "./components/AdminRouteGuard";
 import AdminMasterRouteGuard from "./components/AdminMasterRouteGuard";
 import ManagerLayout from "./components/layouts/ManagerLayout";
+import ClientLayout from "./components/layouts/ClientLayout"; // Import ClientLayout
 import ForgotPassword from "./pages/ForgotPassword";
 import FinalizarCompra from "./pages/FinalizarCompra";
 import ManagerRegister from "./pages/ManagerRegister"; 
 import ManagerIndividualProfile from "./pages/ManagerIndividualProfile";
 import ManagerCompanyRegister from "./pages/ManagerCompanyRegister"; 
-import ManagerCarouselSettings from "./pages/ManagerCarouselSettings"; // NOVO: Importação
+import ManagerCarouselSettings from "./pages/ManagerCarouselSettings";
+import AdminCreatePromotionalBanner from "./pages/AdminCreatePromotionalBanner"; // NOVO: Importação
 
 const queryClient = new QueryClient();
 
@@ -45,14 +47,18 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           {/* Public/Client Routes */}
-          <Route path="/" element={<Index />} />
-          <Route path="/events/:id" element={<EventDetails />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/tickets" element={<MyTickets />} />
-          <Route path="/finalizar-compra" element={<FinalizarCompra />} />
+          <Route path="/" element={<ClientLayout />}> {/* Wrap client routes with ClientLayout */}
+            <Route index element={<Index />} />
+            <Route path="events/:id" element={<EventDetails />} />
+            <Route path="register" element={<Register />} />
+            <Route path="login" element={<Login />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="tickets" element={<MyTickets />} />
+            <Route path="finalizar-compra" element={<FinalizarCompra />} />
+          </Route>
+          
+          {/* Manager Login (outside layout for specific styling) */}
           <Route path="/manager/login" element={<ManagerLogin />} />
           
           {/* Manager Registration Routes (Accessible by logged-in clients) */}
@@ -81,7 +87,8 @@ const App = () => (
           <Route element={<AdminMasterRouteGuard />}>
             <Route element={<ManagerLayout />}>
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                <Route path="/admin/settings/carousel" element={<ManagerCarouselSettings />} /> {/* NOVO: Rota para configurações do carrossel */}
+                <Route path="/admin/settings/carousel" element={<ManagerCarouselSettings />} />
+                <Route path="/admin/banners/create" element={<AdminCreatePromotionalBanner />} /> {/* NOVO: Rota para criar banners promocionais */}
                 <Route path="/manager/settings/advanced" element={<ManagerAdvancedSettings />} />
             </Route>
           </Route>

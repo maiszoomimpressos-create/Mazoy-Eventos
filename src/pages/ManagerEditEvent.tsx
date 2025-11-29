@@ -1,41 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch"; // Importando Switch
-import { categories } from '@/data/events';
-import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
+import { Loader2, ArrowLeft } from 'lucide-react';
+import { showError } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, ImageOff, MapPin, CalendarDays, ListOrdered, Heading, Subtitles } from 'lucide-react'; // Novos ícones
-import { DatePicker } from '@/components/DatePicker';
-import ImageUploadPicker from '@/components/ImageUploadPicker';
-import { useManagerCompany } from '@/hooks/use-manager-company'; // Importando o hook da empresa
-import { parseISO, format } from 'date-fns'; // Importando parseISO e format
+import EventFormSteps from '@/components/EventFormSteps';
+import { parseISO } from 'date-fns';
+import { useManagerCompany } from '@/hooks/use-manager-company';
 
 // Define the structure for the form data
 interface EventFormData {
     title: string;
     description: string;
-    date: Date | undefined; // Alterado para Date | undefined
+    date: Date | undefined;
     time: string;
-    location: string; // General location name
-    address: string; // Detailed address
-    image_url: string; // Image URL
-    min_age: number | string; // Minimum age
+    location: string;
+    address: string;
+    image_url: string;
+    min_age: number | string;
     category: string;
-    capacity: number | string; // Capacidade
-    duration: string; // NOVO: Duração
-
-    // NOVOS CAMPOS PARA CARROSSEL E GEOLOCALIZAÇÃO
-    latitude: number | null;
-    longitude: number | null;
+    capacity: number | string;
+    duration: string;
+    
     is_featured_carousel: boolean;
     carousel_display_order: number | string;
-    carousel_start_date: Date | undefined; // Alterado para Date | undefined
-    carousel_end_date: Date | undefined; // Alterado para Date | undefined
+    carousel_start_date: Date | undefined;
+    carousel_end_date: Date | undefined;
     carousel_headline: string;
     carousel_subheadline: string;
 }
@@ -43,11 +33,9 @@ interface EventFormData {
 const ManagerEditEvent: React.FC = () => {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
-    const [formData, setFormData] = useState<EventFormData | null>(null);
-    const [isLoading, setIsLoading] = useState(false); // Renomeado de isLoading para isSaving para clareza
+    const [initialEventData, setInitialEventData] = useState<EventFormData | null>(null);
     const [isFetching, setIsFetching] = useState(true);
     const [userId, setUserId] = useState<string | null>(null);
-    const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({}); // Para validação de campos
 
     useEffect(() => {
         const fetchEventAndUser = async () => {
@@ -82,22 +70,19 @@ const ManagerEditEvent: React.FC = () => {
             }
 
             // Populate form data
-            setFormData({
+            setInitialEventData({
                 title: eventData.title || '',
                 description: eventData.description || '',
-                date: eventData.date ? parseISO(eventData.date) : undefined, // Converte string para Date
+                date: eventData.date ? parseISO(eventData.date) : undefined,
                 time: eventData.time || '',
                 location: eventData.location || '',
                 address: eventData.address || '',
                 image_url: eventData.image_url || '',
                 min_age: eventData.min_age || 0,
                 category: eventData.category || '',
-                capacity: eventData.capacity || '',
+                capacity: eventData.capacity || 0,
                 duration: eventData.duration || '',
                 
-                // NOVOS CAMPOS PARA CARROSSEL E GEOLOCALIZAÇÃO
-                latitude: eventData.latitude || null,
-                longitude: eventData.longitude || null,
                 is_featured_carousel: eventData.is_featured_carousel || false,
                 carousel_display_order: eventData.carousel_display_order || 0,
                 carousel_start_date: eventData.carousel_start_date ? parseISO(eventData.carousel_start_date) : undefined,
@@ -111,184 +96,11 @@ const ManagerEditEvent: React.FC = () => {
         fetchEventAndUser();
     }, [id, navigate]);
 
-    // Obter o ID da empresa do gestor
-    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId || undefined);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { id, value, type } = e.target;
-        setFormData(prev => {
-            if (!prev) return null;
-            const updatedValue = type === 'number' ? (value === '' ? '' : Number(value)) : value;
-            return { 
-                ...prev, 
-                [id]: updatedValue 
-            };
-        });
-        if (formErrors[id]) {
-            setFormErrors(prev => ({ ...prev, [id]: '' }));
-        }
-    };
-    
-    const handleDateChange = (field: 'date' | 'carousel_start_date' | 'carousel_end_date', date: Date | undefined) => {
-        setFormData(prev => prev ? { ...prev, [field]: date } : null);
-        if (formErrors[field]) {
-            setFormErrors(prev => ({ ...prev, [field]: '' }));
-        }
+    const handleSaveSuccess = () => {
+        navigate('/manager/events');
     };
 
-    const handleSelectChange = (value: string) => {
-        setFormData(prev => {
-            if (!prev) return null;
-            return { ...prev, category: value };
-        });
-        if (formErrors.category) {
-            setFormErrors(prev => ({ ...prev, category: '' }));
-        }
-    };
-    
-    const handleSwitchChange = (checked: boolean) => {
-        setFormData(prev => prev ? { ...prev, is_featured_carousel: checked } : null);
-    };
-
-    const handleImageUpload = (url: string) => {
-        setFormData(prev => {
-            if (!prev) return null;
-            return { ...prev, image_url: url };
-        });
-        if (formErrors.image_url) {
-            setFormErrors(prev => ({ ...prev, image_url: '' }));
-        }
-    };
-
-    const validateForm = (): { isValid: boolean, isoDate: string | null, isoCarouselStartDate: string | null, isoCarouselEndDate: string | null } => {
-        if (!formData) return { isValid: false, isoDate: null, isoCarouselStartDate: null, isoCarouselEndDate: null };
-        const errors: { [key: string]: string } = {};
-        let isoDate: string | null = null;
-        let isoCarouselStartDate: string | null = null;
-        let isoCarouselEndDate: string | null = null;
-        
-        if (!formData.title) errors.title = "Título é obrigatório.";
-        if (!formData.description) errors.description = "Descrição é obrigatória.";
-        if (!formData.time) errors.time = "Horário é obrigatório.";
-        if (!formData.location) errors.location = "Localização é obrigatória.";
-        if (!formData.address) errors.address = "Endereço detalhado é obrigatório.";
-        if (!formData.image_url) errors.image_url = "URL da Imagem/Banner é obrigatória.";
-        if (!formData.duration) errors.duration = "Duração é obrigatória."; // Validação de Duração
-        
-        // Validação da Data (agora é um objeto Date)
-        if (!formData.date) {
-            errors.date = "Data é obrigatória.";
-        } else {
-            // Converte para o formato ISO (YYYY-MM-DD) para salvar no Supabase
-            isoDate = format(formData.date, 'yyyy-MM-dd');
-        }
-
-        const minAge = Number(formData.min_age);
-        if (formData.min_age === '' || formData.min_age === null || isNaN(minAge) || minAge < 0) {
-            errors.min_age = "Idade Mínima é obrigatória e deve ser 0 ou maior.";
-        }
-        
-        const capacity = Number(formData.capacity);
-        if (formData.capacity === '' || formData.capacity === null || isNaN(capacity) || capacity <= 0) {
-            errors.capacity = "Capacidade é obrigatória e deve ser maior que zero.";
-        }
-
-        if (!formData.category) errors.category = "Categoria é obrigatória.";
-
-        // Validação dos novos campos do carrossel, se 'is_featured_carousel' for true
-        if (formData.is_featured_carousel) {
-            const displayOrder = Number(formData.carousel_display_order);
-            if (formData.carousel_display_order === '' || formData.carousel_display_order === null || isNaN(displayOrder) || displayOrder < 0) {
-                errors.carousel_display_order = "Ordem de Exibição é obrigatória e deve ser 0 ou maior.";
-            }
-            if (!formData.carousel_start_date) {
-                errors.carousel_start_date = "Data de Início do Carrossel é obrigatória.";
-            } else {
-                isoCarouselStartDate = format(formData.carousel_start_date, 'yyyy-MM-dd');
-            }
-            if (!formData.carousel_end_date) {
-                errors.carousel_end_date = "Data de Fim do Carrossel é obrigatória.";
-            } else {
-                isoCarouselEndDate = format(formData.carousel_end_date, 'yyyy-MM-dd');
-            }
-            if (!formData.carousel_headline) errors.carousel_headline = "Título do Carrossel é obrigatório.";
-            if (!formData.carousel_subheadline) errors.carousel_subheadline = "Subtítulo do Carrossel é obrigatório.";
-        }
-
-        setFormErrors(errors);
-        return { isValid: Object.keys(errors).length === 0, isoDate, isoCarouselStartDate, isoCarouselEndDate };
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const validationResult = validateForm();
-        
-        if (!validationResult.isValid || !userId || !id || !formData || !validationResult.isoDate) {
-            showError("Por favor, preencha todos os campos obrigatórios corretamente.");
-            return;
-        }
-
-        if (!company?.id) {
-            showError("Você precisa ter um perfil de empresa cadastrado para editar eventos.");
-            return;
-        }
-
-        const toastId = showLoading("Atualizando evento...");
-        setIsLoading(true);
-        
-        // Placeholder para geocodificação
-        // Em um cenário real, você usaria uma API de geocodificação para converter o endereço em lat/lon.
-        // Por enquanto, vamos usar valores fixos ou nulos.
-        const geocodedLatitude = -23.5505; // Exemplo: Latitude de São Paulo
-        const geocodedLongitude = -46.6333; // Exemplo: Longitude de São Paulo
-
-        try {
-            const { error } = await supabase
-                .from('events')
-                .update({
-                    title: formData.title,
-                    description: formData.description,
-                    date: validationResult.isoDate,
-                    time: formData.time,
-                    location: formData.location,
-                    address: formData.address,
-                    image_url: formData.image_url,
-                    min_age: Number(formData.min_age),
-                    category: formData.category,
-                    capacity: Number(formData.capacity),
-                    duration: formData.duration,
-
-                    // NOVOS CAMPOS PARA CARROSSEL E GEOLOCALIZAÇÃO
-                    latitude: geocodedLatitude, // Usando placeholder
-                    longitude: geocodedLongitude, // Usando placeholder
-                    is_featured_carousel: formData.is_featured_carousel,
-                    carousel_display_order: formData.is_featured_carousel ? Number(formData.carousel_display_order) : 0,
-                    carousel_start_date: formData.is_featured_carousel ? validationResult.isoCarouselStartDate : null,
-                    carousel_end_date: formData.is_featured_carousel ? validationResult.isoCarouselEndDate : null,
-                    carousel_headline: formData.is_featured_carousel ? formData.carousel_headline : null,
-                    carousel_subheadline: formData.is_featured_carousel ? formData.carousel_subheadline : null,
-                })
-                .eq('id', id)
-                .eq('company_id', company.id); // Filtrando por company_id para garantir que o gestor edite apenas eventos da sua empresa
-
-            if (error) {
-                throw error;
-            }
-
-            dismissToast(toastId);
-            showSuccess(`Evento "${formData.title}" atualizado com sucesso!`);
-            navigate('/manager/events');
-
-        } catch (error: any) {
-            dismissToast(toastId);
-            console.error("Erro ao atualizar evento:", error);
-            showError(`Falha ao atualizar evento: ${error.message || 'Erro desconhecido'}`);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    if (isFetching || !formData || isLoadingCompany || !userId) {
+    if (isFetching || !initialEventData || !userId) {
         return (
             <div className="max-w-4xl mx-auto px-4 sm:px-0 text-center py-20">
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
@@ -297,340 +109,26 @@ const ManagerEditEvent: React.FC = () => {
         );
     }
 
-    if (!company?.id) {
-        return (
-            <div className="max-w-4xl mx-auto px-4 sm:px-0 text-center py-20">
-                <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-6 rounded-xl mb-8">
-                    <i className="fas fa-exclamation-triangle text-2xl mb-3"></i>
-                    <h3 className="font-semibold text-white mb-2">Perfil da Empresa Necessário</h3>
-                    <p className="text-sm">Você precisa cadastrar o Perfil da Empresa antes de editar eventos.</p>
-                    <Button 
-                        onClick={() => navigate('/manager/settings/company-profile')}
-                        className="mt-4 bg-yellow-500 text-black hover:bg-yellow-600"
-                    >
-                        Ir para Perfil da Empresa
-                    </Button>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="max-w-4xl mx-auto px-4 sm:px-0">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
-                <h1 className="text-2xl sm:text-3xl font-serif text-yellow-500 mb-4 sm:mb-0">Editar Evento: {formData.title}</h1>
+                <h1 className="text-2xl sm:text-3xl font-serif text-yellow-500 mb-4 sm:mb-0">Editar Evento: {initialEventData.title}</h1>
                 <Button 
                     onClick={() => navigate('/manager/events')}
                     variant="outline"
                     className="bg-black/60 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 text-sm"
                 >
-                    <i className="fas fa-arrow-left mr-2"></i>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
                     Voltar para a Lista
                 </Button>
             </div>
 
-            <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
-                <CardHeader>
-                    <CardTitle className="text-white text-xl sm:text-2xl font-semibold">Detalhes do Evento</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Linha 1: Título e Localização Geral */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label htmlFor="title" className="block text-sm font-medium text-white mb-2">Título do Evento *</label>
-                                <Input 
-                                    id="title" 
-                                    value={formData.title} 
-                                    onChange={handleChange} 
-                                    placeholder="Ex: Concerto Sinfônico Premium"
-                                    className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 ${formErrors.title ? 'border-red-500' : ''}`}
-                                    required
-                                />
-                                {formErrors.title && <p className="text-red-500 text-xs mt-1">{formErrors.title}</p>}
-                            </div>
-                            <div>
-                                <label htmlFor="location" className="block text-sm font-medium text-white mb-2">Localização (Nome do Local) *</label>
-                                <Input 
-                                    id="location" 
-                                    value={formData.location} 
-                                    onChange={handleChange} 
-                                    placeholder="Ex: Teatro Municipal"
-                                    className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 ${formErrors.location ? 'border-red-500' : ''}`}
-                                    required
-                                />
-                                {formErrors.location && <p className="text-red-500 text-xs mt-1">{formErrors.location}</p>}
-                            </div>
-                        </div>
-
-                        {/* Linha 2: Endereço Detalhado */}
-                        <div>
-                            <label htmlFor="address" className="block text-sm font-medium text-white mb-2">Endereço Detalhado (Rua, Número, Cidade) *</label>
-                            <Input 
-                                id="address" 
-                                value={formData.address} 
-                                onChange={handleChange} 
-                                placeholder="Ex: Praça Ramos de Azevedo, s/n - República, São Paulo - SP"
-                                className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 ${formErrors.address ? 'border-red-500' : ''}`}
-                                required
-                            />
-                            {formErrors.address && <p className="text-red-500 text-xs mt-1">{formErrors.address}</p>}
-                        </div>
-
-                        {/* Linha 3: Descrição */}
-                        <div>
-                            <label htmlFor="description" className="block text-sm font-medium text-white mb-2">Descrição Detalhada *</label>
-                            <Textarea 
-                                id="description" 
-                                value={formData.description} 
-                                onChange={handleChange} 
-                                placeholder="Descreva o evento, destaques e público-alvo."
-                                className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 min-h-[100px] ${formErrors.description ? 'border-red-500' : ''}`}
-                                required
-                            />
-                            {formErrors.description && <p className="text-red-500 text-xs mt-1">{formErrors.description}</p>}
-                        </div>
-                        
-                        {/* Linha 4: Imagem/Banner com ImageUploadPicker */}
-                        <div className="space-y-4 pt-4 border-t border-yellow-500/20">
-                            <h3 className="text-xl font-semibold text-white">Banner do Evento *</h3>
-                            {userId && (
-                                <ImageUploadPicker
-                                    userId={userId}
-                                    currentImageUrl={formData.image_url}
-                                    onImageUpload={handleImageUpload}
-                                    width={1200} // Largura recomendada
-                                    height={400} // Altura recomendada
-                                    placeholderText="Clique para enviar ou arraste e solte uma imagem"
-                                    bucketName="event-banners" // Nome do bucket no Supabase
-                                    folderPath="banners" // Pasta dentro do bucket
-                                    maxFileSizeMB={5} // Tamanho máximo do arquivo
-                                    isInvalid={!!formErrors.image_url} // Passa o estado de erro
-                                />
-                            )}
-                            {formErrors.image_url && <p className="text-red-500 text-xs mt-1">{formErrors.image_url}</p>}
-                        </div>
-
-                        {/* Linha 5: Data, Horário, Categoria */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label htmlFor="date" className="block text-sm font-medium text-white mb-2">Data *</label>
-                                <DatePicker 
-                                    date={formData.date}
-                                    setDate={(d) => handleDateChange('date', d)}
-                                    placeholder="DD/MM/AAAA ou Selecione"
-                                />
-                                {formErrors.date && <p className="text-red-500 text-xs mt-1">{formErrors.date}</p>}
-                            </div>
-                            <div>
-                                <label htmlFor="time" className="block text-sm font-medium text-white mb-2">Horário *</label>
-                                <Input 
-                                    id="time" 
-                                    type="time"
-                                    value={formData.time} 
-                                    onChange={handleChange} 
-                                    className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 ${formErrors.time ? 'border-red-500' : ''}`}
-                                    required
-                                />
-                                {formErrors.time && <p className="text-red-500 text-xs mt-1">{formErrors.time}</p>}
-                            </div>
-                            <div>
-                                <label htmlFor="category" className="block text-sm font-medium text-white mb-2">Categoria *</label>
-                                <Select onValueChange={handleSelectChange} value={formData.category}>
-                                    <SelectTrigger className={`w-full bg-black/60 border-yellow-500/30 text-white focus:ring-yellow-500 ${formErrors.category ? 'border-red-500' : ''}`}>
-                                        <SelectValue placeholder="Selecione a Categoria" />
-                                    </SelectTrigger>
-                                    <SelectContent className="bg-black border-yellow-500/30 text-white">
-                                        {categories.map(cat => (
-                                            <SelectItem key={cat.id} value={cat.name} className="hover:bg-yellow-500/10 cursor-pointer">
-                                                {cat.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {formErrors.category && <p className="text-red-500 text-xs mt-1">{formErrors.category}</p>}
-                            </div>
-                        </div>
-                        
-                        {/* Linha 6: Capacidade, Duração e Idade Mínima */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label htmlFor="capacity" className="block text-sm font-medium text-white mb-2">Capacidade Máxima (Pessoas) *</label>
-                                <Input 
-                                    id="capacity" 
-                                    type="number"
-                                    value={formData.capacity} 
-                                    onChange={handleChange} 
-                                    placeholder="Ex: 500"
-                                    className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 ${formErrors.capacity ? 'border-red-500' : ''}`}
-                                    min="1"
-                                    required
-                                />
-                                <p className="text-xs text-gray-500 mt-1">Número máximo de pessoas.</p>
-                                {formErrors.capacity && <p className="text-red-500 text-xs mt-1">{formErrors.capacity}</p>}
-                            </div>
-                            <div>
-                                <label htmlFor="duration" className="block text-sm font-medium text-white mb-2">Duração (Ex: 2h30min) *</label>
-                                <Input 
-                                    id="duration" 
-                                    type="text"
-                                    value={formData.duration} 
-                                    onChange={handleChange} 
-                                    placeholder="Ex: 3 horas ou 2h30min"
-                                    className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 ${formErrors.duration ? 'border-red-500' : ''}`}
-                                    required
-                                />
-                                <p className="text-xs text-gray-500 mt-1">Duração estimada do evento.</p>
-                                {formErrors.duration && <p className="text-red-500 text-xs mt-1">{formErrors.duration}</p>}
-                            </div>
-                            <div>
-                                <label htmlFor="min_age" className="block text-sm font-medium text-white mb-2">Idade Mínima (Anos) *</label>
-                                <Input 
-                                    id="min_age" 
-                                    type="number"
-                                    value={formData.min_age} 
-                                    onChange={handleChange} 
-                                    placeholder="0 (Livre)"
-                                    className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 ${formErrors.min_age ? 'border-red-500' : ''}`}
-                                    min="0"
-                                    required
-                                />
-                                <p className="text-xs text-gray-500 mt-1">Defina 0 para classificação livre.</p>
-                                {formErrors.min_age && <p className="text-red-500 text-xs mt-1">{formErrors.min_age}</p>}
-                            </div>
-                        </div>
-
-                        {/* Seção de Configurações do Carrossel */}
-                        <div className="space-y-4 pt-6 border-t border-yellow-500/20">
-                            <div className="flex items-center justify-between">
-                                <h3 className="text-xl font-semibold text-white flex items-center">
-                                    <SlidersHorizontal className="h-5 w-5 mr-2 text-yellow-500" />
-                                    Exibir no Carrossel da Home?
-                                </h3>
-                                <Switch 
-                                    checked={formData.is_featured_carousel} 
-                                    onCheckedChange={handleSwitchChange}
-                                    className="data-[state=checked]:bg-yellow-500 data-[state=unchecked]:bg-gray-700"
-                                    disabled={isLoading}
-                                />
-                            </div>
-
-                            {formData.is_featured_carousel && (
-                                <div className="space-y-6 p-4 bg-black/60 rounded-xl border border-yellow-500/20">
-                                    <div>
-                                        <label htmlFor="carousel_headline" className="block text-sm font-medium text-white mb-2 flex items-center">
-                                            <Heading className="h-4 w-4 mr-2 text-yellow-500" />
-                                            Título do Banner (Carrossel) *
-                                        </label>
-                                        <Input 
-                                            id="carousel_headline" 
-                                            value={formData.carousel_headline} 
-                                            onChange={handleChange} 
-                                            placeholder="Título chamativo para o carrossel"
-                                            className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 ${formErrors.carousel_headline ? 'border-red-500' : ''}`}
-                                            required
-                                            disabled={isLoading}
-                                        />
-                                        {formErrors.carousel_headline && <p className="text-red-500 text-xs mt-1">{formErrors.carousel_headline}</p>}
-                                    </div>
-                                    <div>
-                                        <label htmlFor="carousel_subheadline" className="block text-sm font-medium text-white mb-2 flex items-center">
-                                            <Subtitles className="h-4 w-4 mr-2 text-yellow-500" />
-                                            Subtítulo do Banner (Carrossel) *
-                                        </label>
-                                        <Textarea 
-                                            id="carousel_subheadline" 
-                                            value={formData.carousel_subheadline} 
-                                            onChange={handleChange} 
-                                            placeholder="Descrição curta para o banner"
-                                            className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 min-h-[60px] ${formErrors.carousel_subheadline ? 'border-red-500' : ''}`}
-                                            required
-                                            disabled={isLoading}
-                                        />
-                                        {formErrors.carousel_subheadline && <p className="text-red-500 text-xs mt-1">{formErrors.carousel_subheadline}</p>}
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div>
-                                            <label htmlFor="carousel_display_order" className="block text-sm font-medium text-white mb-2 flex items-center">
-                                                <ListOrdered className="h-4 w-4 mr-2 text-yellow-500" />
-                                                Ordem de Exibição *
-                                            </label>
-                                            <Input 
-                                                id="carousel_display_order" 
-                                                type="number"
-                                                value={formData.carousel_display_order} 
-                                                onChange={handleChange} 
-                                                placeholder="0"
-                                                className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 ${formErrors.carousel_display_order ? 'border-red-500' : ''}`}
-                                                min="0"
-                                                required
-                                                disabled={isLoading}
-                                            />
-                                            {formErrors.carousel_display_order && <p className="text-red-500 text-xs mt-1">{formErrors.carousel_display_order}</p>}
-                                        </div>
-                                        <div>
-                                            <label htmlFor="carousel_start_date" className="block text-sm font-medium text-white mb-2 flex items-center">
-                                                <CalendarDays className="h-4 w-4 mr-2 text-yellow-500" />
-                                                Início Exibição *
-                                            </label>
-                                            <DatePicker 
-                                                date={formData.carousel_start_date}
-                                                setDate={(d) => handleDateChange('carousel_start_date', d)}
-                                                placeholder="DD/MM/AAAA"
-                                                disabled={isLoading}
-                                            />
-                                            {formErrors.carousel_start_date && <p className="text-red-500 text-xs mt-1">{formErrors.carousel_start_date}</p>}
-                                        </div>
-                                        <div>
-                                            <label htmlFor="carousel_end_date" className="block text-sm font-medium text-white mb-2 flex items-center">
-                                                <CalendarDays className="h-4 w-4 mr-2 text-yellow-500" />
-                                                Fim Exibição *
-                                            </label>
-                                            <DatePicker 
-                                                date={formData.carousel_end_date}
-                                                setDate={(d) => handleDateChange('carousel_end_date', d)}
-                                                placeholder="DD/MM/AAAA"
-                                                disabled={isLoading}
-                                            />
-                                            {formErrors.carousel_end_date && <p className="text-red-500 text-xs mt-1">{formErrors.carousel_end_date}</p>}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="flex items-center space-x-4 pt-4">
-                            <Button
-                                type="submit"
-                                disabled={isLoading || !userId || !company?.id}
-                                className="flex-1 bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50"
-                            >
-                                {isLoading ? (
-                                    <div className="flex items-center justify-center">
-                                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                                        Salvando Alterações...
-                                    </div>
-                                ) : (
-                                    <>
-                                        <i className="fas fa-save mr-2"></i>
-                                        Salvar Alterações
-                                    </>
-                                )}
-                            </Button>
-                            <Button
-                                type="button"
-                                onClick={() => navigate('/manager/events')}
-                                variant="outline"
-                                className="flex-1 bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer"
-                                disabled={isLoading}
-                            >
-                                <i className="fas fa-arrow-left mr-2"></i>
-                                Voltar para a Lista
-                            </Button>
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
+            <EventFormSteps 
+                eventId={id}
+                initialData={initialEventData}
+                onSaveSuccess={handleSaveSuccess} 
+                onCancel={() => navigate('/manager/events')}
+            />
         </div>
     );
 };

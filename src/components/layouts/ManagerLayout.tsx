@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Menu, X, Loader2, Crown, LogOut, User, Settings, QrCode, BarChart3, CalendarDays, ChevronDown, SlidersHorizontal, Plus } from 'lucide-react'; // NOVO: SlidersHorizontal, Plus
+import { Menu, X, Loader2, Crown, LogOut, User, Settings, QrCode, BarChart3, CalendarDays, ChevronDown, SlidersHorizontal, Plus, Image } from 'lucide-react'; // NOVO: Image
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from '@/integrations/supabase/client';
@@ -80,7 +80,7 @@ const ManagerLayout: React.FC = () => {
         { path: '/', label: 'Home', icon: <User className="mr-2 h-4 w-4" /> }, // Ícone genérico para Home
         { path: '/manager/dashboard', label: 'Dashboard PRO', icon: <Crown className="mr-2 h-4 w-4" /> },
         { path: '/manager/events', label: 'Eventos', icon: <CalendarDays className="mr-2 h-4 w-4" /> },
-        { path: '/manager/events/create', label: 'Criar Novo Evento', icon: <Plus className="mr-2 h-4 w-4" /> }, // NOVO ITEM
+        { path: '/manager/events/create', label: 'Criar Novo Evento', icon: <Plus className="mr-2 h-4 w-4" /> },
         { path: '/manager/wristbands', label: 'Pulseiras', icon: <QrCode className="mr-2 h-4 w-4" /> },
         { path: '/manager/reports', label: 'Relatórios', icon: <BarChart3 className="mr-2 h-4 w-4" /> },
         { path: '/manager/settings', label: 'Configurações', icon: <Settings className="mr-2 h-4 w-4" /> },
@@ -89,9 +89,12 @@ const ManagerLayout: React.FC = () => {
     // Add Admin Dashboard link if the user is an Admin Master
     if (isAdminMaster) {
         allNavItems.splice(1, 0, { path: '/admin/dashboard', label: 'Dashboard Admin', icon: <Crown className="mr-2 h-4 w-4" /> });
-        // NOVO: Adicionar link para configurações do carrossel para Admin Master
         allNavItems.splice(allNavItems.findIndex(item => item.path === '/manager/settings') + 1, 0, 
             { path: '/admin/settings/carousel', label: 'Config. Carrossel', icon: <SlidersHorizontal className="mr-2 h-4 w-4" /> }
+        );
+        // NOVO: Adicionar link para criar banners promocionais
+        allNavItems.splice(allNavItems.findIndex(item => item.path === '/admin/settings/carousel') + 1, 0, 
+            { path: '/admin/banners/create', label: 'Criar Banner Promo', icon: <Image className="mr-2 h-4 w-4" /> }
         );
     }
     
