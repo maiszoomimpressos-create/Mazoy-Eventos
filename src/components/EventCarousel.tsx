@@ -29,20 +29,36 @@ const getMinPriceDisplay = (price: number | null): string => {
 };
 
 // Componente para o Slide de Evento
-const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex: number, style: React.CSSProperties }> = ({ event, onClick, slideIndex, style }) => {
+const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex: number }> = ({ event, onClick, slideIndex }) => {
     const minPriceDisplay = getMinPriceDisplay(event.min_price);
     
+    // Aplica transformação específica para o slide 3 (índice 2)
+    const isSlide3 = slideIndex === 3;
+    
+    const customStyle = isSlide3 ? {
+        // Move 510px para a direita e reduz a escala para simular profundidade
+        transform: 'translateX(510px) scale(0.95)',
+        zIndex: 10, // Garante que ele fique atrás do slide 4 (que terá zIndex padrão ou maior)
+        opacity: 0.8,
+        transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
+    } : {
+        zIndex: 20, // ZIndex padrão para slides normais
+        transform: 'translateX(0) scale(1)',
+        opacity: 1,
+        transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
+    };
+
     return (
         <Card 
             className={cn(
                 "bg-black/60 backdrop-blur-sm border rounded-2xl overflow-hidden h-full cursor-pointer transition-all duration-500 ease-in-out relative",
-                "border-yellow-500/80 shadow-2xl shadow-yellow-500/30"
+                "border-yellow-500/80 shadow-2xl shadow-yellow-500/30 scale-100" // Mantendo o estilo de destaque
             )}
             onClick={onClick}
             style={{ 
                 height: `${SLIDE_HEIGHT}px`, 
                 width: `${SLIDE_WIDTH}px`,
-                ...style // Aplica o estilo dinâmico
+                ...customStyle // Aplica o estilo customizado
             }} 
         >
             {/* Identificadores de Borda */}
@@ -115,16 +131,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
     const [prevBtnDisabled, setPrevBtnDisabled] = useState(true);
     const [nextBtnDisabled, setNextBtnDisabled] = useState(true);
-    const [scrollProgress, setScrollProgress] = useState<number[]>([]); // Novo estado para o progresso do scroll
-
-    // Função para calcular o progresso do scroll (distância do centro)
-    const onScroll = useCallback((emblaApi: EmblaCarouselType) => {
-        const progress = emblaApi.scrollProgress();
-        const progressArray = emblaApi.scrollSnapList().map((snap) => {
-            return emblaApi.scrollProgress() - snap;
-        });
-        setScrollProgress(progressArray);
-    }, []);
 
     // --- Lógica de Auto-Play ---
     const autoplay = useCallback(() => {
@@ -151,8 +157,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
 
     const onInit = useCallback((emblaApi: EmblaCarouselType) => {
         setScrollSnaps(emblaApi.scrollSnapList());
-        onScroll(emblaApi);
-    }, [onScroll]);
+    }, []);
 
     useEffect(() => {
         if (!emblaApi) return;
@@ -160,8 +165,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         onSelect(emblaApi);
         emblaApi.on('reInit', onInit);
         emblaApi.on('select', onSelect);
-        emblaApi.on('scroll', onScroll); // Adiciona listener de scroll
-    }, [emblaApi, onInit, onSelect, onScroll]);
+    }, [emblaApi, onInit, onSelect]);
 
     const scrollTo = useCallback((index: number) => {
         emblaApi && emblaApi.scrollTo(index);
@@ -177,47 +181,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
 
     const handleEventClick = (event: PublicEvent) => {
         navigate(`/finalizar-compra`, { state: { eventId: event.id } });
-    };
-
-    // Função de interpolação para o efeito de profundidade
-    const getSlideStyle = (index: number): React.CSSProperties => {
-        if (!emblaApi || scrollProgress.length === 0) return {};
-
-        const progress = scrollProgress[index];
-        const distance = Math.abs(progress);
-        
-        // Define a escala mínima e máxima
-        const MIN_SCALE = 0.85;
-        const MAX_SCALE = 1.0;
-        
-        // Define a opacidade mínima e máxima
-        const MIN_OPACITY = 0.5;
-        const MAX_OPACITY = 1.0;
-        
-        // Interpolação linear: 
-        // Se distance = 0 (centro), scale = MAX_SCALE, opacity = MAX_OPACITY
-        // Se distance = 1 (longe), scale = MIN_SCALE, opacity = MIN_OPACITY
-        
-        // Usamos Math.min(distance, 1) para limitar a interpolação
-        const clampedDistance = Math.min(distance * 1.5, 1); // Multiplicamos por 1.5 para acelerar o efeito
-        
-        const scale = MAX_SCALE - clampedDistance * (MAX_SCALE - MIN_SCALE);
-        const opacity = MAX_OPACITY - clampedDistance * (MAX_OPACITY - MIN_OPACITY);
-        
-        // ZIndex: O slide central (distance 0) deve ter o maior zIndex
-        const zIndex = Math.round(MAX_SCALE * 100 - clampedDistance * 100);
-
-        // O deslocamento X (translate) é crucial para o efeito de profundidade
-        // Move o slide para longe do centro (para dentro)
-        const MAX_TRANSLATE = 100; // Deslocamento máximo em pixels
-        const translateX = progress * MAX_TRANSLATE; // progress é negativo para a esquerda, positivo para a direita
-
-        return {
-            transform: `translateX(${translateX}px) scale(${scale})`,
-            opacity: opacity,
-            zIndex: zIndex,
-            transition: 'transform 0.3s ease-out, opacity 0.3s ease-out', // Transição suave
-        };
     };
 
 
@@ -266,12 +229,13 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                                 className="flex-shrink-0 min-w-0"
                                 style={slideContainerStyle}
                             >
-                                <EventSlide 
-                                    event={event} 
-                                    onClick={() => handleEventClick(event)}
-                                    slideIndex={index + 1} // Adicionando o índice do slide
-                                    style={getSlideStyle(index)} // Aplica o estilo dinâmico de profundidade
-                                />
+                                <div style={slideStyle}>
+                                    <EventSlide 
+                                        event={event} 
+                                        onClick={() => handleEventClick(event)}
+                                        slideIndex={index + 1} // Adicionando o índice do slide
+                                    />
+                                </div>
                             </div>
                         );
                     })}
@@ -281,7 +245,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             {/* Setas de Navegação Customizadas (Posicionamento ajustado) */}
             <Button
                 variant="outline"
-                className={`absolute left-1/2 transform -translate-x-1/2 top-1/2 -translate-y-1/2 z-30 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex`}
+                className={`absolute left-1/2 transform -translate-x-1/2 top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex`}
                 style={{ marginLeft: `-${arrowOffset}px` }} // Move para a borda esquerda do slide + peek
                 onClick={scrollPrev}
                 disabled={featuredEvents.length <= 1}
@@ -290,7 +254,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             </Button>
             <Button
                 variant="outline"
-                className={`absolute right-1/2 transform translate-x-1/2 top-1/2 -translate-y-1/2 z-30 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex`}
+                className={`absolute right-1/2 transform translate-x-1/2 top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex`}
                 style={{ marginRight: `-${arrowOffset}px` }} // Move para a borda direita do slide + peek
                 onClick={scrollNext}
                 disabled={featuredEvents.length <= 1}
