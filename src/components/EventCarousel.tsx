@@ -133,57 +133,60 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         };
     }, [emblaApi, autoplay]);
 
-    // --- Lógica de Estilo Dinâmico ---
+    // --- Lógica de Estilo Dinâmico (Corrigida) ---
     const updateSlideStyles = useCallback((emblaApi: EmblaCarouselType) => {
-        const scrollProgress = emblaApi.scrollProgress();
         const styles: React.CSSProperties[] = [];
         
-        // Calcula a posição de cada slide em relação ao centro (0)
-        emblaApi.scrollSnapList().forEach((snap, index) => {
-            const diff = emblaApi.scrollProgress() - emblaApi.scrollSnapList()[emblaApi.selectedScrollSnap()];
-            const distance = emblaApi.scrollSnapList()[index] - scrollProgress;
+        // Itera sobre todos os slides visíveis e calcula a distância do centro
+        emblaApi.slideNodes().forEach((slide, index) => {
+            const scrollProgress = emblaApi.scrollProgress();
+            const slideRect = slide.getBoundingClientRect();
+            const containerRect = emblaApi.containerNode().getBoundingClientRect();
+            
+            // Calcula a posição central do slide em relação ao centro do container
+            const slideCenter = slideRect.left + slideRect.width / 2;
+            const containerCenter = containerRect.left + containerRect.width / 2;
+            const distance = slideCenter - containerCenter;
             
             // Normaliza a distância para um valor entre -1 e 1 (aproximadamente)
-            const normalizedDistance = Math.min(Math.max(distance, -1), 1);
+            // Usamos a largura do slide como fator de normalização
+            const normalizedDistance = distance / SLIDE_WIDTH; 
             
             let scale = 1;
             let opacity = 1;
-            let translateX = 0;
             let zIndex = 20;
+            let translateX = 0; // Usaremos translateX para o deslocamento de 40px
 
-            // Slide central (distância próxima de 0)
-            if (Math.abs(normalizedDistance) < 0.1) {
+            // Se o slide estiver muito próximo do centro (slide principal)
+            if (Math.abs(normalizedDistance) < 0.5) {
                 scale = 1;
                 opacity = 1;
-                zIndex = 20;
+                zIndex = 30;
             } 
-            // Slide imediatamente à esquerda (distância próxima de 1)
-            else if (normalizedDistance > 0.5 && normalizedDistance < 1.5) {
-                // Slide que está atrás do slide principal (esquerda)
-                scale = 0.95;
-                opacity = 0.8;
-                translateX = -40; // Deslocamento de 40px para a esquerda
-                zIndex = 15;
-            }
-            // Slide imediatamente à direita (distância próxima de -1)
+            // Slide à esquerda (normalizedDistance é negativo)
             else if (normalizedDistance < -0.5 && normalizedDistance > -1.5) {
-                // Slide que está atrás do slide principal (direita)
                 scale = 0.95;
                 opacity = 0.8;
-                translateX = 40; // Deslocamento de 40px para a direita (simetria)
                 zIndex = 15;
+                translateX = 40; // Move 40px para a direita (para compensar o Embla e dar o efeito de profundidade)
             }
-            // Slides mais distantes (efeito de profundidade maior)
+            // Slide à direita (normalizedDistance é positivo)
+            else if (normalizedDistance > 0.5 && normalizedDistance < 1.5) {
+                scale = 0.95;
+                opacity = 0.8;
+                zIndex = 15;
+                translateX = -40; // Move 40px para a esquerda (simetria)
+            }
+            // Slides mais distantes
             else {
                 scale = 0.90;
                 opacity = 0.6;
-                // Move para fora da tela para simular profundidade extrema
-                translateX = normalizedDistance > 0 ? 510 : -510; 
                 zIndex = 10;
             }
             
             styles.push({
-                transform: `translateX(${translateX}px) scale(${scale})`,
+                // Aplicamos apenas scale, opacity e zIndex. O translateX é usado para o deslocamento de 40px
+                transform: `scale(${scale}) translateX(${translateX}px)`,
                 opacity: opacity,
                 zIndex: zIndex,
                 transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
