@@ -36,7 +36,7 @@ interface EventFormData {
     capacity: number | string;
     duration: string;
     
-    // Carousel fields (now optional and pre-filled, for event_carousel_banners)
+    // Carousel fields (now optional and pre-filled)
     is_featured_carousel: boolean;
     carousel_display_order: number | string;
     carousel_start_date: Date | undefined;
@@ -452,9 +452,9 @@ const EventFormSteps: React.FC<EventFormStepsProps> = ({ eventId, initialData, o
                                             userId={userId}
                                             currentImageUrl={form.watch('image_url')}
                                             onImageUpload={handleImageUpload}
-                                            width={1000}
-                                            height={400}
-                                            placeholderText="Clique para enviar ou arraste e solte uma imagem (1000px de largura por 400px de altura)"
+                                            width={600} // ALTERADO: 600px de largura
+                                            height={400} // ALTERADO: 400px de altura
+                                            placeholderText="Clique para enviar ou arraste e solte uma imagem (600px de largura por 400px de altura)"
                                             bucketName="event-banners"
                                             folderPath="banners"
                                             maxFileSizeMB={5}
