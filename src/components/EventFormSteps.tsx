@@ -20,6 +20,7 @@ import ImageUploadPicker from '@/components/ImageUploadPicker';
 import { useManagerCompany } from '@/hooks/use-manager-company';
 import { useProfile } from '@/hooks/use-profile';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form'; // Adicionado FormField e outros
 
 // Define the structure for the form data
 interface EventFormData {
@@ -86,13 +87,6 @@ const eventSchema = z.object({
                 code: z.ZodIssueCode.custom,
                 message: "Data de Início do Carrossel é obrigatória.",
                 path: ['carousel_start_date'],
-            });
-        }
-        if (!data.carousel_end_date) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "Data de Fim do Carrossel é obrigatória.",
-                path: ['carousel_end_date'],
             });
         }
         if (data.carousel_start_date && data.carousel_end_date && data.carousel_start_date > data.carousel_end_date) {
