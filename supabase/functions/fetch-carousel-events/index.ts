@@ -7,6 +7,49 @@ const corsHeaders = {
   'Content-Type': 'application/json',
 };
 
+// Dados de exemplo para o carrossel (temporário)
+const DUMMY_CAROUSEL_EVENTS = [
+  {
+    id: "dummy-1",
+    title: "Concerto Sinfônico Premium",
+    description: "Uma noite inesquecível com a Orquestra Sinfônica Nacional apresentando as mais belas composições clássicas.",
+    image_url: "https://readdy.ai/api/search-image?query=luxury%20black%20and%20gold%20event%20venue%20with%20elegant%20lighting%20and%20premium%20atmosphere%2C%20sophisticated%20interior%20design%20with%20golden%20accents%20and%20dramatic%20shadows&width=1200&height=400&seq=banner1&orientation=landscape",
+    carousel_headline: "Música Clássica em Destaque",
+    carousel_subheadline: "Uma experiência sonora única.",
+    category: "Música",
+    min_price: 280.00,
+    location: "Teatro Municipal",
+    date: "15/12/2025",
+    time: "20:00",
+  },
+  {
+    id: "dummy-2",
+    title: "Summit de Inovação Tech",
+    description: "Conecte-se com líderes do mercado e descubra as principais tendências tecnológicas que transformarão o futuro.",
+    image_url: "https://readdy.ai/api/search-image?query=premium%20concert%20hall%20with%20golden%20stage%20lighting%20and%20black%20elegant%20seating%2C%20luxury%20entertainment%20venue%20with%20sophisticated%20ambiance%20and%20dramatic%20illumination&width=1200&height=400&seq=banner2&orientation=landscape",
+    carousel_headline: "O Futuro da Tecnologia",
+    carousel_subheadline: "Networking e insights com os maiores inovadores.",
+    category: "Negócios",
+    min_price: 450.00,
+    location: "Centro de Convenções",
+    date: "22/12/2025",
+    time: "08:00",
+  },
+  {
+    id: "dummy-3",
+    title: "Exposição de Arte Contemporânea",
+    description: "Obras exclusivas de artistas renomados em ambiente premium, apresentando as mais inovadoras expressões da arte.",
+    image_url: "https://readdy.ai/api/search-image?query=elegant%20corporate%20event%20space%20with%20black%20and%20gold%20decor%2C%20luxury%20conference%20room%20with%20premium%20furniture%20and%20sophisticated%20lighting%20design&width=1200&height=400&seq=banner3&orientation=landscape",
+    carousel_headline: "Arte que Inspira",
+    carousel_subheadline: "Uma jornada pelas novas fronteiras da criatividade.",
+    category: "Arte",
+    min_price: 80.00,
+    location: "Galeria Premium",
+    date: "28/12/2025",
+    time: "10:00",
+  },
+];
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -59,6 +102,21 @@ serve(async (req) => {
       .limit(carouselSettings.max_banners_display); // Aplicar limite aqui
 
     if (eventsError) throw eventsError;
+
+    // Se não houver eventos reais em destaque, usa os dados de exemplo
+    if (!eventsData || eventsData.length === 0) {
+        console.log("[DEBUG] No real featured events found. Using dummy data for carousel.");
+        eventsData = DUMMY_CAROUSEL_EVENTS.map(event => ({
+            ...event,
+            is_featured_carousel: true,
+            carousel_display_order: 0, // Dummy data doesn't need real order
+            carousel_start_date: new Date().toISOString().split('T')[0],
+            carousel_end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
+            latitude: -23.5505, // Dummy latitude
+            longitude: -46.6333, // Dummy longitude
+        }));
+    }
+
 
     // 3. Buscar todas as pulseiras ativas para esses eventos para calcular preço mínimo e disponibilidade
     const eventIds = eventsData.map(e => e.id);
