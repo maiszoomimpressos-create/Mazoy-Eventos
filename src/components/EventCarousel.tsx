@@ -24,19 +24,17 @@ const getMinPriceDisplay = (price: number | null): string => {
 };
 
 // Componente para o Slide de Evento
-const EventSlide: React.FC<{ event: PublicEvent, isCentral: boolean, onClick: () => void }> = ({ event, isCentral, onClick }) => {
+const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void }> = ({ event, onClick }) => {
     const minPriceDisplay = getMinPriceDisplay(event.min_price);
     
     return (
         <Card 
             className={cn(
                 "bg-black/60 backdrop-blur-sm border rounded-2xl overflow-hidden h-full cursor-pointer transition-all duration-500 ease-in-out",
-                isCentral 
-                    ? "border-yellow-500/80 shadow-2xl shadow-yellow-500/30 scale-100" 
-                    : "border-yellow-500/20 shadow-md scale-[0.95] opacity-70 hover:opacity-90"
+                "border-yellow-500/80 shadow-2xl shadow-yellow-500/30 scale-100" // Mantendo o estilo de destaque
             )}
             onClick={onClick}
-            style={{ height: '380px' }} // Altura fixa conforme solicitado
+            style={{ height: '380px' }} // Altura fixa
         >
             <CardContent className="flex flex-col p-0 h-full">
                 <div className="relative h-full overflow-hidden">
@@ -51,7 +49,7 @@ const EventSlide: React.FC<{ event: PublicEvent, isCentral: boolean, onClick: ()
                         </span>
                         <h3 className={cn(
                             "font-serif text-white line-clamp-2 transition-colors",
-                            isCentral ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl text-gray-200"
+                            "text-2xl sm:text-3xl"
                         )}>
                             {event.title}
                         </h3>
@@ -90,7 +88,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
 
     const [emblaRef, emblaApi] = useEmblaCarousel({ 
         loop: true,
-        align: 'center', // Alinha ao centro para o efeito de destaque
+        align: 'start', // Alinha ao início para garantir que apenas um slide seja visível
         slidesToScroll: 1,
         watchDrag: true,
     });
@@ -163,72 +161,32 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         );
     }
     
-    // Calcula a distância de cada slide para o slide central (selectedIndex)
-    const getSlideDistance = (index: number) => {
-        if (!emblaApi || !emblaApi.options) return 0;
-        const totalSlides = featuredEvents.length;
-        
-        // Calcula a diferença absoluta
-        let diff = Math.abs(index - selectedIndex);
-        
-        // Ajusta para loop (distância circular)
-        if (emblaApi.options.loop) {
-            diff = Math.min(diff, totalSlides - diff);
-        }
-        
-        // Limita a distância máxima para 3 (para o efeito visual)
-        return Math.min(diff, 3);
-    };
-
-    // Larguras fixas para o efeito de profundidade
-    const CENTRAL_WIDTH = 550; // Largura do slide central
-    const SIDE_WIDTH = 300;    // Largura dos slides laterais
-
     return (
         <div className="relative pt-4 pb-10">
             <div className="overflow-hidden" ref={emblaRef}>
                 <div className="flex touch-pan-y">
-                    {featuredEvents.map((event, index) => {
-                        const distance = getSlideDistance(index);
-                        const isCentral = index === selectedIndex;
+                    {featuredEvents.map((event) => {
                         
-                        // Define a largura do slide
-                        const width = isCentral ? CENTRAL_WIDTH : SIDE_WIDTH;
-                        
-                        // Define a profundidade (z-index) e a transformação de escala/opacidade
-                        let zIndex = 10 - distance;
-                        let opacity = 1;
-                        let scale = 1;
-                        
-                        if (!isCentral) {
-                            // Escala e opacidade decrescem mais agressivamente
-                            scale = 1 - (distance * 0.15); // 0.85, 0.70, etc.
-                            opacity = 1 - (distance * 0.35); // 0.65, 0.30, etc.
-                            zIndex = 10 - distance;
-                        }
-                        
-                        // Ajusta a largura do slide e usa margem negativa para sobreposição
+                        // Estilo para ocupar 100% da largura do contêiner
                         const slideStyle = {
-                            flex: `0 0 ${width}px`,
-                            minWidth: `${width}px`,
-                            maxWidth: `${width}px`,
-                            // Margem negativa para sobrepor os slides laterais ao central
-                            margin: isCentral ? '0 10px' : '0 -50px', 
-                            zIndex: zIndex,
-                            opacity: opacity,
-                            transform: `scale(${scale})`,
+                            flex: '0 0 100%',
+                            minWidth: '100%',
+                            maxWidth: '100%',
+                            margin: '0', 
+                            zIndex: 10,
+                            opacity: 1,
+                            transform: 'scale(1)',
                             transition: 'all 0.5s ease-in-out',
                         };
 
                         return (
                             <div 
                                 key={event.id} 
-                                className="flex-shrink-0 min-w-0"
+                                className="flex-shrink-0 min-w-0 px-2" // Adicionando um pequeno padding horizontal para evitar que o slide toque as setas
                                 style={slideStyle}
                             >
                                 <EventSlide 
                                     event={event} 
-                                    isCentral={isCentral} 
                                     onClick={() => handleEventClick(event)}
                                 />
                             </div>
