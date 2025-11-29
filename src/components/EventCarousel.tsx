@@ -13,6 +13,8 @@ interface EventCarouselProps {
     events: PublicEvent[];
 }
 
+const MAX_FEATURED_EVENTS = 7; // Definindo a constante
+
 // Dimensões fixas
 const SLIDE_WIDTH = 550;
 const SLIDE_HEIGHT = 380;
@@ -133,14 +135,12 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             // Slide à esquerda (Ex: Slide 3, index 2, normalizedDistance -1)
             else if (normalizedDistance === -1) { 
                 // Move o slide 3 para a direita, atrás do slide 4.
-                // O slide 3 está posicionado em -SLIDE_WIDTH. Para que ele termine em +40px (borda direita),
-                // ele precisa de um deslocamento total de SLIDE_WIDTH + (SLIDE_WIDTH - PEEK_WIDTH)
-                // SLIDE_WIDTH (550) + (550 - 40) = 1060px
+                // Cálculo: 550 (SLIDE_WIDTH) + (550 - 40 (PEEK_WIDTH)) = 1060px
                 
                 scale = 0.95;
                 opacity = 0.6; 
                 zIndex = 10; 
-                translateX = `${SLIDE_WIDTH + (SLIDE_WIDTH - PEEK_WIDTH)}px`; // 550 + 510 = 1060px
+                translateX = `${SLIDE_WIDTH + (SLIDE_WIDTH - PEEK_WIDTH)}px`; // 1060px
             }
             // Slide à direita (Ex: Slide 5, index 4, normalizedDistance 1)
             else if (normalizedDistance === 1) { 
