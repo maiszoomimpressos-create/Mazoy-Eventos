@@ -101,13 +101,9 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     // 1. Limita a 7 eventos
     let featuredEvents = events.slice(0, MAX_FEATURED_EVENTS);
 
-    // 2. Lógica para trocar a posição do evento 3 e 4 (índices 2 e 3)
-    if (featuredEvents.length >= 4) {
-        const event3 = featuredEvents[2];
-        const event4 = featuredEvents[3];
-        featuredEvents[2] = event4;
-        featuredEvents[3] = event3;
-    }
+    // 2. Lógica para trocar a posição do evento 3 e 4 (índices 2 e 3) - REMOVIDA
+    // Revertendo a troca para que o evento 3 esteja no índice 2 e o 4 no índice 3
+    // A ordem original é mantida aqui.
 
     const [emblaRef, emblaApi] = useEmblaCarousel({ 
         loop: true,
@@ -147,6 +143,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             let scale = 1;
             let opacity = 1;
             let zIndex = 20;
+            let translateX = '0'; // Novo: para manipulação manual
 
             // Calcula a distância circular (para loop)
             const distance = (index - currentSnap + featuredEvents.length) % featuredEvents.length;
@@ -159,7 +156,18 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 zIndex = 30;
             } 
             // Slides Imediatamente Laterais
-            else if (Math.abs(normalizedDistance) === 1) {
+            else if (normalizedDistance === -1) { // Slide à esquerda (Ex: Slide 3 quando 4 está centralizado)
+                scale = 0.95;
+                opacity = 0.8;
+                zIndex = 15;
+                
+                // NOVO: Mover o slide 3 (que está na posição -1) para a direita, atrás do slide 4
+                // O valor de 510px é a largura do slide + um pouco de margem
+                translateX = '510px'; 
+                zIndex = 10; // Coloca ele atrás do slide 5 (que terá zIndex 15)
+                opacity = 0.6; // Diminui a opacidade para parecer mais distante
+            }
+            else if (normalizedDistance === 1) { // Slide à direita (Ex: Slide 5 quando 4 está centralizado)
                 scale = 0.95;
                 opacity = 0.8;
                 zIndex = 15;
@@ -172,8 +180,8 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             }
             
             styles.push({
-                // Aplicamos apenas scale, opacity e zIndex. O Embla gerencia o translateX.
-                transform: `scale(${scale})`,
+                // Aplicamos scale, opacity, zIndex e o novo translateX
+                transform: `scale(${scale}) translateX(${translateX})`,
                 opacity: opacity,
                 zIndex: zIndex,
                 transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
