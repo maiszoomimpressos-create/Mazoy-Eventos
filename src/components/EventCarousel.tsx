@@ -98,17 +98,8 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
 const EventCarousel = ({ events }: EventCarouselProps) => {
     const navigate = useNavigate();
     
-    // 1. Limita a 7 eventos
+    // 1. Limita a 7 eventos e remove a lógica de troca para manter a ordem original (1, 2, 3, 4, 5, ...)
     let featuredEvents = events.slice(0, MAX_FEATURED_EVENTS);
-
-    // 2. Lógica para trocar a posição do evento 3 (índice 2) e evento 5 (índice 4)
-    if (featuredEvents.length >= 5) {
-        const event3 = featuredEvents[2]; // Exposição de Arte
-        const event5 = featuredEvents[4]; // Teatro Musical
-        
-        featuredEvents[2] = event5; // Posição 3 agora é Teatro Musical
-        featuredEvents[4] = event3; // Posição 5 agora é Exposição de Arte
-    }
 
     const [emblaRef, emblaApi] = useEmblaCarousel({ 
         loop: true,
@@ -148,19 +139,34 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             let scale = 1;
             let opacity = 1;
             let zIndex = 20;
-            
+            let translateX = '0'; // Novo: para manipulação manual
+
             // Calcula a distância circular (para loop)
             const distance = (index - currentSnap + featuredEvents.length) % featuredEvents.length;
             const normalizedDistance = distance > featuredEvents.length / 2 ? distance - featuredEvents.length : distance;
 
-            // Slide Central
+            // Slide Central (Ex: Slide 4)
             if (normalizedDistance === 0) {
                 scale = 1;
                 opacity = 1;
                 zIndex = 30;
             } 
-            // Slides Imediatamente Laterais
-            else if (Math.abs(normalizedDistance) === 1) {
+            // Slide à esquerda (Ex: Slide 3, que queremos mover para a direita)
+            else if (normalizedDistance === -1) { 
+                // Cálculo: O slide está em -550px. Para que ele apareça 40px à direita do centro (550/2 = 275), 
+                // ele precisa estar em 275 - 40 = 235px (borda esquerda).
+                // O centro do slide precisa estar em 235 + 275 = 510px.
+                // Movimento total necessário: 510px - (-550px) = 1060px.
+                
+                scale = 0.95;
+                opacity = 0.6; // Mais escuro para parecer atrás
+                zIndex = 10; // ZIndex mais baixo para ficar atrás do slide central (30) e do slide à direita (15)
+                
+                // Move o slide 3 (que está na posição -1) para a direita, atrás do slide 4
+                translateX = '1060px'; 
+            }
+            // Slide à direita (Ex: Slide 5)
+            else if (normalizedDistance === 1) { 
                 scale = 0.95;
                 opacity = 0.8;
                 zIndex = 15;
@@ -173,8 +179,8 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             }
             
             styles.push({
-                // Aplicamos apenas scale, opacity e zIndex. O Embla gerencia o translateX.
-                transform: `scale(${scale})`,
+                // Aplicamos scale e o custom translation combinado
+                transform: `scale(${scale}) translateX(${translateX})`,
                 opacity: opacity,
                 zIndex: zIndex,
                 transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
