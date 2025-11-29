@@ -29,55 +29,35 @@ const getMinPriceDisplay = (price: number | null): string => {
 };
 
 // Componente para o Slide de Evento
-const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex: number }> = ({ event, onClick, slideIndex }) => {
+const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, distance: number }> = ({ event, onClick, distance }) => {
     const minPriceDisplay = getMinPriceDisplay(event.min_price);
-    
-    // Slides de profundidade 1 (mais próximos)
-    const isSlide3 = slideIndex === 3;
-    const isSlide5 = slideIndex === 5;
-    
-    // Slides de profundidade 2 (mais distantes)
-    const isSlide4 = slideIndex === 4;
-    const isSlide6 = slideIndex === 6;
     
     let customStyle = {};
 
-    if (isSlide3) {
-        // Profundidade 1: Direita
+    // Distância 1 (Slides imediatamente adjacentes)
+    if (Math.abs(distance) === 1) {
+        const translateX = distance > 0 ? 510 : -510;
         customStyle = {
-            transform: 'translateX(510px) scale(0.90)', 
+            transform: `translateX(${translateX}px) scale(0.90)`, 
             zIndex: 10, 
             opacity: 0.6, 
             transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
         };
-    } else if (isSlide5) {
-        // Profundidade 1: Esquerda
+    } 
+    // Distância 2 (Slides na segunda camada de profundidade)
+    else if (Math.abs(distance) === 2) {
+        const translateX = distance > 0 ? 1020 : -1020;
         customStyle = {
-            transform: 'translateX(-510px) scale(0.90)', 
-            zIndex: 10, 
-            opacity: 0.6, 
+            transform: `translateX(${translateX}px) scale(0.80)`, 
+            zIndex: 5, 
+            opacity: 0.3, 
             transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
         };
-    } else if (isSlide4) {
-        // Profundidade 2: Direita (Atrás do Slide 3)
+    } 
+    // Slide Central (Distância 0) e slides fora do campo de visão (Distância > 2)
+    else {
         customStyle = {
-            transform: 'translateX(1020px) scale(0.80)', // Dobro do deslocamento, escala menor
-            zIndex: 5, // ZIndex menor
-            opacity: 0.3, // Opacidade menor
-            transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
-        };
-    } else if (isSlide6) {
-        // Profundidade 2: Esquerda (Atrás do Slide 5)
-        customStyle = {
-            transform: 'translateX(-1020px) scale(0.80)', // Dobro do deslocamento, escala menor
-            zIndex: 5, // ZIndex menor
-            opacity: 0.3, // Opacidade menor
-            transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
-        };
-    } else {
-        // Slide Central (2) e Slides Fora de Vista (1 e 7)
-        customStyle = {
-            zIndex: 20, // ZIndex padrão para slides normais
+            zIndex: 20, 
             transform: 'translateX(0) scale(1)',
             opacity: 1,
             transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
@@ -98,13 +78,10 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
                 ...customStyle // Aplica o estilo customizado
             }} 
         >
-            {/* Identificadores de Borda */}
-            <div className="absolute top-4 left-4 z-30 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-bold border border-yellow-500">
-                {slideIndex}
-            </div>
-            <div className="absolute top-4 right-4 z-30 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-bold border border-yellow-500">
-                {slideIndex}
-            </div>
+            {/* Identificadores de Borda (Removido para produção, mas mantido para debug visual) */}
+            {/* <div className="absolute top-4 left-4 z-30 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-bold border border-yellow-500">
+                {distance}
+            </div> */}
             
             <CardContent className="flex flex-col p-0 h-full">
                 <div className="relative h-full overflow-hidden">
@@ -234,7 +211,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     }
     
     // Novo cálculo para posicionar a seta na borda do slide principal
-    // SLIDE_WIDTH / 2 (275px) + Button Half Width (24px) = 299px
     const ARROW_POSITION_OFFSET = SLIDE_WIDTH / 2 + 24; 
 
     return (
@@ -243,16 +219,28 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 <div className="flex touch-pan-y">
                     {featuredEvents.map((event, index) => {
                         
+                        // Calcula a distância do índice atual para o índice selecionado (central)
+                        let distance = index - selectedIndex;
+                        
+                        // Ajusta a distância para o loop infinito (se o carrossel for loop)
+                        if (emblaApi && emblaApi.options.loop) {
+                            const slideCount = featuredEvents.length;
+                            if (distance > slideCount / 2) {
+                                distance -= slideCount;
+                            } else if (distance < -slideCount / 2) {
+                                distance += slideCount;
+                            }
+                        }
+                        
                         // Estilo para limitar a largura do slide e centralizar
                         const slideContainerStyle = {
-                            // Ocupa a largura do slide + 2 * PEEK_WIDTH para o Embla calcular o alinhamento
                             flex: `0 0 ${SLIDE_WIDTH + PEEK_WIDTH * 2}px`, 
                             minWidth: `${SLIDE_WIDTH + PEEK_WIDTH * 2}px`,
                             maxWidth: `${SLIDE_WIDTH + PEEK_WIDTH * 2}px`,
                             display: 'flex',
-                            justifyContent: 'center', // Centraliza o conteúdo dentro do slide
-                            paddingLeft: `${PEEK_WIDTH}px`, // Adiciona padding para o peek
-                            paddingRight: `${PEEK_WIDTH}px`, // Adiciona padding para o peek
+                            justifyContent: 'center', 
+                            paddingLeft: `${PEEK_WIDTH}px`, 
+                            paddingRight: `${PEEK_WIDTH}px`, 
                         };
                         
                         // Estilo para o slide em si (largura fixa)
@@ -272,7 +260,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                                     <EventSlide 
                                         event={event} 
                                         onClick={() => handleEventClick(event)}
-                                        slideIndex={index + 1} // Adicionando o índice do slide
+                                        distance={distance} // Passa a distância dinâmica
                                     />
                                 </div>
                             </div>
