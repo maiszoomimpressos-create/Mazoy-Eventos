@@ -95,14 +95,17 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     
     const featuredEvents = events.slice(0, MAX_FEATURED_EVENTS);
 
+    // Set initialScrollSnap to 3 to start with the 4th banner (index 3)
     const [emblaRef, emblaApi] = useEmblaCarousel({ 
         loop: false, 
         align: 'center', 
         slidesToScroll: 1,
         watchDrag: true,
+        initialScrollSnap: 3, // Inicia no 4º slide (índice 3)
     });
     
-    const [selectedIndex, setSelectedIndex] = useState(0);
+    // Initialize selectedIndex to 3 to match the initialScrollSnap
+    const [selectedIndex, setSelectedIndex] = useState(3); 
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
     const [slideStyles, setSlideStyles] = useState<React.CSSProperties[]>([]);
 
