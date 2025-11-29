@@ -41,12 +41,13 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
                 ...customStyle
             }} 
         >
-            <div className="absolute top-4 left-4 z-30 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-bold border border-yellow-500">
+            {/* Removendo os indicadores de slideIndex */}
+            {/* <div className="absolute top-4 left-4 z-30 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-bold border border-yellow-500">
                 {slideIndex}
             </div>
             <div className="absolute top-4 right-4 z-30 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-bold border border-yellow-500">
                 {slideIndex}
-            </div>
+            </div> */}
             
             <CardContent className="flex flex-col p-0 h-full">
                 <div className="relative h-full overflow-hidden">
