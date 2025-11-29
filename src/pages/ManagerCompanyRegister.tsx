@@ -9,11 +9,13 @@ import { Form } from '@/components/ui/form';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { Loader2, Building, ArrowLeft } from 'lucide-react';
 import CompanyForm, { createCompanySchema, CompanyFormData } from '@/components/CompanyForm';
+import { useQueryClient } from '@tanstack/react-query'; // Importando useQueryClient
 
 // --- Component ---
 
 const ManagerCompanyRegister: React.FC = () => {
     const navigate = useNavigate();
+    const queryClient = useQueryClient(); // Inicializando useQueryClient
     const [userId, setUserId] = useState<string | null>(null);
     const [isFetching, setIsFetching] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
@@ -146,6 +148,8 @@ const ManagerCompanyRegister: React.FC = () => {
                 console.error("Warning: Failed to create user_company association:", associationError);
             }
 
+            // NOVO: Invalida o cache da empresa do gestor para forçar a re-busca
+            queryClient.invalidateQueries({ queryKey: ['managerCompany', userId] });
 
             dismissToast(toastId);
             showSuccess("Registro de Gestor (Empresa) concluído com sucesso!");
