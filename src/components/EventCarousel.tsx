@@ -91,29 +91,31 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
 const EventCarousel = ({ events }: EventCarouselProps) => {
     const navigate = useNavigate();
     
-    const featuredEvents = events.slice(0, MAX_FEATURED_EVENTS);
+    // Aumenta o número de eventos destacados para incluir o novo banner 1
+    const featuredEvents = events.slice(0, MAX_FEATURED_EVENTS + 1); // Agora pegamos 8 eventos
 
     const handleEventClick = (event: PublicEvent) => {
         navigate(`/finalizar-compra`, { state: { eventId: event.id } });
     };
 
-    if (featuredEvents.length === 0) {
+    if (featuredEvents.length < 5) { // Ajusta a verificação para garantir que temos pelo menos 5 eventos para exibir
         return (
             <div className="flex items-center justify-center h-full bg-black/60 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/20" style={{ height: `${SLIDE_HEIGHT}px` }}>
                 <div className="text-center p-8">
                     <i className="fas fa-star text-yellow-500 text-4xl mb-4"></i>
                     <h2 className="text-xl sm:text-2xl font-serif text-white mb-2">Destaques Premium</h2>
-                    <p className="text-gray-400 text-sm">Nenhum evento em destaque encontrado.</p>
+                    <p className="text-gray-400 text-sm">Não há eventos suficientes para o carrossel completo.</p>
                 </div>
             </div>
         );
     }
     
-    // Identifica os eventos para os banners 2, 3, 4 e 5 (índices 1, 2, 3 e 4)
-    const prevPrevEvent = featuredEvents[1]; // Novo Banner 2
-    const prevEvent = featuredEvents[2];     // Banner 3
-    const fixedEvent = featuredEvents[3];    // Banner 4 (central e fixo)
-    const nextEvent = featuredEvents[4];     // Banner 5
+    // Identifica os eventos para os banners 1, 2, 3, 4 e 5 (índices 0, 1, 2, 3 e 4)
+    const prevPrevPrevEvent = featuredEvents[0]; // Novo Banner 1
+    const prevPrevEvent = featuredEvents[1];     // Banner 2
+    const prevEvent = featuredEvents[2];         // Banner 3
+    const fixedEvent = featuredEvents[3];        // Banner 4 (central e fixo)
+    const nextEvent = featuredEvents[4];         // Banner 5
 
     // Se o evento central não existir, exibe uma mensagem de erro
     if (!fixedEvent) {
@@ -136,6 +138,19 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     return (
         <div className="relative pt-4 pb-10 flex justify-center items-center overflow-hidden">
             <div className="flex items-center"> {/* Este div interno será centralizado pelo flex pai */}
+                {prevPrevPrevEvent && (
+                    <div 
+                        className="relative hidden md:block" 
+                        style={{ marginRight: `-${overlapAmount}px` }} 
+                    >
+                        <EventSlide 
+                            event={prevPrevPrevEvent} 
+                            onClick={() => handleEventClick(prevPrevPrevEvent)}
+                            slideIndex={1} 
+                            customStyle={{ transform: 'scale(0.55)', opacity: 0.05, zIndex: 5 }} // Escala e opacidade ainda menores para o banner 1
+                        />
+                    </div>
+                )}
                 {prevPrevEvent && (
                     <div 
                         className="relative hidden md:block" 
