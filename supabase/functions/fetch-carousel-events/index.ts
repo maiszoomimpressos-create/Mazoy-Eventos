@@ -51,6 +51,7 @@ serve(async (req) => {
       .single();
 
     if (settingsError && settingsError.code !== 'PGRST116') { // PGRST116 = No rows found
+      console.error("[ERROR] Failed to fetch carousel settings:", settingsError);
       throw settingsError;
     }
 
@@ -72,13 +73,17 @@ serve(async (req) => {
       .from('event_carousel_banners')
       .select(`
         id, event_id, image_url, headline, subheadline, display_order, start_date, end_date,
-        events (title, description, category, location, date, time, latitude, longitude)
+        events (id, title, description, category, location, date, time, latitude, longitude)
       `)
       .lte('start_date', now)
       .gte('end_date', now)
       .order('display_order', { ascending: true });
 
-    if (eventCarouselError) console.error("Error fetching event carousel banners:", eventCarouselError);
+    if (eventCarouselError) {
+        console.error("[ERROR] Failed to fetch event carousel banners:", eventCarouselError);
+        // Se houver um erro de RLS aqui, ele pode estar relacionado ao JOIN com 'events'
+        // Mas a política 'Public read access to active event carousel banners' deve cobrir isso.
+    }
 
     // 3. Buscar banners promocionais
     const { data: promotionalBanners, error: promoBannersError } = await supabase
@@ -90,22 +95,25 @@ serve(async (req) => {
       .gte('end_date', now)
       .order('display_order', { ascending: true });
 
-    if (promoBannersError) console.error("Error fetching promotional banners:", promoBannersError);
+    if (promoBannersError) console.error("[ERROR] Failed to fetch promotional banners:", promoBannersError);
 
     // 4. Combinar e formatar banners
     if (eventCarouselBanners) {
       const eventIds = eventCarouselBanners.map(b => b.event_id);
+      
+      // Buscar preços mínimos (wristbands)
       const { data: wristbandsData, error: wristbandsError } = await supabase
         .from('wristbands')
         .select('event_id, price, status')
         .in('event_id', eventIds)
         .eq('status', 'active');
 
-      if (wristbandsError) console.error("Error fetching wristbands for carousel events:", wristbandsError);
+      if (wristbandsError) console.error("[ERROR] Failed to fetch wristbands for carousel events:", wristbandsError);
 
       const eventMinPrices = wristbandsData ? wristbandsData.reduce((acc, item) => {
-        if (!acc[item.event_id] || item.price < acc[item.event_id]) {
-          acc[item.event_id] = item.price;
+        const price = parseFloat(item.price as unknown as string) || 0;
+        if (!acc[item.event_id] || price < acc[item.event_id]) {
+          acc[item.event_id] = price;
         }
         return acc;
       }, {} as { [eventId: string]: number }) : {};
@@ -166,7 +174,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('Edge Function Error:', error);
+    console.error('Edge Function CRITICAL Error:', error);
     return new Response(JSON.stringify({ error: error.message || 'Internal Server Error' }), {
       status: 500,
       headers: corsHeaders,
