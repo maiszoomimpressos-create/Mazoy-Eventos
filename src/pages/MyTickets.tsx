@@ -161,7 +161,7 @@ const MyTickets: React.FC = () => {
                     </div>
                 </div>
             </header>
-            <main className="pt-24 pb-12 px-4 sm:px-6 max-w-7xl mx-auto">
+            <main className="pt-24 pb-12 px-4 sm:px-6 max-w-7xl mx-auto"> {/* Ajustado o padding-top */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
                     <h1 className="text-3xl sm:text-4xl font-serif text-yellow-500 mb-4 sm:mb-0">Meus Ingressos</h1>
                     <Button 

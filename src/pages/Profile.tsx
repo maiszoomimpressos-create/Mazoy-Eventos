@@ -382,7 +382,7 @@ const Profile: React.FC = () => {
                     </div>
                 </div>
             </header>
-            <main className="pt-24 pb-12 px-4 sm:px-6">
+            <main className="pt-24 pb-12 px-4 sm:px-6"> {/* Ajustado o padding-top */}
                 <div className="max-w-4xl mx-auto">
                     <h1 className="text-3xl sm:text-4xl font-serif text-yellow-500 mb-8">Meu Perfil</h1>
                     

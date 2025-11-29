@@ -108,7 +108,7 @@ const EventDetails: React.FC = () => {
                     </div>
                 </div>
             </header>
-            <section className="pt-20 pb-0">
+            <section className="pt-20 pb-0"> {/* Ajustado o padding-top */}
                 <div className="relative h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden">
                     <img
                         src={event.image_url}

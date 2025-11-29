@@ -15,9 +15,8 @@ interface EventCarouselProps {
 
 const MAX_FEATURED_EVENTS = 7;
 
-const SLIDE_WIDTH = 550;
+const SLIDE_WIDTH = 550; // Mantido para referência de tamanho máximo do conteúdo
 const SLIDE_HEIGHT = 380;
-const PEEK_WIDTH = 40;
 
 const getMinPriceDisplay = (price: number | null): string => {
     if (price === null || price === 0) return 'Grátis';
@@ -36,7 +35,8 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
             onClick={onClick}
             style={{ 
                 height: `${SLIDE_HEIGHT}px`, 
-                width: `${SLIDE_WIDTH}px`,
+                maxWidth: `${SLIDE_WIDTH}px`, // Limita a largura máxima do conteúdo
+                width: '100%', // Ocupa a largura total do seu container
                 ...customStyle
             }} 
         >
@@ -99,7 +99,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         align: 'center', 
         slidesToScroll: 1,
         watchDrag: true,
-        padding: { left: SLIDE_WIDTH / 2 - PEEK_WIDTH, right: SLIDE_WIDTH / 2 - PEEK_WIDTH }, 
+        padding: 0, // Removido o padding para exibir apenas um slide
     });
     
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -111,9 +111,9 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         const currentSnap = emblaApi.selectedScrollSnap();
         
         emblaApi.slideNodes().forEach((slide, index) => {
-            let scale = 0.9;
-            let opacity = 0.6;
-            let zIndex = 10;
+            let scale = 0.8; // Escala menor para slides não selecionados
+            let opacity = 0; // Oculta slides não selecionados
+            let zIndex = 5;
             let translateX = '0'; 
 
             const normalizedDistance = index - currentSnap;
@@ -123,29 +123,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 opacity = 1;
                 zIndex = 30;
             } 
-            else if (normalizedDistance === -1) { 
-                scale = 0.95;
-                opacity = 0.8; 
-                zIndex = 10; 
-                translateX = `${SLIDE_WIDTH - PEEK_WIDTH}px`; 
-            }
-            else if (normalizedDistance === 1) { 
-                scale = 0.95;
-                opacity = 0.8;
-                zIndex = 15;
-                translateX = `-${SLIDE_WIDTH - PEEK_WIDTH}px`;
-            }
-            else {
-                scale = 0.90;
-                opacity = 0.6;
-                zIndex = 5;
-            }
-            
-            // Ajuste específico para garantir que o slide 3 (índice 2) fique atrás do slide 4 (índice 3)
-            // quando o slide 4 é o central (currentSnap === 3)
-            if (currentSnap === 3 && index === 2) {
-                zIndex = 5; // Garante que o slide 3 fique atrás do slide 4 (zIndex 30) e do slide 5 (zIndex 15)
-            }
             
             styles.push({
                 transform: `scale(${scale}) translateX(${translateX})`,
@@ -202,9 +179,9 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 <div className="flex touch-pan-y">
                     {featuredEvents.map((event, index) => {
                         const slideContainerStyle = {
-                            flex: `0 0 ${SLIDE_WIDTH}px`, 
-                            minWidth: `${SLIDE_WIDTH}px`,
-                            maxWidth: `${SLIDE_WIDTH}px`,
+                            flex: '0 0 100%', // Cada slide ocupa 100% da largura
+                            minWidth: '100%',
+                            maxWidth: '100%',
                             display: 'flex',
                             justifyContent: 'center',
                             marginLeft: '0',
@@ -212,9 +189,9 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                         };
                         
                         const slideStyle = {
-                            width: `${SLIDE_WIDTH}px`,
-                            maxWidth: '100%', 
-                            margin: '0', 
+                            width: '100%', // Ocupa a largura total do seu container
+                            maxWidth: `${SLIDE_WIDTH}px`, // Limita a largura máxima do conteúdo
+                            margin: '0 auto', // Centraliza o conteúdo dentro do container do slide
                         };
 
                         return (

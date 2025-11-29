@@ -62,7 +62,7 @@ const FinalizarCompra: React.FC = () => {
     return (
         <div className="min-h-screen bg-black text-white">
             {/* Banner do Evento (Replicando o estilo da imagem) */}
-            <section className="relative h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden">
+            <section className="relative h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden pt-20"> {/* Ajustado o padding-top */}
                 <img
                     src={event.image_url}
                     alt={event.title}
