@@ -12,10 +12,10 @@ interface EventCarouselProps {
     events: PublicEvent[];
 }
 
-const MAX_FEATURED_EVENTS = 7;
+const MAX_FEATURED_EVENTS = 7; // Ainda usamos para fatiar a lista de eventos
 
-const SLIDE_WIDTH = 550; // Max width for the content card
-const SLIDE_HEIGHT = 380;
+const SLIDE_WIDTH = 550; // Largura máxima para o cartão de conteúdo
+const SLIDE_HEIGHT = 380; // Altura fixa para os cartões
 
 const getMinPriceDisplay = (price: number | null): string => {
     if (price === null || price === 0) return 'Grátis';
@@ -109,33 +109,56 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         );
     }
     
-    // Exibe apenas o 4º evento (índice 3) de forma estática
-    const fixedEvent = featuredEvents[3];
+    // Identifica os eventos para os banners 3, 4 e 5 (índices 2, 3 e 4)
+    const prevEvent = featuredEvents[2]; // Banner 3
+    const fixedEvent = featuredEvents[3]; // Banner 4 (central e fixo)
+    const nextEvent = featuredEvents[4]; // Banner 5
 
+    // Se o evento central não existir, exibe uma mensagem de erro
     if (!fixedEvent) {
         return (
             <div className="flex items-center justify-center h-full bg-black/60 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/20" style={{ height: `${SLIDE_HEIGHT}px` }}>
                 <div className="text-center p-8">
                     <i className="fas fa-exclamation-circle text-red-500 text-4xl mb-4"></i>
-                    <h2 className="text-xl sm:text-2xl font-serif text-white mb-2">Evento Fixo Não Encontrado</h2>
-                    <p className="text-gray-400 text-sm">O evento destacado não está disponível.</p>
+                    <h2 className="text-xl sm:text-2xl font-serif text-white mb-2">Evento Destacado Não Encontrado</h2>
+                    <p className="text-gray-400 text-sm">O evento principal (banner 4) não está disponível.</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="relative pt-4 pb-10 flex justify-center"> {/* Adicionado flex justify-center para centralizar */}
-            <div className="flex-shrink-0 min-w-0">
-                <div style={{ width: '100%', maxWidth: `${SLIDE_WIDTH}px`, margin: '0 auto' }}>
+        <div className="relative pt-4 pb-10 flex justify-center items-center overflow-hidden">
+            {prevEvent && (
+                <div className="relative -mr-20 z-10 hidden md:block"> {/* Banner 3 à esquerda, oculto em telas pequenas */}
+                    <EventSlide 
+                        event={prevEvent} 
+                        onClick={() => handleEventClick(prevEvent)}
+                        slideIndex={3} 
+                        customStyle={{ transform: 'scale(0.85)', opacity: 0.5, zIndex: 10 }} 
+                    />
+                </div>
+            )}
+            {fixedEvent && (
+                <div className="relative z-20"> {/* Banner 4 central e em destaque */}
                     <EventSlide 
                         event={fixedEvent} 
                         onClick={() => handleEventClick(fixedEvent)}
-                        slideIndex={4} // Mantém o índice 4 para exibição
-                        customStyle={{ transform: 'scale(1.05)', opacity: 1, zIndex: 20 }} // Estilo fixo para destaque
+                        slideIndex={4} 
+                        customStyle={{ transform: 'scale(1.05)', opacity: 1, zIndex: 20 }} 
                     />
                 </div>
-            </div>
+            )}
+            {nextEvent && (
+                <div className="relative -ml-20 z-10 hidden md:block"> {/* Banner 5 à direita, oculto em telas pequenas */}
+                    <EventSlide 
+                        event={nextEvent} 
+                        onClick={() => handleEventClick(nextEvent)}
+                        slideIndex={5} 
+                        customStyle={{ transform: 'scale(0.85)', opacity: 0.5, zIndex: 10 }} 
+                    />
+                </div>
+            )}
         </div>
     );
 };
