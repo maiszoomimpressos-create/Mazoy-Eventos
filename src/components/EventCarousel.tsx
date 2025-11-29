@@ -108,23 +108,25 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
 
     const updateSlideStyles = useCallback((emblaApi: EmblaCarouselType) => {
         const styles: React.CSSProperties[] = [];
-        
-        emblaApi.slideNodes().forEach((slide, index) => {
-            let scale = 1; // Todos os slides com a mesma escala
-            let opacity = 1; // Todos os slides totalmente opacos
-            let zIndex = 10; // Todos os slides com o mesmo z-index
-            let translateX = 0; // Sem translação padrão para sobreposição
+        const currentSelectedIndex = emblaApi.selectedScrollSnap();
 
-            // REMOVIDO: Aplica o deslocamento de 510px para a direita APENAS no banner 4 (índice 3)
-            // if (index === 3) { 
-            //     translateX = 510; 
-            // }
+        emblaApi.slideNodes().forEach((slide, index) => {
+            let scale = 0.95; // Escala padrão para slides inativos
+            let opacity = 0.7; // Opacidade padrão para slides inativos
+            let zIndex = 10; 
+            let translateX = 0; 
+
+            if (index === currentSelectedIndex) {
+                scale = 1.05; // Aumenta o slide selecionado
+                opacity = 1; // Totalmente opaco
+                zIndex = 20; // Traz para frente
+            }
             
             styles.push({
                 transform: `scale(${scale}) translateX(${translateX}px)`,
                 opacity: opacity,
                 zIndex: zIndex,
-                transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out', // Mantém a transição para movimento suave
+                transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
             });
         });
         setSlideStyles(styles);
