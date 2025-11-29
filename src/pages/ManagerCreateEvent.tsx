@@ -15,10 +15,11 @@ import {
     AlertDialogHeader, 
     AlertDialogTitle 
 } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch"; // Importando Switch
 import { categories } from '@/data/events';
 import { showSuccess, showError, showLoading, dismissToast } from '@/utils/toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, ArrowLeft, ImageOff, Loader2 } from 'lucide-react';
+import { Plus, ArrowLeft, ImageOff, Loader2, MapPin, CalendarDays, ListOrdered, Heading, Subtitles } from 'lucide-react'; // Novos ícones
 import { format } from 'date-fns';
 import { DatePicker } from '@/components/DatePicker';
 import ImageUploadPicker from '@/components/ImageUploadPicker';
@@ -37,6 +38,16 @@ interface EventFormData {
     category: string;
     capacity: number | string; // Capacidade
     duration: string; // NOVO: Duração
+    
+    // NOVOS CAMPOS PARA CARROSSEL E GEOLOCALIZAÇÃO
+    latitude: number | null;
+    longitude: number | null;
+    is_featured_carousel: boolean;
+    carousel_display_order: number | string;
+    carousel_start_date: Date | undefined;
+    carousel_end_date: Date | undefined;
+    carousel_headline: string;
+    carousel_subheadline: string;
 }
 
 const ManagerCreateEvent: React.FC = () => {
@@ -53,6 +64,16 @@ const ManagerCreateEvent: React.FC = () => {
         category: '',
         capacity: '', // Inicializado como string vazia
         duration: '', // Inicializado como string vazia
+        
+        // NOVOS CAMPOS PARA CARROSSEL E GEOLOCALIZAÇÃO
+        latitude: null,
+        longitude: null,
+        is_featured_carousel: false,
+        carousel_display_order: 0,
+        carousel_start_date: undefined,
+        carousel_end_date: undefined,
+        carousel_headline: '',
+        carousel_subheadline: '',
     });
     const [isSaving, setIsSaving] = useState(false); // Renomeado de isLoading para isSaving para clareza
     const [userId, setUserId] = useState<string | null>(null);
@@ -95,10 +116,10 @@ const ManagerCreateEvent: React.FC = () => {
         }
     };
     
-    const handleDateChange = (date: Date | undefined) => {
-        setFormData(prev => ({ ...prev, date }));
-        if (formErrors.date) {
-            setFormErrors(prev => ({ ...prev, date: '' }));
+    const handleDateChange = (field: 'date' | 'carousel_start_date' | 'carousel_end_date', date: Date | undefined) => {
+        setFormData(prev => ({ ...prev, [field]: date }));
+        if (formErrors[field]) {
+            setFormErrors(prev => ({ ...prev, [field]: '' }));
         }
     };
 
@@ -108,6 +129,10 @@ const ManagerCreateEvent: React.FC = () => {
             setFormErrors(prev => ({ ...prev, category: '' }));
         }
     };
+    
+    const handleSwitchChange = (checked: boolean) => {
+        setFormData(prev => ({ ...prev, is_featured_carousel: checked }));
+    };
 
     const handleImageUpload = (url: string) => {
         setFormData(prev => ({ ...prev, image_url: url }));
@@ -116,9 +141,11 @@ const ManagerCreateEvent: React.FC = () => {
         }
     };
 
-    const validateForm = (): { isValid: boolean, isoDate: string | null } => {
+    const validateForm = (): { isValid: boolean, isoDate: string | null, isoCarouselStartDate: string | null, isoCarouselEndDate: string | null } => {
         const errors: { [key: string]: string } = {};
         let isoDate: string | null = null;
+        let isoCarouselStartDate: string | null = null;
+        let isoCarouselEndDate: string | null = null;
         
         if (!formData.title) errors.title = "Título é obrigatório.";
         if (!formData.description) errors.description = "Descrição é obrigatória.";
@@ -148,8 +175,28 @@ const ManagerCreateEvent: React.FC = () => {
 
         if (!formData.category) errors.category = "Categoria é obrigatória.";
 
+        // Validação dos novos campos do carrossel, se 'is_featured_carousel' for true
+        if (formData.is_featured_carousel) {
+            const displayOrder = Number(formData.carousel_display_order);
+            if (formData.carousel_display_order === '' || formData.carousel_display_order === null || isNaN(displayOrder) || displayOrder < 0) {
+                errors.carousel_display_order = "Ordem de Exibição é obrigatória e deve ser 0 ou maior.";
+            }
+            if (!formData.carousel_start_date) {
+                errors.carousel_start_date = "Data de Início do Carrossel é obrigatória.";
+            } else {
+                isoCarouselStartDate = format(formData.carousel_start_date, 'yyyy-MM-dd');
+            }
+            if (!formData.carousel_end_date) {
+                errors.carousel_end_date = "Data de Fim do Carrossel é obrigatória.";
+            } else {
+                isoCarouselEndDate = format(formData.carousel_end_date, 'yyyy-MM-dd');
+            }
+            if (!formData.carousel_headline) errors.carousel_headline = "Título do Carrossel é obrigatório.";
+            if (!formData.carousel_subheadline) errors.carousel_subheadline = "Subtítulo do Carrossel é obrigatório.";
+        }
+
         setFormErrors(errors);
-        return { isValid: Object.keys(errors).length === 0, isoDate };
+        return { isValid: Object.keys(errors).length === 0, isoDate, isoCarouselStartDate, isoCarouselEndDate };
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -169,23 +216,39 @@ const ManagerCreateEvent: React.FC = () => {
         const toastId = showLoading("Publicando evento...");
         setIsSaving(true);
 
+        // Placeholder para geocodificação
+        // Em um cenário real, você usaria uma API de geocodificação para converter o endereço em lat/lon.
+        // Por enquanto, vamos usar valores fixos ou nulos.
+        const geocodedLatitude = -23.5505; // Exemplo: Latitude de São Paulo
+        const geocodedLongitude = -46.6333; // Exemplo: Longitude de São Paulo
+
         try {
             const { data, error } = await supabase
                 .from('events')
                 .insert([
                     {
-                        company_id: company.id, // Usando company_id em vez de user_id
+                        company_id: company.id,
                         title: formData.title,
                         description: formData.description,
-                        date: validationResult.isoDate, // Usando a data formatada para ISO
+                        date: validationResult.isoDate,
                         time: formData.time,
                         location: formData.location,
                         address: formData.address,
                         image_url: formData.image_url,
                         min_age: Number(formData.min_age),
                         category: formData.category,
-                        capacity: Number(formData.capacity), // SALVANDO CAPACIDADE
-                        duration: formData.duration, // SALVANDO DURAÇÃO
+                        capacity: Number(formData.capacity),
+                        duration: formData.duration,
+                        
+                        // NOVOS CAMPOS PARA CARROSSEL E GEOLOCALIZAÇÃO
+                        latitude: geocodedLatitude, // Usando placeholder
+                        longitude: geocodedLongitude, // Usando placeholder
+                        is_featured_carousel: formData.is_featured_carousel,
+                        carousel_display_order: formData.is_featured_carousel ? Number(formData.carousel_display_order) : 0,
+                        carousel_start_date: formData.is_featured_carousel ? validationResult.isoCarouselStartDate : null,
+                        carousel_end_date: formData.is_featured_carousel ? validationResult.isoCarouselEndDate : null,
+                        carousel_headline: formData.is_featured_carousel ? formData.carousel_headline : null,
+                        carousel_subheadline: formData.is_featured_carousel ? formData.carousel_subheadline : null,
                     },
                 ])
                 .select('id')
@@ -349,7 +412,7 @@ const ManagerCreateEvent: React.FC = () => {
                                 <label htmlFor="date" className="block text-sm font-medium text-white mb-2">Data *</label>
                                 <DatePicker 
                                     date={formData.date}
-                                    setDate={handleDateChange}
+                                    setDate={(d) => handleDateChange('date', d)}
                                     placeholder="DD/MM/AAAA ou Selecione"
                                 />
                                 {formErrors.date && <p className="text-red-500 text-xs mt-1">{formErrors.date}</p>}
@@ -430,6 +493,105 @@ const ManagerCreateEvent: React.FC = () => {
                                 <p className="text-xs text-gray-500 mt-1">Defina 0 para classificação livre.</p>
                                 {formErrors.min_age && <p className="text-red-500 text-xs mt-1">{formErrors.min_age}</p>}
                             </div>
+                        </div>
+
+                        {/* Seção de Configurações do Carrossel */}
+                        <div className="space-y-4 pt-6 border-t border-yellow-500/20">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xl font-semibold text-white flex items-center">
+                                    <SlidersHorizontal className="h-5 w-5 mr-2 text-yellow-500" />
+                                    Exibir no Carrossel da Home?
+                                </h3>
+                                <Switch 
+                                    checked={formData.is_featured_carousel} 
+                                    onCheckedChange={handleSwitchChange}
+                                    className="data-[state=checked]:bg-yellow-500 data-[state=unchecked]:bg-gray-700"
+                                    disabled={isSaving}
+                                />
+                            </div>
+
+                            {formData.is_featured_carousel && (
+                                <div className="space-y-6 p-4 bg-black/60 rounded-xl border border-yellow-500/20">
+                                    <div>
+                                        <label htmlFor="carousel_headline" className="block text-sm font-medium text-white mb-2 flex items-center">
+                                            <Heading className="h-4 w-4 mr-2 text-yellow-500" />
+                                            Título do Banner (Carrossel) *
+                                        </label>
+                                        <Input 
+                                            id="carousel_headline" 
+                                            value={formData.carousel_headline} 
+                                            onChange={handleChange} 
+                                            placeholder="Título chamativo para o carrossel"
+                                            className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 ${formErrors.carousel_headline ? 'border-red-500' : ''}`}
+                                            required
+                                            disabled={isSaving}
+                                        />
+                                        {formErrors.carousel_headline && <p className="text-red-500 text-xs mt-1">{formErrors.carousel_headline}</p>}
+                                    </div>
+                                    <div>
+                                        <label htmlFor="carousel_subheadline" className="block text-sm font-medium text-white mb-2 flex items-center">
+                                            <Subtitles className="h-4 w-4 mr-2 text-yellow-500" />
+                                            Subtítulo do Banner (Carrossel) *
+                                        </label>
+                                        <Textarea 
+                                            id="carousel_subheadline" 
+                                            value={formData.carousel_subheadline} 
+                                            onChange={handleChange} 
+                                            placeholder="Descrição curta para o banner"
+                                            className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 min-h-[60px] ${formErrors.carousel_subheadline ? 'border-red-500' : ''}`}
+                                            required
+                                            disabled={isSaving}
+                                        />
+                                        {formErrors.carousel_subheadline && <p className="text-red-500 text-xs mt-1">{formErrors.carousel_subheadline}</p>}
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div>
+                                            <label htmlFor="carousel_display_order" className="block text-sm font-medium text-white mb-2 flex items-center">
+                                                <ListOrdered className="h-4 w-4 mr-2 text-yellow-500" />
+                                                Ordem de Exibição *
+                                            </label>
+                                            <Input 
+                                                id="carousel_display_order" 
+                                                type="number"
+                                                value={formData.carousel_display_order} 
+                                                onChange={handleChange} 
+                                                placeholder="0"
+                                                className={`bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500 ${formErrors.carousel_display_order ? 'border-red-500' : ''}`}
+                                                min="0"
+                                                required
+                                                disabled={isSaving}
+                                            />
+                                            {formErrors.carousel_display_order && <p className="text-red-500 text-xs mt-1">{formErrors.carousel_display_order}</p>}
+                                        </div>
+                                        <div>
+                                            <label htmlFor="carousel_start_date" className="block text-sm font-medium text-white mb-2 flex items-center">
+                                                <CalendarDays className="h-4 w-4 mr-2 text-yellow-500" />
+                                                Início Exibição *
+                                            </label>
+                                            <DatePicker 
+                                                date={formData.carousel_start_date}
+                                                setDate={(d) => handleDateChange('carousel_start_date', d)}
+                                                placeholder="DD/MM/AAAA"
+                                                disabled={isSaving}
+                                            />
+                                            {formErrors.carousel_start_date && <p className="text-red-500 text-xs mt-1">{formErrors.carousel_start_date}</p>}
+                                        </div>
+                                        <div>
+                                            <label htmlFor="carousel_end_date" className="block text-sm font-medium text-white mb-2 flex items-center">
+                                                <CalendarDays className="h-4 w-4 mr-2 text-yellow-500" />
+                                                Fim Exibição *
+                                            </label>
+                                            <DatePicker 
+                                                date={formData.carousel_end_date}
+                                                setDate={(d) => handleDateChange('carousel_end_date', d)}
+                                                placeholder="DD/MM/AAAA"
+                                                disabled={isSaving}
+                                            />
+                                            {formErrors.carousel_end_date && <p className="text-red-500 text-xs mt-1">{formErrors.carousel_end_date}</p>}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <Button
