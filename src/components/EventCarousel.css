@@ -4,15 +4,27 @@
   height: 100%;
 }
 
+/* Define a largura do slide para o modo 'auto' */
 .swiper-slide {
+  width: 70%; /* O slide central ocupa 70% da largura do contêiner */
+  max-width: 600px; /* Limite máximo para o slide central */
+  height: 100%;
   text-align: center;
   font-size: 18px;
-  background: #000; /* Fundo escuro para slides */
+  background: #000; 
 
   /* Center slide text vertically */
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+/* Ajuste para telas maiores */
+@media (min-width: 768px) {
+    .swiper-slide {
+        width: 50%; /* Em telas maiores, o slide central ocupa 50% */
+        max-width: 800px;
+    }
 }
 
 .swiper-slide img {
@@ -62,6 +74,11 @@
 @media (max-width: 768px) {
   .swiper-button-next,
   .swiper-button-prev {
-    display: none;
+    /* Mantemos os botões visíveis, mas ajustamos a posição se necessário */
   }
+}
+
+/* Ajuste para a posição da paginação */
+.event-carousel-perspective .swiper-pagination {
+    bottom: 100px !important; /* Move a paginação para cima, sobre o slide */
 }

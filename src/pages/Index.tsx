@@ -85,9 +85,9 @@ const Index: React.FC = () => {
 
     return (
         <> {/* Removed fixed header from here, now handled by ClientLayout */}
-            <section id="home" className="pt-0 pb-12 sm:pb-20 px-4 sm:px-6"> {/* Adjusted padding-top */}
+            <section id="home" className="pt-0 pb-12 sm:pb-20 px-0 sm:px-0"> {/* Removido padding horizontal e vertical superior */}
                 <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-10 sm:mb-16">
+                    <div className="text-center mb-10 sm:mb-16 px-4 sm:px-6">
                         <h2 className="text-3xl sm:text-5xl font-serif text-yellow-500 mb-4">Eventos em Destaque</h2>
                         <div className="w-16 sm:w-24 h-px bg-yellow-500 mx-auto"></div>
                     </div>

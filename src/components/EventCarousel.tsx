@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 import { Loader2, SlidersHorizontal } from 'lucide-react'; // Importação corrigida
+import { cn } from '@/lib/utils'; // Importando cn para classes condicionais
 
 // Interface para os dados do banner retornados pela Edge Function
 interface CarouselBanner {
@@ -43,6 +44,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
     const [banners, setBanners] = useState<CarouselBanner[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+    const [activeIndex, setActiveIndex] = useState(0); // Estado para rastrear o slide ativo
 
     useEffect(() => {
         // Tenta obter a localização do usuário
@@ -68,7 +70,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
             setIsLoading(true);
             try {
                 const token = (await supabase.auth.getSession()).data.session?.access_token;
-                // A Edge Function 'fetch-carousel-events' agora buscará de ambas as tabelas
+                
                 const { data, error } = await supabase.functions.invoke('fetch-carousel-events', {
                     body: {
                         user_id: userId,
@@ -89,7 +91,27 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                     throw new Error(data.error);
                 }
 
-                setBanners(data.banners || []); // Agora esperamos 'banners' em vez de 'events'
+                // A Edge Function retorna 'events' ou 'banners' dependendo da versão. 
+                // Vamos normalizar para 'banners'
+                const fetchedBanners = data.banners || data.events || [];
+                
+                // Mapeamento para garantir que os dados de evento simulados se encaixem na interface CarouselBanner
+                const normalizedBanners: CarouselBanner[] = fetchedBanners.map((item: any) => ({
+                    id: item.id,
+                    type: item.type || 'event', // Assume 'event' se não especificado
+                    image_url: item.image_url,
+                    headline: item.headline || item.title,
+                    subheadline: item.subheadline || item.description,
+                    category: item.category,
+                    min_price: item.min_price,
+                    location: item.location,
+                    date: item.date,
+                    time: item.time,
+                    link_url: item.link_url,
+                    event_id: item.event_id || item.id,
+                }));
+
+                setBanners(normalizedBanners);
 
             } catch (error: any) {
                 console.error("Error fetching carousel banners:", error);
@@ -100,7 +122,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
         };
 
         fetchCarouselBanners();
-    }, [userId, userLocation]); // Refetch quando userId ou userLocation mudarem
+    }, [userId, userLocation]);
 
     if (isLoading) {
         return (
@@ -121,14 +143,18 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
             </div>
         );
     }
+    
+    const activeBanner = banners[activeIndex];
 
     return (
-        <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] rounded-2xl overflow-hidden shadow-2xl shadow-yellow-500/10">
+        <div className="relative w-full h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
             <Swiper
-                spaceBetween={30}
-                centeredSlides={true}
+                onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
+                slidesPerView={'auto'} // Permite que o Swiper calcule o número de slides visíveis
+                centeredSlides={true} // Centraliza o slide ativo
+                spaceBetween={30} // Espaçamento entre os slides
                 autoplay={{
-                    delay: 5000, // Usar o delay padrão ou buscar da config
+                    delay: 5000,
                     disableOnInteraction: false,
                 }}
                 pagination={{
@@ -136,80 +162,83 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 }}
                 navigation={true}
                 modules={[Autoplay, Pagination, Navigation]}
-                className="mySwiper w-full h-full"
+                className="mySwiper w-full h-full event-carousel-perspective" // Adicionando classe para estilos de perspectiva
             >
-                {banners.map((banner) => (
-                    <SwiperSlide key={banner.id}>
-                        <div className="relative w-full h-full">
-                            <img
-                                src={banner.image_url}
-                                alt={banner.headline}
-                                className="w-full h-full object-cover object-center"
-                            />
-                            {/* Overlay escuro com gradiente */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/40"></div>
-                            
-                            <div className="absolute inset-0 flex items-end pb-16 pt-20">
-                                <div className="max-w-7xl mx-auto px-4 sm:px-6 w-full">
-                                    <div className="max-w-full lg:max-w-4xl">
-                                        {/* Título do Carrossel */}
-                                        <h2 className="text-4xl sm:text-6xl lg:text-7xl font-serif text-white mb-4 sm:mb-6 leading-tight drop-shadow-lg">
-                                            {banner.headline}
-                                        </h2>
-                                        
-                                        {/* Subtítulo do Carrossel */}
-                                        <p className="text-base sm:text-xl text-gray-200 mb-6 sm:mb-10 leading-relaxed line-clamp-3 drop-shadow-md">
-                                            {banner.subheadline}
-                                        </p>
-                                        
-                                        {/* Detalhes (Data, Horário, Local) - Apenas para banners de evento */}
-                                        {banner.type === 'event' && (
-                                            <div className="flex flex-wrap gap-x-10 gap-y-4 mb-8 sm:mb-12">
-                                                <div className="flex items-center">
-                                                    <i className="fas fa-calendar-alt text-yellow-500 text-2xl mr-3"></i>
-                                                    <div>
-                                                        <div className="text-xs text-gray-400">Data</div>
-                                                        <div className="text-lg font-bold text-white">{banner.date}</div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center">
-                                                    <i className="fas fa-clock text-yellow-500 text-2xl mr-3"></i>
-                                                    <div>
-                                                        <div className="text-xs text-gray-400">Horário</div>
-                                                        <div className="text-lg font-bold text-white">{banner.time}</div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center">
-                                                    <i className="fas fa-map-marker-alt text-yellow-500 text-2xl mr-3"></i>
-                                                    <div>
-                                                        <div className="text-xs text-gray-400">Local</div>
-                                                        <div className="text-lg font-bold text-white">{banner.location}</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                        
-                                        {/* Preço e Botão */}
-                                        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
-                                            {banner.type === 'event' && (
-                                                <span className="text-3xl sm:text-4xl font-bold text-yellow-500">
-                                                    {getMinPriceDisplay(banner.min_price)}
-                                                </span>
+                {banners.map((banner, index) => (
+                    <SwiperSlide key={banner.id} className="event-slide-item">
+                        {({ isActive }) => (
+                            <div 
+                                className={cn(
+                                    "relative w-full h-full rounded-2xl overflow-hidden shadow-2xl transition-all duration-500",
+                                    isActive ? "scale-100 opacity-100 shadow-yellow-500/30" : "scale-90 opacity-70 shadow-none"
+                                )}
+                                onClick={() => navigate(banner.event_id ? `/events/${banner.event_id}` : banner.link_url || '/')}
+                            >
+                                <img
+                                    src={banner.image_url}
+                                    alt={banner.headline}
+                                    className="w-full h-full object-cover object-center"
+                                />
+                                {/* Overlay escuro com gradiente */}
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/40"></div>
+                                
+                                <div className="absolute inset-0 flex items-end pb-10 pt-20">
+                                    <div className="px-6 w-full">
+                                        <div className="max-w-full">
+                                            {/* Título do Carrossel */}
+                                            <h2 className="text-2xl sm:text-4xl font-serif text-white mb-2 leading-tight drop-shadow-lg line-clamp-2">
+                                                {banner.headline}
+                                            </h2>
+                                            
+                                            {/* Subtítulo do Carrossel */}
+                                            <p className="text-sm sm:text-base text-gray-200 mb-4 leading-relaxed line-clamp-2 drop-shadow-md">
+                                                {banner.subheadline}
+                                            </p>
+                                            
+                                            {/* Botão (Apenas no slide ativo) */}
+                                            {isActive && (
+                                                <Button 
+                                                    className="w-full sm:w-auto bg-yellow-500 text-black hover:bg-yellow-600 px-6 py-2 text-sm sm:text-base font-semibold transition-all duration-300 cursor-pointer hover:scale-105"
+                                                >
+                                                    {banner.type === 'event' ? 'Ver Detalhes' : 'Saiba Mais'}
+                                                </Button>
                                             )}
-                                            <Button 
-                                                onClick={() => navigate(banner.event_id ? `/events/${banner.event_id}` : banner.link_url || '/')}
-                                                className="w-full sm:w-auto bg-yellow-500 text-black hover:bg-yellow-600 px-8 py-3 text-base sm:text-lg font-semibold transition-all duration-300 cursor-pointer hover:scale-105"
-                                            >
-                                                {banner.type === 'event' ? 'Ver Detalhes' : 'Saiba Mais'}
-                                            </Button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </SwiperSlide>
                 ))}
             </Swiper>
+            
+            {/* Detalhes do Evento Ativo (abaixo do carrossel) */}
+            {activeBanner && (
+                <div className="mt-8 text-center animate-fadeInUp">
+                    <h3 className="text-xl font-semibold text-white mb-2">{activeBanner.headline}</h3>
+                    {activeBanner.type === 'event' && (
+                        <div className="flex items-center justify-center space-x-6 text-gray-400 text-sm">
+                            <div className="flex items-center">
+                                <i className="fas fa-map-marker-alt mr-2 text-yellow-500"></i>
+                                <span>{activeBanner.location}</span>
+                            </div>
+                            <div className="flex items-center">
+                                <i className="fas fa-calendar-alt mr-2 text-yellow-500"></i>
+                                <span>{activeBanner.date}</span>
+                            </div>
+                            <div className="flex items-center">
+                                <i className="fas fa-clock mr-2 text-yellow-500"></i>
+                                <span>{activeBanner.time}</span>
+                            </div>
+                        </div>
+                    )}
+                    {activeBanner.type === 'event' && activeBanner.min_price !== null && (
+                        <p className="text-2xl font-bold text-yellow-500 mt-3">
+                            A partir de {getMinPriceDisplay(activeBanner.min_price)}
+                        </p>
+                    )}
+                </div>
+            )}
         </div>
     );
 };
