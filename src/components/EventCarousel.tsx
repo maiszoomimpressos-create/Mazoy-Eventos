@@ -23,7 +23,8 @@ const getMinPriceDisplay = (price: number | null): string => {
 };
 
 const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex: number, customStyle: React.CSSProperties }> = ({ event, onClick, slideIndex, customStyle }) => {
-    // Para fins de teste, vamos renderizar um bloco colorido simples
+    const minPriceDisplay = getMinPriceDisplay(event.min_price);
+    
     return (
         <Card 
             className={cn(
@@ -35,18 +36,9 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
                 height: `${SLIDE_HEIGHT}px`, 
                 maxWidth: `${SLIDE_WIDTH}px`, 
                 width: '100%', 
-                ...customStyle,
-                backgroundColor: `hsl(${30 + slideIndex * 30}, 70%, 50%)` // Cor diferente para cada slide
+                ...customStyle
             }} 
         >
-            <div className="absolute inset-0 flex items-center justify-center z-30">
-                <span className="text-white text-5xl font-bold">
-                    {slideIndex}
-                </span>
-            </div>
-            
-            {/* Removendo o conteúdo original para o teste */}
-            {/*
             <div className="absolute top-4 left-4 z-30 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-bold border border-yellow-500">
                 {slideIndex}
             </div>
@@ -92,7 +84,6 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
                     </div>
                 </div>
             </CardContent>
-            */}
         </Card>
     );
 };
