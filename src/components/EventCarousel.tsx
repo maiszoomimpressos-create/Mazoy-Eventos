@@ -41,7 +41,6 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
                 ...customStyle
             }} 
         >
-            {/* Adicionando os indicadores de slideIndex de volta */}
             <div className="absolute top-4 left-4 z-30 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-bold border border-yellow-500">
                 {slideIndex}
             </div>
@@ -129,28 +128,26 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 scale = 0.95;
                 opacity = 0.7; 
                 zIndex = 20;
-                const offset = (SLIDE_WIDTH * (1 - scale)) / 2 + PEEK_AMOUNT;
-                translateX = `${offset}px`; 
+                // Ajustado para mostrar exatamente PEEK_AMOUNT (40px)
+                translateX = `${PEEK_AMOUNT}px`; 
             } else if (normalizedDistance === 1) { // Immediate right adjacent
                 scale = 0.95;
                 opacity = 0.7; 
                 zIndex = 20;
-                const offset = (SLIDE_WIDTH * (1 - scale)) / 2 + PEEK_AMOUNT;
-                translateX = `-${offset}px`; 
+                // Ajustado para mostrar exatamente PEEK_AMOUNT (40px)
+                translateX = `-${PEEK_AMOUNT}px`; 
             } else if (normalizedDistance === -2) { // Second left adjacent
                 scale = 0.9;
                 opacity = 0.4; 
                 zIndex = 10;
-                const offset1 = (SLIDE_WIDTH * (1 - 0.95)) / 2 + PEEK_AMOUNT; // Offset of first layer
-                const offset2 = (SLIDE_WIDTH * (1 - scale)) / 2 + PEEK_AMOUNT; // Offset of second layer relative to first
-                translateX = `${offset1 + offset2}px`; 
+                // Ajustado para empilhamento consistente
+                translateX = `${2 * PEEK_AMOUNT}px`; 
             } else if (normalizedDistance === 2) { // Second right adjacent
                 scale = 0.9;
                 opacity = 0.4; 
                 zIndex = 10;
-                const offset1 = (SLIDE_WIDTH * (1 - 0.95)) / 2 + PEEK_AMOUNT; // Offset of first layer
-                const offset2 = (SLIDE_WIDTH * (1 - scale)) / 2 + PEEK_AMOUNT; // Offset of second layer relative to first
-                translateX = `-${offset1 + offset2}px`; 
+                // Ajustado para empilhamento consistente
+                translateX = `-${2 * PEEK_AMOUNT}px`; 
             }
             
             styles.push({
