@@ -123,36 +123,39 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 scale = 1;
                 opacity = 1;
                 zIndex = 30;
-                transition = 'opacity 0.5s ease-in-out'; // No transform transition for the central slide
-            } else if (normalizedDistance === -1) { // Immediate left adjacent
+                transition = 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out'; 
+            } else if (normalizedDistance === -1) { // Slide adjacente à esquerda
                 scale = 0.95;
                 opacity = 0.7; 
                 zIndex = 20;
                 // Calcula o translateX para que 40px do slide adjacente fiquem visíveis à esquerda do slide central
-                // (SLIDE_WIDTH / 2) * (1 + scale_adj) - PEEK_AMOUNT
-                translateX = `${-((SLIDE_WIDTH / 2) * (1 + scale) - PEEK_AMOUNT)}px`; 
-            } else if (normalizedDistance === 1) { // Immediate right adjacent
+                // Deslocamento = (metade da largura do slide principal) - PEEK_AMOUNT + (metade da largura do slide escalado) - (largura total do slide)
+                translateX = `${(0.5 * SLIDE_WIDTH - PEEK_AMOUNT + 0.5 * scale * SLIDE_WIDTH) - SLIDE_WIDTH}px`; 
+            } else if (normalizedDistance === 1) { // Slide adjacente à direita
                 scale = 0.95;
                 opacity = 0.7; 
                 zIndex = 20;
                 // Calcula o translateX para que 40px do slide adjacente fiquem visíveis à direita do slide central
-                translateX = `${(SLIDE_WIDTH / 2) * (1 + scale) - PEEK_AMOUNT}px`; 
-            } else if (normalizedDistance === -2) { // Second left adjacent
+                // Deslocamento = (metade da largura do slide principal) - PEEK_AMOUNT + (metade da largura do slide escalado)
+                translateX = `${(0.5 * SLIDE_WIDTH - PEEK_AMOUNT + 0.5 * scale * SLIDE_WIDTH) - SLIDE_WIDTH}px`; 
+                // Para o lado direito, o translateX deve ser negativo para puxar o slide para a esquerda
+                translateX = `-${translateX.replace('-', '')}`; // Garante que seja negativo
+            } else if (normalizedDistance === -2) { // Segundo slide adjacente à esquerda
                 scale = 0.9;
                 opacity = 0.4; 
                 zIndex = 10;
-                // Posição do centro do primeiro slide adjacente
-                const xCenter1 = -((SLIDE_WIDTH / 2) * (1 + 0.95) - PEEK_AMOUNT);
-                // Posição do centro do segundo slide adjacente
-                translateX = `${xCenter1 - (SLIDE_WIDTH / 2) * (0.95 + scale) - PEEK_AMOUNT}px`; 
-            } else if (normalizedDistance === 2) { // Second right adjacent
+                // Calcula o deslocamento total para o segundo slide adjacente
+                const shift1 = (0.5 * SLIDE_WIDTH - PEEK_AMOUNT + 0.5 * 0.95 * SLIDE_WIDTH) - SLIDE_WIDTH; // Shift do primeiro adjacente
+                const shift2 = (0.5 * 0.95 * SLIDE_WIDTH + 0.5 * scale * SLIDE_WIDTH) - PEEK_AMOUNT; // Shift do segundo em relação ao primeiro
+                translateX = `${shift1 + shift2}px`; 
+            } else if (normalizedDistance === 2) { // Segundo slide adjacente à direita
                 scale = 0.9;
                 opacity = 0.4; 
                 zIndex = 10;
-                // Posição do centro do primeiro slide adjacente
-                const xCenter1 = (SLIDE_WIDTH / 2) * (1 + 0.95) - PEEK_AMOUNT;
-                // Posição do centro do segundo slide adjacente
-                translateX = `${xCenter1 + (SLIDE_WIDTH / 2) * (0.95 + scale) + PEEK_AMOUNT}px`; 
+                // Calcula o deslocamento total para o segundo slide adjacente
+                const shift1 = (0.5 * SLIDE_WIDTH - PEEK_AMOUNT + 0.5 * 0.95 * SLIDE_WIDTH) - SLIDE_WIDTH; // Shift do primeiro adjacente
+                const shift2 = (0.5 * 0.95 * SLIDE_WIDTH + 0.5 * scale * SLIDE_WIDTH) - PEEK_AMOUNT; // Shift do segundo em relação ao primeiro
+                translateX = `-${shift1 + shift2}px`; 
             }
             
             styles.push({
