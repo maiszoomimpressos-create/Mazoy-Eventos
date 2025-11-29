@@ -112,8 +112,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
-    const [prevBtnDisabled, setPrevBtnDisabled] = useState(true);
-    const [nextBtnDisabled, setNextBtnDisabled] = useState(true);
+    // Removendo estados de desabilitação de botões
     const [slideStyles, setSlideStyles] = useState<React.CSSProperties[]>([]);
 
     // --- Lógica de Auto-Play ---
@@ -180,8 +179,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     // --- Lógica de Navegação e Indicadores ---
     const onSelect = useCallback((emblaApi: EmblaCarouselType) => {
         setSelectedIndex(emblaApi.selectedScrollSnap());
-        setPrevBtnDisabled(!emblaApi.canScrollPrev());
-        setNextBtnDisabled(!emblaApi.canScrollNext());
         updateSlideStyles(emblaApi); // Atualiza estilos ao selecionar
     }, [updateSlideStyles]);
 
@@ -203,14 +200,6 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         emblaApi && emblaApi.scrollTo(index);
     }, [emblaApi]);
     
-    const scrollPrev = useCallback(() => {
-        emblaApi && emblaApi.scrollPrev();
-    }, [emblaApi]);
-
-    const scrollNext = useCallback(() => {
-        emblaApi && emblaApi.scrollNext();
-    }, [emblaApi]);
-
     const handleEventClick = (event: PublicEvent) => {
         navigate(`/finalizar-compra`, { state: { eventId: event.id } });
     };
@@ -228,8 +217,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         );
     }
     
-    // O offset da seta agora é baseado na metade da largura do slide + o PEEK_WIDTH
-    const arrowOffset = SLIDE_WIDTH / 2 + PEEK_WIDTH; 
+    // Removendo o cálculo de arrowOffset, pois as setas serão removidas
 
     return (
         <div className="relative pt-4 pb-10">
@@ -277,25 +265,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 </div>
             </div>
             
-            {/* Setas de Navegação Customizadas (Posicionamento ajustado) */}
-            <Button
-                variant="outline"
-                className={`absolute left-1/2 transform -translate-x-1/2 top-1/2 -translate-y-1/2 z-40 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex`}
-                style={{ marginLeft: `-${arrowOffset}px` }} // Move para a borda esquerda do slide + peek
-                onClick={scrollPrev}
-                disabled={featuredEvents.length <= 1}
-            >
-                <ChevronLeft className="h-6 w-6" />
-            </Button>
-            <Button
-                variant="outline"
-                className={`absolute right-1/2 transform translate-x-1/2 top-1/2 -translate-y-1/2 z-40 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex`}
-                style={{ marginRight: `-${arrowOffset}px` }} // Move para a borda direita do slide + peek
-                onClick={scrollNext}
-                disabled={featuredEvents.length <= 1}
-            >
-                <ChevronRight className="h-6 w-6" />
-            </Button>
+            {/* Setas de Navegação Customizadas REMOVIDAS */}
 
             {/* Indicadores (Bolinhas) */}
             <div className="absolute bottom-0 left-0 right-0 flex justify-center space-x-2 z-10">
