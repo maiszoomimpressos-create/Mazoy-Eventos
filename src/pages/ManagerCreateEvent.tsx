@@ -68,7 +68,7 @@ const ManagerCreateEvent: React.FC = () => {
         // NOVOS CAMPOS PARA CARROSSEL E GEOLOCALIZAÇÃO
         latitude: null,
         longitude: null,
-        is_featured_carousel: false,
+        is_featured_carousel: true, // ALTERADO: Agora é true por padrão
         carousel_display_order: 0,
         carousel_start_date: undefined,
         carousel_end_date: undefined,
