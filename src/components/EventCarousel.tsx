@@ -14,6 +14,7 @@ interface EventCarouselProps {
 }
 
 const AUTOPLAY_DELAY = 6000; // 6 segundos
+const MAX_FEATURED_EVENTS = 7; // Limita a 7 eventos conforme solicitado
 
 // Helper function to get the minimum price display
 const getMinPriceDisplay = (price: number | null): string => {
@@ -22,20 +23,75 @@ const getMinPriceDisplay = (price: number | null): string => {
     return `R$ ${price.toFixed(2).replace('.', ',')}`;
 };
 
+// Componente para o Slide de Evento
+const EventSlide: React.FC<{ event: PublicEvent, isCentral: boolean, onClick: () => void }> = ({ event, isCentral, onClick }) => {
+    const minPriceDisplay = getMinPriceDisplay(event.min_price);
+    
+    return (
+        <Card 
+            className={cn(
+                "bg-black/60 backdrop-blur-sm border rounded-2xl overflow-hidden h-full cursor-pointer transition-all duration-500 ease-in-out",
+                isCentral 
+                    ? "border-yellow-500/80 shadow-2xl shadow-yellow-500/30 scale-100" 
+                    : "border-yellow-500/20 shadow-md scale-[0.95] opacity-70 hover:opacity-90"
+            )}
+            onClick={onClick}
+            style={{ height: '380px' }} // Altura fixa conforme solicitado
+        >
+            <CardContent className="flex flex-col p-0 h-full">
+                <div className="relative h-full overflow-hidden">
+                    <img
+                        src={event.image_url}
+                        alt={event.title}
+                        className="w-full h-full object-cover object-center transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-6 flex flex-col justify-end">
+                        <span className="bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-semibold mb-2 self-start">
+                            {event.category}
+                        </span>
+                        <h3 className={cn(
+                            "font-serif text-white line-clamp-2 transition-colors",
+                            isCentral ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl text-gray-200"
+                        )}>
+                            {event.title}
+                        </h3>
+                        <div className="flex justify-between items-center pt-3 mt-2 border-t border-yellow-500/20">
+                            <div className="flex flex-col">
+                                <span className="text-sm text-gray-400">A partir de</span>
+                                <span className="text-xl font-bold text-yellow-500 whitespace-nowrap">
+                                    {minPriceDisplay}
+                                
+                                </span>
+                            </div>
+                            <Button 
+                                variant="default" 
+                                className="bg-yellow-500 text-black hover:bg-yellow-600 px-4 py-2 text-xs"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onClick();
+                                }}
+                            >
+                                Detalhes <ArrowRight className="h-3 w-3 ml-1" />
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
+
+
 const EventCarousel = ({ events }: EventCarouselProps) => {
     const navigate = useNavigate();
     
-    // Limita a 20 eventos
-    const featuredEvents = events.slice(0, 20);
+    // Limita a 7 eventos
+    const featuredEvents = events.slice(0, MAX_FEATURED_EVENTS);
 
     const [emblaRef, emblaApi] = useEmblaCarousel({ 
         loop: true,
-        align: 'start',
+        align: 'center', // Alinha ao centro para o efeito de destaque
         slidesToScroll: 1,
-        breakpoints: {
-            '(min-width: 640px)': { slidesToScroll: 2 },
-            '(min-width: 1024px)': { slidesToScroll: 3 },
-        },
         watchDrag: true,
     });
     const [selectedIndex, setSelectedIndex] = useState(0);
@@ -43,15 +99,10 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     const [prevBtnDisabled, setPrevBtnDisabled] = useState(true);
     const [nextBtnDisabled, setNextBtnDisabled] = useState(true);
 
-
     // --- Lógica de Auto-Play ---
     const autoplay = useCallback(() => {
         if (!emblaApi) return;
-        if (emblaApi.canScrollNext()) {
-            emblaApi.scrollNext();
-        } else {
-            emblaApi.scrollTo(0);
-        }
+        emblaApi.scrollNext();
     }, [emblaApi]);
 
     useEffect(() => {
@@ -95,6 +146,10 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         emblaApi && emblaApi.scrollNext();
     }, [emblaApi]);
 
+    const handleEventClick = (event: PublicEvent) => {
+        navigate(`/finalizar-compra`, { state: { eventId: event.id } });
+    };
+
 
     if (featuredEvents.length === 0) {
         return (
@@ -107,90 +162,94 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             </div>
         );
     }
+    
+    // Calcula a distância de cada slide para o slide central (selectedIndex)
+    const getSlideDistance = (index: number) => {
+        if (!emblaApi) return 0;
+        const scrollSnap = emblaApi.scrollSnapList();
+        const slideIndex = emblaApi.slidesInView().includes(index) ? index : emblaApi.slidesInScroll().includes(index) ? index : -1;
+        
+        if (slideIndex === -1) return 3; // Fora de vista, empilha mais atrás
+
+        // Calcula a distância circular (loop)
+        const diff = Math.abs(index - selectedIndex);
+        const distance = Math.min(diff, featuredEvents.length - diff);
+        
+        return distance;
+    };
 
     return (
-        <div className="relative">
+        <div className="relative pt-4 pb-10">
             <div className="overflow-hidden" ref={emblaRef}>
-                <div className="flex touch-pan-y ml-[-1rem]"> {/* Ajuste de margem para compensar o padding/gap */}
-                    {featuredEvents.map((event, index) => (
-                        <div 
-                            key={event.id} 
-                            className="pl-4 basis-full sm:basis-1/2 lg:basis-1/3 flex-shrink-0 min-w-0"
-                        >
-                            <Card 
-                                className="bg-black/60 backdrop-blur-sm border border-yellow-500/30 rounded-2xl overflow-hidden h-full cursor-pointer hover:border-yellow-500/60 transition-all duration-300 group"
-                                // ALTERADO: Navega para a tela de finalização de compra, passando o ID do evento
-                                onClick={() => navigate(`/finalizar-compra`, { state: { eventId: event.id } })}
+                <div className="flex touch-pan-y">
+                    {featuredEvents.map((event, index) => {
+                        const distance = getSlideDistance(index);
+                        const isCentral = index === selectedIndex;
+                        
+                        // Define a largura do slide (Central: 550px, Outros: 450px)
+                        const slideWidth = isCentral ? '550px' : '450px';
+                        
+                        // Define a profundidade (z-index) e a transformação de escala/opacidade
+                        let zIndex = 10 - distance;
+                        let opacity = 1;
+                        let scale = 1;
+                        
+                        if (!isCentral) {
+                            // Escala e opacidade decrescem com a distância
+                            scale = 1 - (distance * 0.05); // 0.95, 0.90, etc.
+                            opacity = 1 - (distance * 0.2); // 0.8, 0.6, etc.
+                            zIndex = 10 - distance;
+                        }
+                        
+                        // Ajusta a largura do slide para o efeito de empilhamento
+                        const slideStyle = {
+                            flex: `0 0 ${slideWidth}`,
+                            minWidth: slideWidth,
+                            maxWidth: slideWidth,
+                            margin: '0 10px', // Espaçamento entre slides
+                            zIndex: zIndex,
+                            opacity: opacity,
+                            transform: `scale(${scale})`,
+                            transition: 'all 0.5s ease-in-out',
+                        };
+
+                        return (
+                            <div 
+                                key={event.id} 
+                                className="flex-shrink-0 min-w-0"
+                                style={slideStyle}
                             >
-                                <CardContent className="flex flex-col p-0">
-                                    <div className="relative h-48 overflow-hidden">
-                                        <img
-                                            src={event.image_url}
-                                            alt={event.title}
-                                            className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent p-4 flex flex-col justify-end">
-                                            <span className="bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-semibold mb-2 self-start">
-                                                {event.category}
-                                            </span>
-                                            <h3 className="text-xl font-serif text-white line-clamp-2 group-hover:text-yellow-400 transition-colors">
-                                                {event.title}
-                                            </h3>
-                                        </div>
-                                    </div>
-                                    <div className="p-4 space-y-2">
-                                        <div className="flex items-center text-sm text-gray-300">
-                                            <i className="fas fa-calendar-alt mr-2 text-yellow-500"></i>
-                                            {event.date}
-                                        </div>
-                                        <div className="flex items-center text-sm text-gray-300">
-                                            <i className="fas fa-map-marker-alt mr-2 text-yellow-500"></i>
-                                            {event.location}
-                                        </div>
-                                        <div className="flex justify-between items-center pt-2">
-                                            <span className="text-xl font-bold text-yellow-500 whitespace-nowrap">
-                                                {getMinPriceDisplay(event.min_price)}
-                                            </span>
-                                            <Button 
-                                                variant="default" 
-                                                className="bg-yellow-500 text-black hover:bg-yellow-600 px-4 py-2 text-xs"
-                                                // ALTERADO: Botão também navega para a tela de finalização de compra, passando o ID
-                                                onClick={(e) => {
-                                                    e.stopPropagation(); // Evita que o clique no botão acione o clique do card
-                                                    navigate(`/finalizar-compra`, { state: { eventId: event.id } });
-                                                }}
-                                            >
-                                                Detalhes <ArrowRight className="h-3 w-3 ml-1" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    ))}
+                                <EventSlide 
+                                    event={event} 
+                                    isCentral={isCentral} 
+                                    onClick={() => handleEventClick(event)}
+                                />
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
             
             {/* Setas de Navegação Customizadas */}
             <Button
                 variant="outline"
-                className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-10 h-10 p-0 rounded-full"
+                className="absolute left-0 top-1/2 transform -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex"
                 onClick={scrollPrev}
-                disabled={prevBtnDisabled && featuredEvents.length > 1}
+                disabled={featuredEvents.length <= 1}
             >
-                <ChevronLeft className="h-5 w-5" />
+                <ChevronLeft className="h-6 w-6" />
             </Button>
             <Button
                 variant="outline"
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-10 h-10 p-0 rounded-full"
+                className="absolute right-0 top-1/2 transform -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex"
                 onClick={scrollNext}
-                disabled={nextBtnDisabled && featuredEvents.length > 1}
+                disabled={featuredEvents.length <= 1}
             >
-                <ChevronRight className="h-5 w-5" />
+                <ChevronRight className="h-6 w-6" />
             </Button>
 
             {/* Indicadores (Bolinhas) */}
-            <div className="absolute bottom-[-2rem] left-0 right-0 flex justify-center space-x-2 z-10">
+            <div className="absolute bottom-0 left-0 right-0 flex justify-center space-x-2 z-10">
                 {scrollSnaps.map((_, index) => (
                     <button
                         key={index}
