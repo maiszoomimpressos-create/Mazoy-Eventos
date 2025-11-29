@@ -443,9 +443,9 @@ const ManagerCreateEvent: React.FC = () => {
                                     userId={userId}
                                     currentImageUrl={formData.image_url}
                                     onImageUpload={handleImageUpload}
-                                    width={1200} // Largura recomendada
+                                    width={1000} // Largura recomendada
                                     height={400} // Altura recomendada
-                                    placeholderText="Clique para enviar ou arraste e solte uma imagem"
+                                    placeholderText="Clique para enviar ou arraste e solte uma imagem (1000px de largura por 400px de altura)"
                                     bucketName="event-banners" // Nome do bucket no Supabase
                                     folderPath="banners" // Pasta dentro do bucket
                                     maxFileSizeMB={5} // Tamanho máximo do arquivo
