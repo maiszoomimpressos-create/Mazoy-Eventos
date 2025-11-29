@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { trackAdvancedFilterUse } from '@/utils/metrics';
 import { usePublicEvents, PublicEvent } from '@/hooks/use-public-events';
 import { Loader2 } from 'lucide-react';
-import EventCarousel from '@/components/EventCarousel'; // Importando o novo componente
+import FixedEventCarousel from '@/components/FixedEventCarousel'; // Importando o componente fixo
 
 const EVENTS_PER_PAGE = 12;
 
@@ -58,7 +58,8 @@ const Index: React.FC = () => {
             
             const eventsSection = document.getElementById('eventos');
             if (eventsSection) {
-                const offset = 180; 
+                // Ajusta o scroll para o topo da seção de eventos, compensando o header fixo (80px)
+                const offset = 80; 
                 const topPosition = eventsSection.getBoundingClientRect().top + window.scrollY - offset;
                 
                 window.scrollTo({
@@ -92,6 +93,9 @@ const Index: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-black text-white overflow-x-hidden">
+            {/* Componente Fixo do Carrossel */}
+            <FixedEventCarousel />
+
             <header className="fixed top-0 left-0 right-0 z-[100] bg-black/80 backdrop-blur-md border-b border-yellow-500/20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
                     <div className="flex items-center space-x-4 sm:space-x-8">
@@ -99,7 +103,7 @@ const Index: React.FC = () => {
                             Mazoy
                         </div>
                         <nav className="hidden md:flex items-center space-x-8">
-                            <a href="#home" className="text-white hover:text-yellow-500 transition-colors duration-300 cursor-pointer">Home</a>
+                            {/* Ajustando links para rolar para a seção de eventos */}
                             <a href="#eventos" className="text-white hover:text-yellow-500 transition-colors duration-300 cursor-pointer">Eventos</a>
                             <a href="#categorias" className="text-white hover:text-yellow-500 transition-colors duration-300 cursor-pointer">Categorias</a>
                             <a href="#contato" className="text-white hover:text-yellow-500 transition-colors duration-300 cursor-pointer">Contato</a>
@@ -121,20 +125,9 @@ const Index: React.FC = () => {
                     </div>
                 </div>
             </header>
-            <section id="home" className="pt-20 pb-8 px-4 sm:px-6">
-                <div className="max-w-7xl mx-auto">
-                    <div className="relative h-[300px] sm:h-[400px] lg:h-[500px] overflow-hidden">
-                        {isLoadingEvents ? (
-                            <div className="flex items-center justify-center h-full bg-black/60 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/20">
-                                <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
-                            </div>
-                        ) : (
-                            <EventCarousel events={allEvents} />
-                        )}
-                    </div>
-                </div>
-            </section>
-            <section id="eventos" className="py-12 sm:py-20 px-4 sm:px-6">
+            
+            {/* Ajuste de Padding para compensar o header (80px) e o carrossel fixo (450px) */}
+            <section id="eventos" className="pt-[530px] pb-12 sm:pb-20 px-4 sm:px-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-10 sm:mb-16">
                         <h2 className="text-3xl sm:text-5xl font-serif text-yellow-500 mb-4">Lista de Eventos</h2>
