@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -160,6 +160,27 @@ const ManagerCompanyRegister: React.FC = () => {
         }
     };
 
+    // Dados de exemplo para auto-preenchimento
+    const dummyCompanyData: CompanyFormData = {
+        corporate_name: 'Empresa de Teste S.A.',
+        cnpj: '00.000.000/0001-00',
+        trade_name: 'Teste Company',
+        phone: '(11) 98765-4321',
+        email: 'contato@testcompany.com',
+        cep: '01001-000',
+        street: 'Praça da Sé',
+        neighborhood: 'Sé',
+        city: 'São Paulo',
+        state: 'SP',
+        number: '100',
+        complement: 'Andar 5',
+    };
+
+    const handleAutoFill = () => {
+        form.reset(dummyCompanyData);
+        showSuccess("Formulário preenchido com dados de teste!");
+    };
+
     if (isFetching) {
         return (
             <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -232,6 +253,17 @@ const ManagerCompanyRegister: React.FC = () => {
                                             Voltar
                                         </Button>
                                     </div>
+                                    {/* Botão de Auto-Preenchimento */}
+                                    <Button
+                                        type="button"
+                                        onClick={handleAutoFill}
+                                        variant="secondary"
+                                        className="w-full bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 py-3 text-base sm:text-lg font-semibold transition-all duration-300 cursor-pointer"
+                                        disabled={isSaving}
+                                    >
+                                        <i className="fas fa-magic mr-2"></i>
+                                        Auto-Preencher para Teste
+                                    </Button>
                                 </form>
                             </Form>
                         </FormProvider>
