@@ -127,10 +127,18 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         );
     }
 
+    // Calcula a largura efetiva do banner 3 após a escala
+    const scaledWidth = SLIDE_WIDTH * 0.85;
+    // Calcula o quanto precisa ser escondido para deixar 50px visíveis
+    const hiddenWidth = scaledWidth - 50;
+
     return (
         <div className="relative pt-4 pb-10 flex justify-center items-center overflow-hidden">
             {prevEvent && (
-                <div className="relative -mr-20 z-10 hidden md:block"> {/* Banner 3 à esquerda, oculto em telas pequenas */}
+                <div 
+                    className="relative z-10 hidden md:block" 
+                    style={{ marginRight: `-${hiddenWidth}px` }} // Ajusta a margem para esconder a maior parte
+                > {/* Banner 3 à esquerda, oculto em telas pequenas */}
                     <EventSlide 
                         event={prevEvent} 
                         onClick={() => handleEventClick(prevEvent)}
