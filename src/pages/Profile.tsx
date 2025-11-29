@@ -404,8 +404,8 @@ const Profile: React.FC = () => {
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div className="md:col-span-2 order-2 md:order-1">
+                    <div className="grid grid-cols-1 gap-8">
+                        <div className="col-span-1">
                             <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl">
                                 <CardHeader>
                                     <CardTitle className="text-white text-xl sm:text-2xl">Informações Pessoais</CardTitle>
@@ -696,31 +696,23 @@ const Profile: React.FC = () => {
                                                     </Button>
                                                 </div>
                                             ) : (
-                                                <Button type="button" onClick={() => setIsEditing(true)} className="bg-yellow-500 text-black hover:bg-yellow-600 transition-all duration-300 cursor-pointer">
-                                                    Editar Perfil
-                                                </Button>
+                                                <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 pt-4">
+                                                    <Button type="button" onClick={() => setIsEditing(true)} className="flex-1 bg-yellow-500 text-black hover:bg-yellow-600 transition-all duration-300 cursor-pointer">
+                                                        Editar Perfil
+                                                    </Button>
+                                                    <Button 
+                                                        type="button" 
+                                                        onClick={() => navigate('/tickets')}
+                                                        variant="outline"
+                                                        className="flex-1 bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 transition-all duration-300 cursor-pointer"
+                                                    >
+                                                        <i className="fas fa-ticket-alt mr-2"></i>
+                                                        Ver Meus Ingressos
+                                                    </Button>
+                                                </div>
                                             )}
                                         </form>
                                     </Form>
-                                </CardContent>
-                            </Card>
-                        </div>
-                        <div className="md:col-span-1 order-1 md:order-2">
-                             <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl">
-                                <CardHeader>
-                                    <CardTitle className="text-white text-xl sm:text-2xl">Meus Ingressos</CardTitle>
-                                </CardHeader>
-                                <CardContent className="text-center p-6">
-                                    <i className="fas fa-ticket-alt text-4xl text-yellow-500 mb-4"></i>
-                                    <p className="text-gray-400 text-sm mb-4">
-                                        Visualize e gerencie todos os seus ingressos comprados.
-                                    </p>
-                                    <Button 
-                                        onClick={() => navigate('/tickets')}
-                                        className="w-full bg-yellow-500 text-black hover:bg-yellow-600 transition-all duration-300 cursor-pointer"
-                                    >
-                                        Ver Meus Ingressos
-                                    </Button>
                                 </CardContent>
                             </Card>
                         </div>
