@@ -145,7 +145,12 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                         event={fixedEvent} 
                         onClick={() => handleEventClick(fixedEvent)}
                         slideIndex={4} 
-                        customStyle={{ opacity: 1, zIndex: 20 }} // Removido o transform: 'scale(1.05)'
+                        customStyle={{ 
+                            opacity: 1, 
+                            zIndex: 20,
+                            width: `${SLIDE_WIDTH}px`, // Definindo largura explícita
+                            height: `${SLIDE_HEIGHT}px`, // Definindo altura explícita
+                        }} 
                     />
                 </div>
             )}
