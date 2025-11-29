@@ -18,7 +18,7 @@ const MAX_FEATURED_EVENTS = 7; // Definindo a constante
 // Dimensões fixas
 const SLIDE_WIDTH = 550;
 const SLIDE_HEIGHT = 380;
-// Removendo PEEK_WIDTH
+const PEEK_WIDTH = 40; // 40px de visibilidade parcial
 
 // Helper function to get the minimum price display
 const getMinPriceDisplay = (price: number | null): string => {
@@ -105,14 +105,15 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         align: 'center', 
         slidesToScroll: 1,
         watchDrag: true,
-        // Removendo padding para não mostrar slides adjacentes
+        // Reintroduzindo padding para permitir a visualização parcial
+        padding: { left: SLIDE_WIDTH / 2 - PEEK_WIDTH, right: SLIDE_WIDTH / 2 - PEEK_WIDTH }, 
     });
     
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
     const [slideStyles, setSlideStyles] = useState<React.CSSProperties[]>([]);
 
-    // --- Lógica de Estilo Dinâmico (Simplificada) ---
+    // --- Lógica de Estilo Dinâmico (Para sobreposição) ---
     const updateSlideStyles = useCallback((emblaApi: EmblaCarouselType) => {
         const styles: React.CSSProperties[] = [];
         const currentSnap = emblaApi.selectedScrollSnap();
@@ -123,22 +124,45 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             let zIndex = 10;
             let translateX = '0'; 
 
-            // Slide Central
-            if (index === currentSnap) {
+            // Calcula a distância simples (sem loop)
+            const normalizedDistance = index - currentSnap;
+
+            // Slide Central (Ex: Slide 4, index 3)
+            if (normalizedDistance === 0) {
                 scale = 1;
                 opacity = 1;
                 zIndex = 30;
             } 
-            // Slides adjacentes e distantes
+            // Slide à esquerda (Ex: Slide 3, index 2, normalizedDistance -1)
+            else if (normalizedDistance === -1) { 
+                scale = 0.95;
+                opacity = 0.8; 
+                zIndex = 10; 
+                // Move o slide para a direita para que ele fique parcialmente visível atrás do slide central.
+                // O Embla já moveu o slide para a esquerda. Precisamos movê-lo de volta para a direita
+                // o suficiente para que apenas PEEK_WIDTH (40px) fique visível.
+                // Deslocamento necessário: SLIDE_WIDTH - PEEK_WIDTH = 550 - 40 = 510px
+                translateX = `${SLIDE_WIDTH - PEEK_WIDTH}px`; 
+            }
+            // Slide à direita (Ex: Slide 5, index 4, normalizedDistance 1)
+            else if (normalizedDistance === 1) { 
+                scale = 0.95;
+                opacity = 0.8;
+                zIndex = 15; // Fica na frente do slide anterior, mas atrás do central
+                // Move o slide para a esquerda para que ele fique parcialmente visível.
+                // Deslocamento necessário: - (SLIDE_WIDTH - PEEK_WIDTH) = -510px
+                translateX = `-${SLIDE_WIDTH - PEEK_WIDTH}px`;
+            }
+            // Slides mais distantes
             else {
-                scale = 0.9;
+                scale = 0.90;
                 opacity = 0.6;
-                zIndex = 10;
+                zIndex = 5;
             }
             
             styles.push({
-                // Aplicamos apenas scale e zIndex. Removemos a translação customizada.
-                transform: `scale(${scale})`,
+                // Aplicamos scale e o custom translation combinado
+                transform: `scale(${scale}) translateX(${translateX})`,
                 opacity: opacity,
                 zIndex: zIndex,
                 transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
