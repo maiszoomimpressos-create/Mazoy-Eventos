@@ -36,8 +36,8 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
     const isSlide3 = slideIndex === 3;
     
     const customStyle = isSlide3 ? {
-        // Move 510px para a esquerda e reduz a escala para simular profundidade
-        transform: 'translateX(-510px) scale(0.95)',
+        // Move 510px para a direita e reduz a escala para simular profundidade
+        transform: 'translateX(510px) scale(0.95)',
         zIndex: 10, // Garante que ele fique atrás do slide 4 (que terá zIndex padrão ou maior)
         opacity: 0.8,
         transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
