@@ -12,7 +12,7 @@ interface EventCarouselProps {
     events: PublicEvent[];
 }
 
-const MAX_FEATURED_EVENTS = 7; // Ainda usamos para fatiar a lista de eventos
+const MAX_FEATURED_EVENTS = 8; // Aumentado para 8 para acomodar 6 banners (índices 0 a 5)
 
 const SLIDE_WIDTH = 550; // Largura máxima para o cartão de conteúdo
 const SLIDE_HEIGHT = 380; // Altura fixa para os cartões
@@ -91,14 +91,14 @@ const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex
 const EventCarousel = ({ events }: EventCarouselProps) => {
     const navigate = useNavigate();
     
-    // Aumenta o número de eventos destacados para incluir o novo banner 1
-    const featuredEvents = events.slice(0, MAX_FEATURED_EVENTS + 1); // Agora pegamos 8 eventos
+    // Agora pegamos 6 eventos para os 6 banners
+    const featuredEvents = events.slice(0, MAX_FEATURED_EVENTS);
 
     const handleEventClick = (event: PublicEvent) => {
         navigate(`/finalizar-compra`, { state: { eventId: event.id } });
     };
 
-    if (featuredEvents.length < 5) { // Ajusta a verificação para garantir que temos pelo menos 5 eventos para exibir
+    if (featuredEvents.length < 6) { // Ajusta a verificação para garantir que temos pelo menos 6 eventos para exibir
         return (
             <div className="flex items-center justify-center h-full bg-black/60 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/20" style={{ height: `${SLIDE_HEIGHT}px` }}>
                 <div className="text-center p-8">
@@ -110,12 +110,13 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         );
     }
     
-    // Identifica os eventos para os banners 1, 2, 3, 4 e 5 (índices 0, 1, 2, 3 e 4)
-    const prevPrevPrevEvent = featuredEvents[0]; // Novo Banner 1
+    // Identifica os eventos para os banners 1, 2, 3, 4, 5 e 6 (índices 0, 1, 2, 3, 4 e 5)
+    const prevPrevPrevEvent = featuredEvents[0]; // Banner 1
     const prevPrevEvent = featuredEvents[1];     // Banner 2
     const prevEvent = featuredEvents[2];         // Banner 3
     const fixedEvent = featuredEvents[3];        // Banner 4 (central e fixo)
     const nextEvent = featuredEvents[4];         // Banner 5
+    const nextNextEvent = featuredEvents[5];     // NOVO: Banner 6
 
     // Se o evento central não existir, exibe uma mensagem de erro
     if (!fixedEvent) {
@@ -197,6 +198,19 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                             onClick={() => handleEventClick(nextEvent)}
                             slideIndex={5} 
                             customStyle={{ transform: 'scale(0.85)', opacity: 0.5, zIndex: 15 }} 
+                        />
+                    </div>
+                )}
+                {nextNextEvent && ( // NOVO: Banner 6
+                    <div 
+                        className="relative hidden md:block" 
+                        style={{ marginLeft: `-${overlapAmount}px` }} 
+                    >
+                        <EventSlide 
+                            event={nextNextEvent} 
+                            onClick={() => handleEventClick(nextNextEvent)}
+                            slideIndex={6} 
+                            customStyle={{ transform: 'scale(0.7)', opacity: 0.15, zIndex: 10 }} // Espelha o estilo do banner 2
                         />
                     </div>
                 )}
