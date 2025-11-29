@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, SlidersHorizontal } from 'lucide-react'; // Importação corrigida
 
 // Interface para os dados do evento retornados pela Edge Function
 interface CarouselEvent {
