@@ -7,7 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Loader2, QrCode, Tag, AlertTriangle, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useManagerWristbands, WristbandData } from '@/hooks/use-manager-wristbands';
-import { useManagerCompany } from '@/hooks/use-manager-company'; // Importando o hook da empresa
+import { useProfile } from '@/hooks/use-profile'; // Importando o hook de perfil
+
+const ADMIN_MASTER_USER_TYPE_ID = 1;
 
 const ManagerWristbandsList: React.FC = () => {
     const navigate = useNavigate();
@@ -20,13 +22,11 @@ const ManagerWristbandsList: React.FC = () => {
         });
     }, []);
     
-    // 1. Obter o ID da empresa do gestor
-    const { company, isLoading: isLoadingCompany } = useManagerCompany(userId);
+    const { profile, isLoading: isLoadingProfile } = useProfile(userId);
+    const isAdminMaster = profile?.tipo_usuario_id === ADMIN_MASTER_USER_TYPE_ID;
 
-    // 2. Usar o ID da empresa para buscar as pulseiras
-    const { wristbands, isLoading: isLoadingWristbands, isError, invalidateWristbands } = useManagerWristbands(company?.id);
-
-    const isLoading = isLoadingCompany || isLoadingWristbands;
+    // O hook agora recebe isAdminMaster
+    const { wristbands, isLoading, isError, invalidateWristbands } = useManagerWristbands(userId, isAdminMaster);
 
     const filteredWristbands = wristbands.filter(wristband =>
         wristband.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -61,39 +61,24 @@ const ManagerWristbandsList: React.FC = () => {
         navigate(`/manager/wristbands/manage/${eventId}`);
     };
 
-    // Estado de carregamento inicial (antes de saber se o usuário está logado)
-    if (userId === undefined) {
+    // Estado de carregamento inicial (antes de saber se o usuário está logado ou o perfil carregado)
+    if (userId === undefined || isLoadingProfile) {
         return (
             <div className="max-w-7xl mx-auto text-center py-20">
                 <Loader2 className="h-8 w-8 animate-spin text-yellow-500 mx-auto mb-4" />
-                <p className="text-gray-400">Verificando autenticação...</p>
+                <p className="text-gray-400">Verificando autenticação e perfil...</p>
             </div>
         );
     }
     
-    if (!company && !isLoading) {
-        return (
-            <div className="max-w-7xl mx-auto px-4 sm:px-0 text-center py-20">
-                <div className="bg-red-500/20 border border-red-500/50 text-red-400 p-6 rounded-xl mb-8">
-                    <i className="fas fa-exclamation-triangle text-2xl mb-3"></i>
-                    <h3 className="font-semibold text-white mb-2">Perfil da Empresa Necessário</h3>
-                    <p className="text-sm">Você precisa cadastrar o Perfil da Empresa antes de gerenciar pulseiras.</p>
-                    <Button 
-                        onClick={() => navigate('/manager/settings/company-profile')}
-                        className="mt-4 bg-yellow-500 text-black hover:bg-yellow-600"
-                    >
-                        Ir para Perfil da Empresa
-                    </Button>
-                </div>
-            </div>
-        );
-    }
+    // Removemos o check de !company para Admin Master, pois eles não precisam de uma empresa associada
+    // para visualizar todas as pulseiras. Para gestores normais, o hook já lida com a ausência de companyId.
 
     if (isError) {
         return (
             <div className="text-red-400 text-center py-10 flex flex-col items-center">
                 <AlertTriangle className="h-10 w-10 mb-4" />
-                Erro ao carregar pulseiras. Verifique se o Perfil da Empresa está cadastrado corretamente.
+                Erro ao carregar pulseiras.
             </div>
         );
     }
@@ -103,7 +88,7 @@ const ManagerWristbandsList: React.FC = () => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
                 <h1 className="text-2xl sm:text-3xl font-serif text-yellow-500 mb-4 sm:mb-0 flex items-center">
                     <QrCode className="h-7 w-7 mr-3" />
-                    Gestão de Pulseiras ({wristbands.length})
+                    {isAdminMaster ? `Todas as Pulseiras (${wristbands.length})` : `Gestão de Pulseiras (${wristbands.length})`}
                 </h1>
                 {/* Este botão permanece no cabeçalho */}
                 <Button 

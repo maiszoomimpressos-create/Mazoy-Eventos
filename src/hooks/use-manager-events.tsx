@@ -8,40 +8,62 @@ export interface ManagerEvent {
     // Removendo campos não essenciais para a listagem inicial
 }
 
-const fetchManagerEvents = async (companyId: string): Promise<ManagerEvent[]> => {
-    if (!companyId) {
-        console.warn("Attempted to fetch manager events without a companyId.");
+const fetchManagerEvents = async (userId: string, isAdminMaster: boolean): Promise<ManagerEvent[]> => {
+    if (!userId) {
+        console.warn("Attempted to fetch manager events without a userId.");
         return [];
     }
 
-    // Filtra explicitamente os eventos onde o company_id é igual ao companyId logado.
-    const { data, error } = await supabase
+    let query = supabase
         .from('events')
         .select(`
             id,
             title
         `)
-        .eq('company_id', companyId) // FILTRO ATUALIZADO AQUI
         .order('created_at', { ascending: false });
+
+    if (!isAdminMaster) {
+        // Para gestores normais, primeiro precisamos do company_id
+        const { data: companyData, error: companyError } = await supabase
+            .from('user_companies')
+            .select('company_id')
+            .eq('user_id', userId)
+            .eq('is_primary', true)
+            .limit(1)
+            .single();
+
+        if (companyError && companyError.code !== 'PGRST116') {
+            console.error("Error fetching company ID for manager events:", companyError);
+            throw new Error(companyError.message);
+        }
+
+        if (!companyData?.company_id) {
+            console.warn("Manager has no primary company associated. Returning empty event list.");
+            return [];
+        }
+        query = query.eq('company_id', companyData.company_id);
+    }
+    // Se for isAdminMaster, nenhum filtro de company_id é aplicado,
+    // e a RLS no banco de dados já garante o acesso total.
+
+    const { data, error } = await query;
 
     if (error) {
         console.error("Error fetching manager events from Supabase:", error);
-        // Lançamos o erro para que o useQuery o capture e dispare o onError
         throw new Error(error.message); 
     }
     
     return data as ManagerEvent[];
 };
 
-export const useManagerEvents = (companyId: string | undefined) => {
+export const useManagerEvents = (userId: string | undefined, isAdminMaster: boolean) => {
     const queryClient = useQueryClient();
 
     const query = useQuery({
-        queryKey: ['managerEvents', companyId],
-        queryFn: () => fetchManagerEvents(companyId!),
-        enabled: !!companyId, // Só executa se tiver o companyId
+        queryKey: ['managerEvents', userId, isAdminMaster], // Adiciona isAdminMaster à chave de cache
+        queryFn: () => fetchManagerEvents(userId!, isAdminMaster),
+        enabled: !!userId, // Só executa se tiver o userId
         staleTime: 1000 * 60 * 1, // 1 minute
-        // Adicionando tratamento de erro para exibir o toast
         onError: (error) => {
             console.error("Query Error:", error);
             showError("Erro ao carregar eventos. Tente recarregar a página.");
@@ -51,6 +73,6 @@ export const useManagerEvents = (companyId: string | undefined) => {
     return {
         ...query,
         events: query.data || [],
-        invalidateEvents: () => queryClient.invalidateQueries({ queryKey: ['managerEvents', companyId] }),
+        invalidateEvents: () => queryClient.invalidateQueries({ queryKey: ['managerEvents', userId, isAdminMaster] }),
     };
 };

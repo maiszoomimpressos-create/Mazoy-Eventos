@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Loader2 } from 'lucide-react';
+import { Plus, Search, Loader2, AlertTriangle } from 'lucide-react';
 import { useManagerEvents, ManagerEvent } from '@/hooks/use-manager-events';
 import { supabase } from '@/integrations/supabase/client';
 import DeleteEventDialog from '@/components/DeleteEventDialog'; 
+import { useProfile } from '@/hooks/use-profile'; // Importando useProfile
+
+const ADMIN_MASTER_USER_TYPE_ID = 1;
 
 const ManagerEventsList: React.FC = () => {
     const navigate = useNavigate();
@@ -20,19 +23,22 @@ const ManagerEventsList: React.FC = () => {
         });
     }, []);
 
-    // O hook agora retorna apenas id e title
-    const { events, isLoading, isError, invalidateEvents } = useManagerEvents(userId);
+    const { profile, isLoading: isLoadingProfile } = useProfile(userId);
+    const isAdminMaster = profile?.tipo_usuario_id === ADMIN_MASTER_USER_TYPE_ID;
+
+    // O hook agora recebe isAdminMaster
+    const { events, isLoading, isError, invalidateEvents } = useManagerEvents(userId, isAdminMaster);
 
     const filteredEvents = events.filter(event =>
         event.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Estado de carregamento inicial (antes de saber se o usuário está logado)
-    if (userId === undefined) {
+    // Estado de carregamento inicial (antes de saber se o usuário está logado ou o perfil carregado)
+    if (userId === undefined || isLoadingProfile) {
         return (
             <div className="max-w-7xl mx-auto text-center py-20">
                 <Loader2 className="h-8 w-8 animate-spin text-yellow-500 mx-auto mb-4" />
-                <p className="text-gray-400">Verificando autenticação...</p>
+                <p className="text-gray-400">Verificando autenticação e perfil...</p>
             </div>
         );
     }
@@ -48,7 +54,9 @@ const ManagerEventsList: React.FC = () => {
     return (
         <div className="max-w-7xl mx-auto">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
-                <h1 className="text-2xl sm:text-3xl font-serif text-yellow-500 mb-4 sm:mb-0">Meus Eventos ({events.length})</h1>
+                <h1 className="text-2xl sm:text-3xl font-serif text-yellow-500 mb-4 sm:mb-0">
+                    {isAdminMaster ? `Todos os Eventos (${events.length})` : `Meus Eventos (${events.length})`}
+                </h1>
                 <Button 
                     onClick={() => navigate('/manager/events/create')}
                     className="bg-yellow-500 text-black hover:bg-yellow-600 py-3 text-base font-semibold transition-all duration-300 cursor-pointer"
@@ -73,7 +81,7 @@ const ManagerEventsList: React.FC = () => {
                 {isLoading ? (
                     <div className="text-center py-10">
                         <Loader2 className="h-8 w-8 animate-spin text-yellow-500 mx-auto mb-4" />
-                        <p className="text-gray-400">Carregando seus eventos...</p>
+                        <p className="text-gray-400">Carregando eventos...</p>
                     </div>
                 ) : filteredEvents.length === 0 ? (
                     <div className="text-center py-10">
