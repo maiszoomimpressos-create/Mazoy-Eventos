@@ -98,7 +98,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
     const navigate = useNavigate();
     
     // 1. Limita a 7 eventos e mantém a ordem original
-    let featuredEvents = events.slice(0, MAX_FEATURED_EVENTS);
+    const featuredEvents = events.slice(0, MAX_FEATURED_EVENTS);
 
     const [emblaRef, emblaApi] = useEmblaCarousel({ 
         loop: false, // Desativando o loop
@@ -134,19 +134,37 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             } 
             // Slide à esquerda (Ex: Slide 3, index 2, normalizedDistance -1)
             else if (normalizedDistance === -1) { 
-                // Move o slide 3 para a direita, atrás do slide 4.
-                // Cálculo: 550 (SLIDE_WIDTH) + (550 - 40 (PEEK_WIDTH)) = 1060px
+                // O Embla já posiciona o slide -1 em -SLIDE_WIDTH.
+                // Para que ele apareça 40px à direita do centro (SLIDE_WIDTH / 2),
+                // precisamos movê-lo para a direita em:
+                // (SLIDE_WIDTH - PEEK_WIDTH) = 550 - 40 = 510px
+                // O Embla já moveu -550px. Se aplicarmos +510px, ele termina em -40px.
+                // Precisamos que ele termine em + (SLIDE_WIDTH - PEEK_WIDTH) / 2
+                
+                // Vamos usar a translação para compensar o movimento do Embla e posicionar o slide
+                // no local desejado (40px visíveis à esquerda do slide central).
+                
+                // Se o slide central está em 0, o slide anterior está em -100% (ou -550px).
+                // Queremos que ele termine em: -550px + (550 - 40) = -40px (relativo ao centro do container)
+                
+                // O Embla aplica a translação principal. Nossa translação deve ser relativa ao slide.
+                // Para que o slide anterior (que está à esquerda) apareça 40px à direita do centro,
+                // precisamos movê-lo para a direita em: SLIDE_WIDTH - PEEK_WIDTH = 510px.
                 
                 scale = 0.95;
                 opacity = 0.6; 
                 zIndex = 10; 
-                translateX = `${SLIDE_WIDTH + (SLIDE_WIDTH - PEEK_WIDTH)}px`; // 1060px
+                // Move o slide 510px para a direita (550 - 40)
+                translateX = `${SLIDE_WIDTH - PEEK_WIDTH}px`; 
             }
             // Slide à direita (Ex: Slide 5, index 4, normalizedDistance 1)
             else if (normalizedDistance === 1) { 
                 scale = 0.95;
                 opacity = 0.8;
                 zIndex = 15;
+                // Move o slide para a esquerda para que ele fique parcialmente visível
+                // Deslocamento: - (SLIDE_WIDTH - PEEK_WIDTH) = -510px
+                translateX = `-${SLIDE_WIDTH - PEEK_WIDTH}px`;
             }
             // Slides mais distantes
             else {
