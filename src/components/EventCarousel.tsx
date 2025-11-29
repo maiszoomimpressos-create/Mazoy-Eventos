@@ -19,6 +19,7 @@ const MAX_FEATURED_EVENTS = 7; // Limita a 7 eventos conforme solicitado
 // Dimensões fixas
 const SLIDE_WIDTH = 550;
 const SLIDE_HEIGHT = 380;
+const PEEK_WIDTH = 40; // 40px de visibilidade parcial
 
 // Helper function to get the minimum price display
 const getMinPriceDisplay = (price: number | null): string => {
@@ -28,18 +29,26 @@ const getMinPriceDisplay = (price: number | null): string => {
 };
 
 // Componente para o Slide de Evento
-const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void }> = ({ event, onClick }) => {
+const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex: number }> = ({ event, onClick, slideIndex }) => {
     const minPriceDisplay = getMinPriceDisplay(event.min_price);
     
     return (
         <Card 
             className={cn(
-                "bg-black/60 backdrop-blur-sm border rounded-2xl overflow-hidden h-full cursor-pointer transition-all duration-500 ease-in-out",
+                "bg-black/60 backdrop-blur-sm border rounded-2xl overflow-hidden h-full cursor-pointer transition-all duration-500 ease-in-out relative",
                 "border-yellow-500/80 shadow-2xl shadow-yellow-500/30 scale-100" // Mantendo o estilo de destaque
             )}
             onClick={onClick}
-            style={{ height: `${SLIDE_HEIGHT}px` }} // Altura fixa
+            style={{ height: `${SLIDE_HEIGHT}px`, width: `${SLIDE_WIDTH}px` }} // Largura e Altura fixas
         >
+            {/* Identificadores de Borda */}
+            <div className="absolute top-4 left-4 z-30 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-bold border border-yellow-500">
+                {slideIndex}
+            </div>
+            <div className="absolute top-4 right-4 z-30 bg-black/70 text-white px-3 py-1 rounded-full text-sm font-bold border border-yellow-500">
+                {slideIndex}
+            </div>
+            
             <CardContent className="flex flex-col p-0 h-full">
                 <div className="relative h-full overflow-hidden">
                     <img
@@ -92,10 +101,28 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
 
     const [emblaRef, emblaApi] = useEmblaCarousel({ 
         loop: true,
-        align: 'center', // Centraliza o slide
+        align: 'center', // Centraliza o slide principal
         slidesToScroll: 1,
         watchDrag: true,
+        // Adiciona padding para criar o efeito de peek (visibilidade parcial)
+        // O padding deve ser igual à largura do peek desejado (40px)
+        // Embla usa CSS para aplicar o padding no viewport
+        // Para 40px de peek, o padding total é 80px (40px de cada lado)
+        // No entanto, como o slide é centralizado, o Embla calcula o padding automaticamente
+        // Vamos usar o padding para forçar o espaço lateral
+        
+        // Para garantir que 40px do slide vizinho apareçam, precisamos que o viewport
+        // seja menor que a largura total do slide + 2 * PEEK_WIDTH.
+        // Se o slide tem 550px, e queremos 40px de peek, o viewport deve ter 550px - 2*40px = 470px? Não.
+        
+        // A maneira mais simples é usar `padding` no Embla para criar o espaço lateral.
+        // Se o slide tem 550px, e queremos 40px de peek, o padding lateral deve ser 40px.
+        // O Embla centraliza o slide, e o padding define o quanto do slide vizinho é visível.
+        
+        // Vamos definir o padding lateral para 40px.
+        padding: { left: PEEK_WIDTH, right: PEEK_WIDTH },
     });
+    
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
     const [prevBtnDisabled, setPrevBtnDisabled] = useState(true);
@@ -165,41 +192,40 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
         );
     }
     
-    // Calculamos a margem lateral necessária para posicionar as setas
-    // O contêiner tem largura total, o slide tem 550px.
-    // A margem lateral é (Largura Total - 550px) / 2.
-    // Como não sabemos a largura total, usamos classes responsivas para centralizar.
-    // Para alinhar as setas com a borda do slide de 550px, usamos 'left-1/2' e 'right-1/2' e ajustamos com 'ml' e 'mr'.
+    // Ajustamos a posição das setas para compensar o padding de 40px do Embla.
+    // A seta esquerda deve estar em: centro - 275px (metade do slide) - 40px (padding do Embla)
+    // A seta direita deve estar em: centro + 275px + 40px.
+    // Como o contêiner do Embla já tem o padding, as setas devem ser posicionadas
+    // na borda do slide (275px) + 40px (peek).
     
-    // Largura da seta é 48px (w-12). Queremos que a borda da seta esteja na borda do slide.
-    // O slide tem 550px de largura.
-    // A metade da largura do slide é 275px.
-    // A seta esquerda deve estar em: centro - 275px - (largura da seta / 2) -> Não, isso é muito complexo com Tailwind.
+    // Vamos usar a posição calculada anteriormente e adicionar 40px de deslocamento para fora.
+    // Posição anterior: -ml-[275px] (borda do slide)
+    // Nova posição: -ml-[275px + 40px] = -ml-[315px]
     
-    // Vamos usar uma abordagem mais simples: posicionar as setas na borda do contêiner e usar media queries para garantir que elas não fiquem muito longe do slide em telas grandes.
-    // Para telas grandes (lg:), onde o slide de 550px é visível, vamos usar `calc(50% - 275px)` para o posicionamento.
-    
-    // Usaremos classes utilitárias para definir a posição das setas fora do Embla, mas dentro do contêiner relativo.
+    const arrowOffset = SLIDE_WIDTH / 2 + PEEK_WIDTH; // 275 + 40 = 315
 
     return (
         <div className="relative pt-4 pb-10">
             <div className="overflow-hidden" ref={emblaRef}>
                 <div className="flex touch-pan-y">
-                    {featuredEvents.map((event) => {
+                    {featuredEvents.map((event, index) => {
                         
                         // Estilo para limitar a largura do slide e centralizar
                         const slideContainerStyle = {
-                            flex: '0 0 100%', // Ocupa 100% do espaço do viewport do Embla
-                            minWidth: '100%',
-                            maxWidth: '100%',
+                            // Ocupa a largura do slide + 2 * PEEK_WIDTH para o Embla calcular o alinhamento
+                            flex: `0 0 ${SLIDE_WIDTH + PEEK_WIDTH * 2}px`, 
+                            minWidth: `${SLIDE_WIDTH + PEEK_WIDTH * 2}px`,
+                            maxWidth: `${SLIDE_WIDTH + PEEK_WIDTH * 2}px`,
                             display: 'flex',
                             justifyContent: 'center', // Centraliza o conteúdo dentro do slide
+                            paddingLeft: `${PEEK_WIDTH}px`, // Adiciona padding para o peek
+                            paddingRight: `${PEEK_WIDTH}px`, // Adiciona padding para o peek
                         };
                         
-                        // Estilo para o slide em si (limitando a largura)
+                        // Estilo para o slide em si (largura fixa)
                         const slideStyle = {
                             width: `${SLIDE_WIDTH}px`,
-                            maxWidth: '100%', // Garante responsividade em telas menores que 550px
+                            maxWidth: '100%', 
                             margin: '0', 
                         };
 
@@ -213,6 +239,7 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                                     <EventSlide 
                                         event={event} 
                                         onClick={() => handleEventClick(event)}
+                                        slideIndex={index + 1} // Adicionando o índice do slide
                                     />
                                 </div>
                             </div>
@@ -221,11 +248,11 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
                 </div>
             </div>
             
-            {/* Setas de Navegação Customizadas */}
-            {/* Usamos left-1/2 e transform -translate-x-1/2 para centralizar, e depois ajustamos com margem negativa para alinhar com a borda do slide de 550px */}
+            {/* Setas de Navegação Customizadas (Posicionamento ajustado) */}
             <Button
                 variant="outline"
-                className="absolute left-1/2 transform -translate-x-1/2 -ml-[275px] top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex"
+                className={`absolute left-1/2 transform -translate-x-1/2 top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex`}
+                style={{ marginLeft: `-${arrowOffset}px` }} // Move para a borda esquerda do slide + peek
                 onClick={scrollPrev}
                 disabled={featuredEvents.length <= 1}
             >
@@ -233,7 +260,8 @@ const EventCarousel = ({ events }: EventCarouselProps) => {
             </Button>
             <Button
                 variant="outline"
-                className="absolute right-1/2 transform translate-x-1/2 -mr-[275px] top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex"
+                className={`absolute right-1/2 transform translate-x-1/2 top-1/2 -translate-y-1/2 z-20 text-yellow-500 border-yellow-500 hover:bg-yellow-500/10 w-12 h-12 p-0 rounded-full hidden md:flex`}
+                style={{ marginRight: `-${arrowOffset}px` }} // Move para a borda direita do slide + peek
                 onClick={scrollNext}
                 disabled={featuredEvents.length <= 1}
             >
