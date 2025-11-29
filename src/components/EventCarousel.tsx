@@ -32,21 +32,37 @@ const getMinPriceDisplay = (price: number | null): string => {
 const EventSlide: React.FC<{ event: PublicEvent, onClick: () => void, slideIndex: number }> = ({ event, onClick, slideIndex }) => {
     const minPriceDisplay = getMinPriceDisplay(event.min_price);
     
-    // Aplica transformação específica para o slide 3 (índice 2)
+    // Aplica transformação específica para o slide 3 (direita) e slide 5 (esquerda)
     const isSlide3 = slideIndex === 3;
+    const isSlide5 = slideIndex === 5;
     
-    const customStyle = isSlide3 ? {
-        // Move 510px para a direita e reduz a escala para simular profundidade
-        transform: 'translateX(510px) scale(0.90)', // Scale ajustado para 0.90
-        zIndex: 10, // Garante que ele fique atrás dos slides vizinhos
-        opacity: 0.6, // Opacidade mantida em 0.6
-        transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
-    } : {
-        zIndex: 20, // ZIndex padrão para slides normais
-        transform: 'translateX(0) scale(1)',
-        opacity: 1,
-        transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
-    };
+    let customStyle = {};
+
+    if (isSlide3) {
+        customStyle = {
+            // Move 510px para a direita e reduz a escala para simular profundidade
+            transform: 'translateX(510px) scale(0.90)', 
+            zIndex: 10, 
+            opacity: 0.6, 
+            transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
+        };
+    } else if (isSlide5) {
+        customStyle = {
+            // Move 510px para a esquerda e reduz a escala para simular profundidade
+            transform: 'translateX(-510px) scale(0.90)', 
+            zIndex: 10, 
+            opacity: 0.6, 
+            transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
+        };
+    } else {
+        customStyle = {
+            zIndex: 20, // ZIndex padrão para slides normais
+            transform: 'translateX(0) scale(1)',
+            opacity: 1,
+            transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out',
+        };
+    }
+
 
     return (
         <Card 
