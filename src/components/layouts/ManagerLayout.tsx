@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Menu, X, Loader2, Crown, LogOut, User, Settings, QrCode, BarChart3, CalendarDays, ChevronDown, SlidersHorizontal, Plus, Image } from 'lucide-react'; // NOVO: Image
+import { Menu, X, Loader2, Crown, LogOut, User, Settings, QrCode, BarChart3, CalendarDays, ChevronDown, SlidersHorizontal, Plus, Image } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from '@/integrations/supabase/client';
@@ -76,8 +76,8 @@ const ManagerLayout: React.FC = () => {
         }
     }
     
-    const allNavItems = [
-        { path: '/', label: 'Home', icon: <User className="mr-2 h-4 w-4" /> }, // Ícone genérico para Home
+    const baseNavItems = [
+        { path: '/', label: 'Home', icon: <User className="mr-2 h-4 w-4" /> },
         { path: '/manager/dashboard', label: 'Dashboard PRO', icon: <Crown className="mr-2 h-4 w-4" /> },
         { path: '/manager/events', label: 'Eventos', icon: <CalendarDays className="mr-2 h-4 w-4" /> },
         { path: '/manager/events/create', label: 'Criar Novo Evento', icon: <Plus className="mr-2 h-4 w-4" /> },
@@ -86,18 +86,11 @@ const ManagerLayout: React.FC = () => {
         { path: '/manager/settings', label: 'Configurações', icon: <Settings className="mr-2 h-4 w-4" /> },
     ];
     
+    let allNavItems = [...baseNavItems];
+
     // Adiciona links específicos do Admin Master
     if (isAdminMaster) {
         allNavItems.splice(1, 0, { path: '/admin/dashboard', label: 'Dashboard Admin', icon: <Crown className="mr-2 h-4 w-4" /> });
-        
-        // Adiciona Configurações do Carrossel e Criar Banner Promo dentro de Configurações
-        const settingsIndex = allNavItems.findIndex(item => item.path === '/manager/settings');
-        if (settingsIndex !== -1) {
-            allNavItems.splice(settingsIndex + 1, 0, 
-                { path: '/admin/settings/carousel', label: 'Config. Carrossel', icon: <SlidersHorizontal className="mr-2 h-4 w-4" /> },
-                { path: '/admin/banners/create', label: 'Criar Banner Promo', icon: <Image className="mr-2 h-4 w-4" /> }
-            );
-        }
     }
     
     // FILTRAGEM: Remove o item cuja rota é a rota atual
@@ -155,16 +148,60 @@ const ManagerLayout: React.FC = () => {
                                     {userRoleDisplay}
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator className="bg-yellow-500/20" />
-                                {navItems.map(item => (
-                                    <DropdownMenuItem 
-                                        key={item.path}
-                                        onClick={() => navigate(item.path)}
-                                        className="cursor-pointer hover:bg-yellow-500/10"
-                                    >
-                                        {item.icon}
-                                        {item.label}
-                                    </DropdownMenuItem>
-                                ))}
+                                
+                                {/* Renderiza itens de navegação base */}
+                                {navItems.map(item => {
+                                    // Se for Admin Master, e o item for Configurações, renderiza o submenu
+                                    if (isAdminMaster && item.path === '/manager/settings') {
+                                        return (
+                                            <DropdownMenu key={item.path}>
+                                                <DropdownMenuTrigger asChild>
+                                                    <DropdownMenuItem 
+                                                        className="cursor-pointer hover:bg-yellow-500/10 flex justify-between items-center"
+                                                        onSelect={(e) => e.preventDefault()} // Previne o fechamento do menu principal
+                                                    >
+                                                        <div className="flex items-center">
+                                                            <SlidersHorizontal className="mr-2 h-4 w-4" />
+                                                            Carrossel
+                                                        </div>
+                                                        <ChevronDown className="h-4 w-4 ml-auto" />
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent side="right" align="start" className="w-56 bg-black/90 border border-yellow-500/30 text-white">
+                                                    <DropdownMenuLabel className="text-yellow-500">Gerenciar Carrossel</DropdownMenuLabel>
+                                                    <DropdownMenuSeparator className="bg-yellow-500/20" />
+                                                    <DropdownMenuItem 
+                                                        onClick={() => navigate('/admin/settings/carousel')}
+                                                        className="cursor-pointer hover:bg-yellow-500/10"
+                                                    >
+                                                        <SlidersHorizontal className="mr-2 h-4 w-4" />
+                                                        Config. Carrossel
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem 
+                                                        onClick={() => navigate('/admin/banners/create')}
+                                                        className="cursor-pointer hover:bg-yellow-500/10"
+                                                    >
+                                                        <Image className="mr-2 h-4 w-4" />
+                                                        Criar Banner Promo
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        );
+                                    }
+                                    
+                                    // Renderiza itens normais
+                                    return (
+                                        <DropdownMenuItem 
+                                            key={item.path}
+                                            onClick={() => navigate(item.path)}
+                                            className="cursor-pointer hover:bg-yellow-500/10"
+                                        >
+                                            {item.icon}
+                                            {item.label}
+                                        </DropdownMenuItem>
+                                    );
+                                })}
+                                
                                 <DropdownMenuSeparator className="bg-yellow-500/20" />
                                 <DropdownMenuItem 
                                     onClick={handleLogout} 
@@ -199,16 +236,49 @@ const ManagerLayout: React.FC = () => {
                                     </div>
                                     {/* Reutilizando navItems para o menu mobile */}
                                     <nav className="flex flex-col space-y-2">
-                                        {navItems.map(item => (
-                                            <button 
-                                                key={item.path}
-                                                onClick={() => navigate(item.path)} 
-                                                className="flex items-center p-3 rounded-xl text-white hover:bg-yellow-500/10 transition-colors duration-200 text-lg"
-                                            >
-                                                {item.icon}
-                                                {item.label}
-                                            </button>
-                                        ))}
+                                        {navItems.map(item => {
+                                            // Se for Admin Master, e o item for Configurações, renderiza o submenu
+                                            if (isAdminMaster && item.path === '/manager/settings') {
+                                                return (
+                                                    <div key={item.path} className="space-y-2">
+                                                        <button 
+                                                            className="flex items-center p-3 rounded-xl text-white hover:bg-yellow-500/10 transition-colors duration-200 text-lg w-full"
+                                                        >
+                                                            <SlidersHorizontal className="mr-3 h-5 w-5" />
+                                                            Carrossel
+                                                        </button>
+                                                        <div className="pl-6 space-y-1">
+                                                            <button 
+                                                                onClick={() => navigate('/admin/settings/carousel')}
+                                                                className="flex items-center p-2 rounded-xl text-gray-300 hover:bg-yellow-500/10 transition-colors duration-200 text-base w-full justify-start"
+                                                            >
+                                                                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                                                                Config. Carrossel
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => navigate('/admin/banners/create')}
+                                                                className="flex items-center p-2 rounded-xl text-gray-300 hover:bg-yellow-500/10 transition-colors duration-200 text-base w-full justify-start"
+                                                            >
+                                                                <Image className="mr-2 h-4 w-4" />
+                                                                Criar Banner Promo
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+                                            
+                                            // Renderiza itens normais
+                                            return (
+                                                <button 
+                                                    key={item.path}
+                                                    onClick={() => navigate(item.path)} 
+                                                    className="flex items-center p-3 rounded-xl text-white hover:bg-yellow-500/10 transition-colors duration-200 text-lg"
+                                                >
+                                                    {item.icon}
+                                                    {item.label}
+                                                </button>
+                                            );
+                                        })}
                                     </nav>
                                     <div className="border-t border-yellow-500/20 pt-4">
                                         <Button
