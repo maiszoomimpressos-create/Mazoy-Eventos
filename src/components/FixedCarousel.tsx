@@ -117,8 +117,7 @@ const FixedCarousel: React.FC<FixedCarouselProps> = ({ banners }) => {
                                     transitionDelay: `${transitionDelay}ms`
                                 }}
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent"></div>
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/5 to-transparent"></div>
+                            {/* REMOVIDO: Overlay escuro e gradiente lateral */}
                         </div>
                     );
                 })}
@@ -159,8 +158,7 @@ const FixedCarousel: React.FC<FixedCarouselProps> = ({ banners }) => {
                                     transitionDelay: `${200 + transitionDelay}ms`
                                 }}
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent"></div>
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/5 to-transparent"></div>
+                            {/* REMOVIDO: Overlay escuro e gradiente lateral */}
                         </div>
                     );
                 })}
@@ -188,8 +186,7 @@ const FixedCarousel: React.FC<FixedCarouselProps> = ({ banners }) => {
                             }}
                         />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/10 via-transparent to-yellow-400/10"></div>
+                    {/* REMOVIDO: Overlay escuro e gradiente central */}
                     
                     {/* Conteúdo do Banner */}
                     <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
