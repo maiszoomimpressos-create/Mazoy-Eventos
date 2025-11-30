@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ArrowLeft, FileText, Loader2 } from 'lucide-react';
 
 const CrtEvento: React.FC = () => {
@@ -24,20 +23,17 @@ const CrtEvento: React.FC = () => {
                 </Button>
             </div>
 
-            <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
-                <CardHeader>
-                    <CardTitle className="text-white text-xl sm:text-2xl font-semibold">Funcionalidade CRT</CardTitle>
-                    <CardDescription className="text-gray-400 text-sm">
-                        Esta página será usada para gerenciar a funcionalidade CRT (Certificado de Registro de Título) do evento.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="p-6">
-                    <div className="text-center py-10">
-                        <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
-                        <p className="text-gray-400">A funcionalidade de CRT está sendo implementada.</p>
-                    </div>
-                </CardContent>
-            </Card>
+            {/* Conteúdo da funcionalidade CRT (sem o Card) */}
+            <div className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6 sm:p-8">
+                <h2 className="text-white text-xl sm:text-2xl font-semibold mb-2">Funcionalidade CRT</h2>
+                <p className="text-gray-400 text-sm mb-6">
+                    Esta página será usada para gerenciar a funcionalidade CRT (Certificado de Registro de Título) do evento.
+                </p>
+                <div className="text-center py-10">
+                    <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
+                    <p className="text-gray-400">A funcionalidade de CRT está sendo implementada.</p>
+                </div>
+            </div>
         </div>
     );
 };
