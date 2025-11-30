@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Menu, X, Loader2, Crown, LogOut, User, Settings, QrCode, BarChart3, CalendarDays, ChevronDown, SlidersHorizontal, Plus, Image } from 'lucide-react';
+import { Menu, X, Loader2, Crown, LogOut, User, Settings, QrCode, BarChart3, CalendarDays, ChevronDown, SlidersHorizontal, Plus, Image, ListOrdered } from 'lucide-react'; // NOVO: ListOrdered
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from '@/integrations/supabase/client';
@@ -178,6 +178,13 @@ const ManagerLayout: React.FC = () => {
                                                         Config. Carrossel
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem 
+                                                        onClick={() => navigate('/admin/banners')}
+                                                        className="cursor-pointer hover:bg-yellow-500/10"
+                                                    >
+                                                        <ListOrdered className="mr-2 h-4 w-4" />
+                                                        Listar Banners
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem 
                                                         onClick={() => navigate('/admin/banners/create')}
                                                         className="cursor-pointer hover:bg-yellow-500/10"
                                                     >
@@ -254,6 +261,13 @@ const ManagerLayout: React.FC = () => {
                                                             >
                                                                 <SlidersHorizontal className="mr-2 h-4 w-4" />
                                                                 Config. Carrossel
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => navigate('/admin/banners')}
+                                                                className="flex items-center p-2 rounded-xl text-gray-300 hover:bg-yellow-500/10 transition-colors duration-200 text-base w-full justify-start"
+                                                            >
+                                                                <ListOrdered className="mr-2 h-4 w-4" />
+                                                                Listar Banners
                                                             </button>
                                                             <button 
                                                                 onClick={() => navigate('/admin/banners/create')}
