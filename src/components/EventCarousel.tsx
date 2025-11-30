@@ -215,7 +215,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                     rotate: 0, 
                     stretch: 0, // Reduzindo o stretch para 0 para focar no depth/modifier
                     depth: 100, 
-                    modifier: 2, // Aumentando o modifier para acentuar o efeito de perspectiva/recuo
+                    modifier: 1, // REVERTIDO PARA 1
                     slideShadows: false, 
                 }}
                 modules={[Pagination, EffectCoverflow, Autoplay]}

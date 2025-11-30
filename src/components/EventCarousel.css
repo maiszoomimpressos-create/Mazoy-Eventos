@@ -80,3 +80,13 @@
 .event-carousel-perspective .swiper-pagination {
     bottom: 100px !important; /* Move a paginação para cima, sobre o slide */
 }
+
+/* NOVO: Ajuste para acentuar o efeito de escadinha vertical na base */
+/* O EffectCoverflow aplica transformações 3D. Queremos que a base do slide ativo seja o ponto de referência. */
+.event-carousel-perspective .swiper-slide:not(.swiper-slide-active) {
+    /* Adiciona um pequeno deslocamento vertical para baixo para acentuar a escadinha */
+    transform: translateY(10px) !important; 
+}
+
+/* Tentativa de compensar o recuo vertical do coverflow para manter a base alinhada, mas como o coverflow já faz o recuo, 
+   adicionar um translateY positivo (10px) fará com que os slides laterais desçam mais, acentuando a escadinha na base. */
