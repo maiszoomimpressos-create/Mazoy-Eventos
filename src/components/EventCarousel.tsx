@@ -201,9 +201,9 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
                 slidesPerView={'auto'}
                 centeredSlides={true}
-                spaceBetween={-555} // Ajustado para sobreposição máxima (600px - 45px = 555px)
+                spaceBetween={0} // Slides se tocam
                 initialSlide={banners.length >= 4 ? 3 : 0} // Inicia no Banner 4 (índice 3)
-                loop={false} // Desativando loop para melhor controle do índice
+                loop={false} 
                 pagination={{
                     clickable: true,
                 }}
@@ -212,10 +212,10 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 grabCursor={true}
                 coverflowEffect={{
                     rotate: 0, 
-                    stretch: 555, // Estica para cobrir a maior parte do slide adjacente
-                    depth: 0, // Remove a profundidade 3D
+                    stretch: 555, // Desloca 555px (600px - 45px)
+                    depth: 0, 
                     modifier: 1, 
-                    slideShadows: false, // Removendo sombras para um visual mais plano
+                    slideShadows: false, 
                 }}
                 modules={[Pagination, EffectCoverflow]}
                 className="mySwiper w-full h-full event-carousel-perspective"
