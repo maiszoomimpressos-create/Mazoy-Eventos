@@ -86,16 +86,18 @@ const ManagerLayout: React.FC = () => {
         { path: '/manager/settings', label: 'Configurações', icon: <Settings className="mr-2 h-4 w-4" /> },
     ];
     
-    // Add Admin Dashboard link if the user is an Admin Master
+    // Adiciona links específicos do Admin Master
     if (isAdminMaster) {
         allNavItems.splice(1, 0, { path: '/admin/dashboard', label: 'Dashboard Admin', icon: <Crown className="mr-2 h-4 w-4" /> });
-        allNavItems.splice(allNavItems.findIndex(item => item.path === '/manager/settings') + 1, 0, 
-            { path: '/admin/settings/carousel', label: 'Config. Carrossel', icon: <SlidersHorizontal className="mr-2 h-4 w-4" /> }
-        );
-        // NOVO: Adicionar link para criar banners promocionais
-        allNavItems.splice(allNavItems.findIndex(item => item.path === '/admin/settings/carousel') + 1, 0, 
-            { path: '/admin/banners/create', label: 'Criar Banner Promo', icon: <Image className="mr-2 h-4 w-4" /> }
-        );
+        
+        // Adiciona Configurações do Carrossel e Criar Banner Promo dentro de Configurações
+        const settingsIndex = allNavItems.findIndex(item => item.path === '/manager/settings');
+        if (settingsIndex !== -1) {
+            allNavItems.splice(settingsIndex + 1, 0, 
+                { path: '/admin/settings/carousel', label: 'Config. Carrossel', icon: <SlidersHorizontal className="mr-2 h-4 w-4" /> },
+                { path: '/admin/banners/create', label: 'Criar Banner Promo', icon: <Image className="mr-2 h-4 w-4" /> }
+            );
+        }
     }
     
     // FILTRAGEM: Remove o item cuja rota é a rota atual
