@@ -162,7 +162,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
         }
     }, [userId, userLocation, settings, isLoadingSettings]);
 
-    // --- Custom Carousel Logic (Conversion from JS) ---
+    // --- Custom Carousel Logic ---
 
     const rotationTime = settings?.rotation_time_seconds || 5;
 
@@ -186,30 +186,6 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
 
         return () => clearInterval(interval);
     }, [banners, rotationTime, isLoadingBanners, activeIndex, updateIndex]);
-
-    // Function to get the index of a banner relative to the current active index
-    const getRelativeIndex = useCallback((offset: number) => {
-        if (banners.length === 0) return -1;
-        const total = banners.length;
-        // Calculate the index, handling wrap-around (using modulo for positive and negative offsets)
-        return (((activeIndex + offset) % total) + total) % total;
-    }, [activeIndex, banners.length]);
-
-    // Indices for the 6 behind cards (b1 to b6)
-    // b1, b2, b3 are the next 3 slides
-    // b4, b5, b6 are the previous 3 slides
-    const behindIndices = [
-        getRelativeIndex(1), 
-        getRelativeIndex(2), 
-        getRelativeIndex(3), 
-        getRelativeIndex(-3), 
-        getRelativeIndex(-2), 
-        getRelativeIndex(-1), 
-    ];
-    
-    const behindClasses = [
-        "b1", "b2", "b3", "b4", "b5", "b6"
-    ];
 
     const handleCardClick = (banner: CarouselBanner) => {
         if (banner.type === 'event' && banner.event_id) {
@@ -254,25 +230,9 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
     return (
         <div className="carousel-wrapper">
             
-            {/* Camadas Atrás */}
+            {/* Camadas Atrás - REMOVIDAS */}
             <div className="behind-area" id="behindArea">
-                {behindIndices.map((index, i) => {
-                    if (index === -1 || i >= 6) return null;
-                    const banner = banners[index];
-                    
-                    return (
-                        <div 
-                            key={banner.id + index}
-                            className={cn("behind", behindClasses[i])}
-                            style={{ 
-                                backgroundImage: `url(${banner.image_url})`,
-                            }}
-                        >
-                            {/* Overlay escuro para o blur */}
-                            <div className="absolute inset-0 bg-black/50 rounded-xl"></div>
-                        </div>
-                    );
-                })}
+                {/* Conteúdo removido */}
             </div>
 
             {/* Card Central */}

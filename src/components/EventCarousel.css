@@ -32,16 +32,19 @@
   opacity: 1;
 }
 
-/* CAMADAS ATRÁS */
+/* CAMADAS ATRÁS - REMOVIDAS */
 .behind-area {
   position: absolute;
   bottom: 0;
   width: 100%;
   height: 280px;
   pointer-events: none;
+  opacity: 0; /* Torna a área de fundo invisível */
+  visibility: hidden; /* Garante que não ocupe espaço */
 }
 
 .behind {
+  /* Mantido para evitar erros, mas invisível */
   position: absolute;
   width: 460px;
   height: 280px;
@@ -49,37 +52,14 @@
   background-size: cover;
   background-position: center;
   filter: blur(2px);
-  opacity: .35;
+  opacity: 0;
   transition: .6s ease;
-  /* Usando background-image para a imagem de fundo */
 }
 
-/* ESCADINHAS PARA BAIXO — AJUSTADO PARA ALTA SOBREPOSIÇÃO */
-/* Ajuste: Reduzindo drasticamente a distância X e Y para empilhar como na imagem. */
-/* Z-index implícito: b1 e b6 (mais próximos) devem ter o maior Z-index entre os 'behind' */
-.b1 { 
-    transform: scale(.95) translate(var(--b1-x, -100px), var(--b1-y, 5px)); 
-    z-index: 15; /* Mais próximo do main (z-index 20) */
-}
-.b2 { 
-    transform: scale(.90) translate(var(--b2-x, -60px), var(--b2-y, 10px)); 
-    z-index: 14;
-}
-.b3 { 
-    transform: scale(.85) translate(var(--b3-x, -20px), var(--b3-y, 15px)); 
-    z-index: 13;
-}
-.b4 { 
-    transform: scale(.85) translate(var(--b4-x, 20px), var(--b4-y, 15px)); 
-    z-index: 13;
-}
-.b5 { 
-    transform: scale(.90) translate(var(--b5-x, 60px), var(--b5-y, 10px)); 
-    z-index: 14;
-}
-.b6 { 
-    transform: scale(.95) translate(var(--b6-x, 100px), var(--b6-y, 5px)); 
-    z-index: 15;
+/* ESCADINHAS PARA BAIXO — REMOVIDAS */
+.b1, .b2, .b3, .b4, .b5, .b6 { 
+    transform: none; 
+    opacity: 0;
 }
 
 /* Responsive adjustments for smaller screens */
@@ -99,12 +79,4 @@
         max-width: 460px;
         max-height: 280px;
     }
-    
-    /* Adjust transforms using viewport units for better scaling */
-    .b1 { --b1-x: -10vw; --b1-y: 5px; }
-    .b2 { --b2-x: -6vw; --b2-y: 10px; }
-    .b3 { --b3-x: -2vw; --b3-y: 15px; }
-    .b4 { --b4-x: 2vw; --b4-y: 15px; }
-    .b5 { --b5-x: 6vw; --b5-y: 10px; }
-    .b6 { --b6-x: 10vw; --b6-y: 5px; }
 }
