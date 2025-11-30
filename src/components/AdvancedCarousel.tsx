@@ -90,8 +90,8 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                     const zIndex = 15 - pos;
                     const transitionDelay = pos * 80;
                     
-                    // Opacidade total (1) para o container
-                    const opacityValue = 1; 
+                    // Opacidade do overlay: 0.3 + (pos * 0.15) -> 0.45, 0.60, 0.75
+                    const overlayOpacity = 0.3 + (pos * 0.15); 
 
                     return (
                         <div
@@ -102,7 +102,7 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                 height: `${baseHeight * scale}px`,
                                 transform: `translateX(${offsetX}px) translateY(${offsetY}px)`,
                                 zIndex: zIndex,
-                                opacity: isTransitioning ? 0 : opacityValue, // Opacidade total (1) para o container
+                                opacity: isTransitioning ? 0 : 1, // Opacidade total (1) para o container
                                 transition: `all 1000ms ease-out`,
                                 transitionDelay: isTransitioning ? `${transitionDelay}ms` : '0ms'
                             }}
@@ -117,7 +117,11 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                     transitionDelay: `${transitionDelay}ms`
                                 }}
                             />
-                            {/* REMOVIDO: Overlay escuro para simular profundidade e garantir solidez */}
+                            {/* Overlay escuro para simular profundidade e garantir solidez */}
+                            <div 
+                                className="absolute inset-0 bg-black/80 transition-opacity duration-1000"
+                                style={{ opacity: overlayOpacity }}
+                            ></div>
                         </div>
                     );
                 })}
@@ -133,8 +137,7 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                     const zIndex = 15 - pos;
                     const transitionDelay = pos * 80;
                     
-                    // Opacidade total (1) para o container
-                    const opacityValue = 1; 
+                    const overlayOpacity = 0.3 + (pos * 0.15); 
 
                     return (
                         <div
@@ -145,12 +148,10 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                 height: `${baseHeight * scale}px`,
                                 transform: `translateX(${offsetX}px) translateY(${offsetY}px)`,
                                 zIndex: zIndex,
+                                // Opacidade inicial 0, opacidade final 1
                                 opacity: 0,
                                 transition: `all 1000ms ease-out`,
                                 transitionDelay: `${200 + transitionDelay}ms`,
-                                // A opacidade final da animação é 1
-                                animation: `fadeInSide 1000ms ease-out ${200 + transitionDelay}ms forwards`,
-                                '--final-opacity': opacityValue, 
                             }}
                         >
                             <img
@@ -164,7 +165,11 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                     transitionDelay: `${200 + transitionDelay}ms`
                                 }}
                             />
-                            {/* REMOVIDO: Overlay escuro para simular profundidade e garantir solidez */}
+                            {/* Overlay escuro para simular profundidade e garantir solidez */}
+                            <div 
+                                className="absolute inset-0 bg-black/80 transition-opacity duration-1000"
+                                style={{ opacity: overlayOpacity }}
+                            ></div>
                         </div>
                     );
                 })}
