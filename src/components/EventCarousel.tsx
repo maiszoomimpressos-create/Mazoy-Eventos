@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination, EffectCoverflow } from 'swiper/modules'; // Removendo Autoplay e Navigation
+import { Pagination, EffectCoverflow, Autoplay } from 'swiper/modules'; // Adicionando Autoplay
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-coverflow'; // Importar o CSS do Coverflow
@@ -203,9 +203,13 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 centeredSlides={true}
                 spaceBetween={0} // Slides se tocam
                 initialSlide={banners.length >= 4 ? 3 : 0} // Inicia no Banner 4 (índice 3)
-                loop={false} 
+                loop={true} // Ativa o loop para rotação contínua
                 pagination={{
                     clickable: true,
+                }}
+                autoplay={{
+                    delay: settings?.rotation_time_seconds ? settings.rotation_time_seconds * 1000 : 5000, // Usa a configuração do DB
+                    disableOnInteraction: false,
                 }}
                 navigation={false}
                 effect={'coverflow'} 
@@ -217,7 +221,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                     modifier: 1, 
                     slideShadows: false, 
                 }}
-                modules={[Pagination, EffectCoverflow]}
+                modules={[Pagination, EffectCoverflow, Autoplay]} // Adicionando Autoplay
                 className="mySwiper w-full h-full event-carousel-perspective"
             >
                 {banners.map((banner, index) => (
@@ -241,15 +245,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                                 {/* Overlay escuro com gradiente */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/40"></div>
                                 
-                                {/* Número de Debug - Canto Superior Esquerdo */}
-                                <div className="absolute top-4 left-4 bg-black/70 text-yellow-500 px-3 py-1 rounded-full text-sm font-bold z-10">
-                                    {index + 1}
-                                </div>
-                                
-                                {/* Número de Debug - Canto Superior Direito */}
-                                <div className="absolute top-4 right-4 bg-black/70 text-yellow-500 px-3 py-1 rounded-full text-sm font-bold z-10">
-                                    {index + 1}
-                                </div>
+                                {/* REMOVIDOS: Números de Debug */}
                                 
                                 <div className="absolute inset-0 flex items-end pb-10 pt-20">
                                     <div className="px-6 w-full">
