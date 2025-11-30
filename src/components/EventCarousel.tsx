@@ -189,7 +189,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
     }
     
     const activeBanner = banners[activeIndex];
-    const autoplayDelay = settings?.rotation_time_seconds ? settings.rotation_time_seconds * 1000 : 5000;
+    // Removendo autoplayDelay e o módulo Autoplay da Swiper
 
     return (
         <div className="relative w-full h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
@@ -198,16 +198,13 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 slidesPerView={'auto'}
                 centeredSlides={true}
                 spaceBetween={30}
-                autoplay={{
-                    delay: autoplayDelay, // Usando o tempo de rotação das configurações
-                    disableOnInteraction: false,
-                }}
-                loop={true} // Reativando o loop
+                // Autoplay removido
+                loop={true} 
                 pagination={{
                     clickable: true,
                 }}
                 navigation={true}
-                effect={'coverflow'} // Efeito Coverflow
+                effect={'coverflow'} 
                 grabCursor={true}
                 coverflowEffect={{
                     rotate: 0, 
@@ -216,10 +213,10 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                     modifier: 1, 
                     slideShadows: true, 
                 }}
-                modules={[Autoplay, Pagination, Navigation, EffectCoverflow]} // Adicionando Autoplay
+                modules={[Pagination, Navigation, EffectCoverflow]} // Autoplay removido daqui
                 className="mySwiper w-full h-full event-carousel-perspective"
             >
-                {banners.map((banner) => (
+                {banners.map((banner, index) => (
                     <SwiperSlide key={banner.id} className="event-slide-item">
                         {({ isActive }) => (
                             <div 
@@ -237,7 +234,10 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                                 {/* Overlay escuro com gradiente */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/40"></div>
                                 
-                                {/* REMOVIDO: Números de Debug */}
+                                {/* REINTRODUZIDO: Números de Debug */}
+                                <div className="absolute top-4 left-4 bg-black/70 text-yellow-500 px-3 py-1 rounded-full text-sm font-bold z-10">
+                                    {index + 1}
+                                </div>
                                 
                                 <div className="absolute inset-0 flex items-end pb-10 pt-20">
                                     <div className="px-6 w-full">
@@ -293,6 +293,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                         <p className="text-2xl font-bold text-yellow-500 mt-3">
                             A partir de {getMinPriceDisplay(activeBanner.min_price)}
                         </p>
+                        
                     )}
                 </div>
             )}
