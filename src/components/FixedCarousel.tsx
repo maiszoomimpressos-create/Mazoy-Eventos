@@ -169,7 +169,38 @@ const FixedCarousel: React.FC = () => {
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                     <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/10 via-transparent to-yellow-400/10"></div>
+                    
+                    {/* Control buttons - Posicionados DENTRO do banner central */}
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation(); // Previne o clique no card central
+                            if (!isTransitioning) {
+                                const prev = currentIndex === 0 ? images.length - 1 : currentIndex - 1;
+                                setNextIndex(prev);
+                                setIsTransitioning(true);
+                                setTimeout(() => {
+                                    setCurrentIndex(prev);
+                                    setIsTransitioning(false);
+                                }, 1000);
+                            }
+                        }}
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2 w-14 h-14 bg-black/40 hover:bg-black/60 rounded-xl flex items-center justify-center transition-all duration-400 z-30 cursor-pointer backdrop-blur-sm border border-yellow-400/30 shadow-2xl"
+                    >
+                        <i className="fas fa-chevron-left text-white text-xl"></i>
+                    </button>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation(); // Previne o clique no card central
+                            if (!isTransitioning) {
+                                updateSlide();
+                            }
+                        }}
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 w-14 h-14 bg-black/40 hover:bg-black/60 rounded-xl flex items-center justify-center transition-all duration-400 z-30 cursor-pointer backdrop-blur-sm border border-yellow-400/30 shadow-2xl"
+                    >
+                        <i className="fas fa-chevron-right text-white text-xl"></i>
+                    </button>
                 </div>
+                
                 {/* Navigation dots */}
                 <div className="absolute left-1/2 transform -translate-x-1/2 flex space-x-6 z-30" style={{bottom: '-25px'}}>
                     {images.map((_, index) => (
@@ -193,33 +224,7 @@ const FixedCarousel: React.FC = () => {
                         />
                     ))}
                 </div>
-                {/* Control buttons */}
-                <button
-                    onClick={() => {
-                        if (!isTransitioning) {
-                            const prev = currentIndex === 0 ? images.length - 1 : currentIndex - 1;
-                            setNextIndex(prev);
-                            setIsTransitioning(true);
-                            setTimeout(() => {
-                                setCurrentIndex(prev);
-                                setIsTransitioning(false);
-                            }, 1000);
-                        }
-                    }}
-                    className="absolute left-12 top-1/2 transform -translate-y-1/2 w-16 h-16 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all duration-400 z-30 cursor-pointer !rounded-button whitespace-nowrap backdrop-blur-lg border-2 border-white/20 shadow-2xl"
-                >
-                    <i className="fas fa-chevron-left text-white text-2xl"></i>
-                </button>
-                <button
-                    onClick={() => {
-                        if (!isTransitioning) {
-                            updateSlide();
-                        }
-                    }}
-                    className="absolute right-12 top-1/2 transform -translate-y-1/2 w-16 h-16 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all duration-400 z-30 cursor-pointer !rounded-button whitespace-nowrap backdrop-blur-lg border-2 border-white/20 shadow-2xl"
-                >
-                    <i className="fas fa-chevron-right text-white text-2xl"></i>
-                </button>
+                
                 {/* Progress indicator */}
                 <div className="absolute top-10 right-12 z-30 bg-black/40 backdrop-blur-lg rounded-2xl px-6 py-3 border-2 border-yellow-400/30 shadow-2xl">
                     <span className="text-yellow-400 text-2xl font-bold">{String(currentIndex + 1).padStart(2, '0')}</span>
