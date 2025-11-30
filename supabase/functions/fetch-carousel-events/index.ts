@@ -23,11 +23,20 @@ const DUMMY_CAROUSEL_BANNERS = [
     type: "promotional",
     headline: "Torne-se um Gestor PRO!",
     subheadline: "Crie e gerencie seus eventos com ferramentas avançadas.",
-    image_url: "https://readdy.ai/api/search-image?query=premium%20concert%20hall%20with%20golden%20stage%20lighting%20and%20black%20elegant%20seating%2C%20luxury%20entertainment%20venue%20with%20sophisticated%20ambiance%20and%20dramatic%20illumination&width=1200&height=400&seq=banner2&orientation=landscape",
+    image_url: "https://readdy.ai/api/search-image?query=premium%20concert%20hall%20with%20golden%20stage%20lighting%20and%20black%20elegant%20seating%20luxury%20entertainment%20venue%20with%20sophisticated%20ambiance%20and%20dramatic%20illumination&width=1200&height=400&seq=banner2&orientation=landscape",
     link_url: "/manager/register",
     display_order: 2,
   },
 ];
+
+// Função de embaralhamento Fisher-Yates (para garantir aleatoriedade no Deno)
+function shuffleArray(array: any[]) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -36,19 +45,20 @@ serve(async (req) => {
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_ANON_KEY') ?? '', // Usando ANON_KEY para dados públicos
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
     { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
   );
 
   try {
+    // Tenta ler o corpo APENAS se o Content-Type for JSON
     let body = {};
-    try {
-        // Tenta ler o corpo, mas se for GET ou o corpo estiver vazio, falha silenciosamente
-        if (req.headers.get('content-type')?.includes('application/json')) {
+    const contentType = req.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+        try {
             body = await req.json();
+        } catch (e) {
+            // Ignora erro de corpo vazio ou mal formatado se for uma chamada GET/POST sem payload
         }
-    } catch (e) {
-        // Ignora erro de corpo vazio
     }
     
     const { user_id, user_latitude, user_longitude } = body as { user_id?: string, user_latitude?: number, user_longitude?: number };
@@ -56,74 +66,62 @@ serve(async (req) => {
     // 1. Buscar configurações globais do carrossel
     const { data: settings, error: settingsError } = await supabase
       .from('carousel_settings')
-      .select('*')
+      .select('max_banners_display')
       .limit(1)
       .single();
 
-    if (settingsError && settingsError.code !== 'PGRST116') { // PGRST116 = No rows found
+    if (settingsError && settingsError.code !== 'PGRST116') {
       console.error("[ERROR] Failed to fetch carousel settings:", settingsError);
-      throw settingsError;
+      // Não lança erro, usa default
     }
 
-    const carouselSettings = settings || {
-      rotation_time_seconds: 5,
-      max_banners_display: 5,
-      regional_distance_km: 100,
-      min_regional_banners: 3,
-      fallback_strategy: 'latest_events',
-      days_until_event_threshold: 30,
-    };
+    const maxBannersDisplay = settings?.max_banners_display || 5;
 
     let allBanners: any[] = [];
 
-    // 2. Buscar banners de eventos do carrossel (AGORA ALEATÓRIO E SEM FILTRO DE DATA)
+    // 2. Buscar banners de eventos do carrossel
     const { data: eventCarouselBanners, error: eventCarouselError } = await supabase
       .from('event_carousel_banners')
       .select(`
         id, event_id, image_url, headline, subheadline, display_order, start_date, end_date,
         events (id, title, description, category, location, date, time, latitude, longitude)
-      `)
-      .order('display_order', { ascending: true })
-      .order('created_at', { ascending: false }); // Ordem secundária para estabilidade
+      `);
 
     if (eventCarouselError) {
         console.error("[ERROR] Failed to fetch event carousel banners:", eventCarouselError);
     }
 
-    // 3. Buscar banners promocionais (AGORA ALEATÓRIO E SEM FILTRO DE DATA)
+    // 3. Buscar banners promocionais
     const { data: promotionalBanners, error: promoBannersError } = await supabase
       .from('promotional_banners')
       .select(`
         id, image_url, headline, subheadline, display_order, start_date, end_date, link_url
-      `)
-      .order('display_order', { ascending: true })
-      .order('created_at', { ascending: false }); // Ordem secundária para estabilidade
+      `);
 
     if (promoBannersError) console.error("[ERROR] Failed to fetch promotional banners:", promoBannersError);
 
     // 4. Combinar e formatar banners
-    if (eventCarouselBanners) {
-      const eventIds = eventCarouselBanners.map(b => b.event_id);
-      
-      // Buscar preços mínimos (wristbands)
-      const { data: wristbandsData, error: wristbandsError } = await supabase
-        .from('wristbands')
-        .select('event_id, price, status')
-        .in('event_id', eventIds)
-        .eq('status', 'active');
+    const eventIds = (eventCarouselBanners || []).map(b => b.event_id);
+    let eventMinPrices: { [eventId: string]: number } = {};
 
-      if (wristbandsError) console.error("[ERROR] Failed to fetch wristbands for carousel events:", wristbandsError);
+    if (eventIds.length > 0) {
+        const { data: wristbandsData } = await supabase
+            .from('wristbands')
+            .select('event_id, price, status')
+            .in('event_id', eventIds)
+            .eq('status', 'active');
 
-      const eventMinPrices = wristbandsData ? wristbandsData.reduce((acc, item) => {
-        const price = parseFloat(item.price as unknown as string) || 0;
-        if (!acc[item.event_id] || price < acc[item.event_id]) {
-          acc[item.event_id] = price;
-        }
-        return acc;
-      }, {} as { [eventId: string]: number }) : {};
+        eventMinPrices = (wristbandsData || []).reduce((acc, item) => {
+            const price = parseFloat(item.price as unknown as string) || 0;
+            if (!acc[item.event_id] || price < acc[item.event_id]) {
+                acc[item.event_id] = price;
+            }
+            return acc;
+        }, {} as { [eventId: string]: number });
+    }
 
-      eventCarouselBanners.forEach(banner => {
-        if (banner.events) { // Ensure event data exists
+    (eventCarouselBanners || []).forEach(banner => {
+        if (banner.events) {
           allBanners.push({
             id: banner.id,
             type: 'event',
@@ -141,11 +139,9 @@ serve(async (req) => {
             longitude: banner.events.longitude,
           });
         }
-      });
-    }
+    });
 
-    if (promotionalBanners) {
-      promotionalBanners.forEach(banner => {
+    (promotionalBanners || []).forEach(banner => {
         allBanners.push({
           id: banner.id,
           type: 'promotional',
@@ -155,30 +151,19 @@ serve(async (req) => {
           link_url: banner.link_url,
           display_order: banner.display_order,
         });
-      });
-    }
+    });
 
-    // Se não houver banners reais, usa os dados de exemplo
+    // 5. Se não houver banners reais, usa os dados de exemplo
     if (allBanners.length === 0) {
         console.log("[DEBUG] No real banners found. Using dummy data for carousel.");
-        const now = new Date().toISOString().split('T')[0];
-        allBanners = DUMMY_CAROUSEL_BANNERS.map(banner => ({
-            ...banner,
-            start_date: now,
-            end_date: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0],
-        }));
+        allBanners = DUMMY_CAROUSEL_BANNERS;
     }
 
-    // 5. Implementar ordenação aleatória (random shuffle no Deno)
-    // Nota: Para garantir que o limite seja aplicado após a seleção aleatória,
-    // fazemos o shuffle aqui no código da Edge Function.
-    for (let i = allBanners.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [allBanners[i], allBanners[j]] = [allBanners[j], allBanners[i]];
-    }
+    // 6. Implementar ordenação aleatória (shuffle)
+    allBanners = shuffleArray(allBanners);
 
-    // 6. Limitar os banners
-    allBanners = allBanners.slice(0, carouselSettings.max_banners_display);
+    // 7. Limitar os banners
+    allBanners = allBanners.slice(0, maxBannersDisplay);
 
     return new Response(JSON.stringify({ banners: allBanners }), {
       status: 200,
@@ -188,7 +173,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Edge Function CRITICAL Error:', error);
     return new Response(JSON.stringify({ error: error.message || 'Internal Server Error' }), {
-      status: 500,
+      status: 500, // Retorna 500 em caso de erro crítico
       headers: corsHeaders,
     });
   }
