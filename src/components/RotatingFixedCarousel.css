@@ -53,24 +53,24 @@
 
 /* 1º à Esquerda */
 .position-left-1 {
-    /* Ajuste: Aumentando o recuo X para -180px e diminuindo o Y para 20px */
-    transform: translate(calc(-50% - 180px), calc(-50% + 20px)) scale(.85);
+    /* Removido o deslocamento vertical (+ 20px) */
+    transform: translate(calc(-50% - 180px), -50%) scale(.85);
     opacity: 0.8;
     z-index: 90;
 }
 
 /* 2º à Esquerda */
 .position-left-2 {
-    /* Ajuste: Aumentando o recuo X para -300px e diminuindo o Y para 40px */
-    transform: translate(calc(-50% - 300px), calc(-50% + 40px)) scale(.75);
+    /* Removido o deslocamento vertical (+ 40px) */
+    transform: translate(calc(-50% - 300px), -50%) scale(.75);
     opacity: 0.6;
     z-index: 80;
 }
 
 /* 3º à Esquerda */
 .position-left-3 {
-    /* Ajuste: Aumentando o recuo X para -400px e diminuindo o Y para 60px */
-    transform: translate(calc(-50% - 400px), calc(-50% + 60px)) scale(.65);
+    /* Removido o deslocamento vertical (+ 60px) */
+    transform: translate(calc(-50% - 400px), -50%) scale(.65);
     opacity: 0.4;
     z-index: 70;
 }
@@ -79,24 +79,24 @@
 
 /* 1º à Direita */
 .position-right-1 {
-    /* Ajuste: Aumentando o recuo X para +180px e diminuindo o Y para 20px */
-    transform: translate(calc(-50% + 180px), calc(-50% + 20px)) scale(.85);
+    /* Removido o deslocamento vertical (+ 20px) */
+    transform: translate(calc(-50% + 180px), -50%) scale(.85);
     opacity: 0.8;
     z-index: 90;
 }
 
 /* 2º à Direita */
 .position-right-2 {
-    /* Ajuste: Aumentando o recuo X para +300px e diminuindo o Y para 40px */
-    transform: translate(calc(-50% + 300px), calc(-50% + 40px)) scale(.75);
+    /* Removido o deslocamento vertical (+ 40px) */
+    transform: translate(calc(-50% + 300px), -50%) scale(.75);
     opacity: 0.6;
     z-index: 80;
 }
 
 /* 3º à Direita */
 .position-right-3 {
-    /* Ajuste: Aumentando o recuo X para +400px e diminuindo o Y para 60px */
-    transform: translate(calc(-50% + 400px), calc(-50% + 60px)) scale(.65);
+    /* Removido o deslocamento vertical (+ 60px) */
+    transform: translate(calc(-50% + 400px), -50%) scale(.65);
     opacity: 0.4;
     z-index: 70;
 }
@@ -146,11 +146,11 @@
     }
     
     /* Ajuste de offsets para telas menores */
-    .position-left-1 { transform: translate(calc(-50% - 100px), calc(-50% + 20px)) scale(.85); }
-    .position-left-2 { transform: translate(calc(-50% - 180px), calc(-50% + 40px)) scale(.75); }
-    .position-left-3 { transform: translate(calc(-50% - 260px), calc(-50% + 60px)) scale(.65); }
+    .position-left-1 { transform: translate(calc(-50% - 100px), -50%) scale(.85); }
+    .position-left-2 { transform: translate(calc(-50% - 180px), -50%) scale(.75); }
+    .position-left-3 { transform: translate(calc(-50% - 260px), -50%) scale(.65); }
     
-    .position-right-1 { transform: translate(calc(-50% + 100px), calc(-50% + 20px)) scale(.85); }
-    .position-right-2 { transform: translate(calc(-50% + 180px), calc(-50% + 40px)) scale(.75); }
-    .position-right-3 { transform: translate(calc(-50% + 260px), calc(-50% + 60px)) scale(.65); }
+    .position-right-1 { transform: translate(calc(-50% + 100px), -50%) scale(.85); }
+    .position-right-2 { transform: translate(calc(-50% + 180px), -50%) scale(.75); }
+    .position-right-3 { transform: translate(calc(-50% + 260px), -50%) scale(.65); }
 }
