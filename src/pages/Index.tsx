@@ -10,9 +10,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { trackAdvancedFilterUse } from '@/utils/metrics';
 import { usePublicEvents, PublicEvent } from '@/hooks/use-public-events';
 import { Loader2 } from 'lucide-react';
-import FixedCenterCarousel from '@/components/FixedCenterCarousel'; // Importado o novo carrossel
+import RotatingFixedCarousel from '@/components/RotatingFixedCarousel'; // Importado o novo carrossel
 
 const EVENTS_PER_PAGE = 12;
+
+// Dados de teste para o carrossel (7+ itens necessários para o efeito 3D)
+const DUMMY_CAROUSEL_ITEMS = [
+    "https://readdy.ai/api/search-image?query=luxury%20black%20and%20gold%20event%20venue%20with%20elegant%20lighting&width=600&height=400&seq=c1",
+    "https://readdy.ai/api/search-image?query=premium%20concert%20hall%20with%20golden%20stage%20lighting&width=600&height=400&seq=c2",
+    "https://readdy.ai/api/search-image?query=elegant%20corporate%20event%20space%20with%20black%20and%20gold%20decor&width=600&height=400&seq=c3",
+    "https://readdy.ai/api/search-image?query=luxury%20art%20gallery%20exhibition%20with%20black%20walls&width=600&height=400&seq=c4",
+    "https://readdy.ai/api/search-image?query=elegant%20fine%20dining%20restaurant%20with%20black%20and%20gold%20interior&width=600&height=400&seq=c5",
+    "https://readdy.ai/api/search-image?query=luxury%20theater%20stage%20with%20black%20velvet%20curtains&width=600&height=400&seq=c6",
+    "https://readdy.ai/api/search-image?query=elegant%20wine%20tasting%20room%20with%20black%20and%20gold%20luxury%20decor&width=600&height=400&seq=c7",
+    "https://readdy.ai/api/search-image?query=luxury%20fashion%20show%20runway%20with%20black%20stage&width=600&height=400&seq=c8",
+];
 
 const getMinPriceDisplay = (price: number | null): string => {
     if (price === null || price === 0) return 'Grátis';
@@ -96,7 +108,7 @@ const Index: React.FC = () => {
                 
                 {/* Carrossel (Largura Total) */}
                 <div className="mb-8">
-                    <FixedCenterCarousel />
+                    <RotatingFixedCarousel items={DUMMY_CAROUSEL_ITEMS} />
                 </div>
             </section>
 
@@ -217,10 +229,8 @@ const Index: React.FC = () => {
                                         <p className="text-gray-400">Carregando eventos...</p>
                                     </div>
                                 ) : isErrorEvents || allEvents.length === 0 ? (
-                                    <div className="text-center py-20">
-                                        <i className="fas fa-calendar-times text-5xl text-gray-600 mb-4"></i>
-                                        <p className="text-gray-400 text-lg">Nenhum evento encontrado.</p>
-                                        <p className="text-gray-500 text-sm mt-2">Cadastre um evento na área do gestor para vê-lo aqui.</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">
+                                        {/* Placeholder for events */}
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-8">

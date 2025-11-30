@@ -1,0 +1,150 @@
+.rotating-carousel-container {
+    position: relative;
+    width: 100%;
+    max-width: 900px; /* Largura máxima no desktop */
+    height: 450px; /* Altura fixa para acomodar a perspectiva */
+    margin: 50px auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden; /* Esconde itens que saem da área */
+}
+
+.carousel-item {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 400px; /* Largura base do item */
+    height: 300px; /* Altura base do item */
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: #1f2937; /* bg-gray-800 */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    
+    /* Ponto de origem para transformações (centro) */
+    transform-origin: center center;
+    
+    /* Transições suaves para todas as transformações */
+    transition: transform .4s ease, opacity .4s ease, z-index 0s linear .4s;
+    
+    /* Inicialmente, todos os itens estão escondidos e centralizados */
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0;
+    z-index: 1;
+}
+
+.carousel-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* --- Posições Fixas --- */
+
+/* Item Central (Active) */
+.position-center {
+    transform: translate(-50%, -50%) scale(1.0);
+    opacity: 1;
+    z-index: 100;
+}
+
+/* --- Lado Esquerdo (Recuado) --- */
+
+/* 1º à Esquerda */
+.position-left-1 {
+    transform: translate(calc(-50% - 150px), calc(-50% + 30px)) scale(.85);
+    opacity: 0.8;
+    z-index: 90;
+}
+
+/* 2º à Esquerda */
+.position-left-2 {
+    transform: translate(calc(-50% - 250px), calc(-50% + 60px)) scale(.75);
+    opacity: 0.6;
+    z-index: 80;
+}
+
+/* 3º à Esquerda */
+.position-left-3 {
+    transform: translate(calc(-50% - 350px), calc(-50% + 90px)) scale(.65);
+    opacity: 0.4;
+    z-index: 70;
+}
+
+/* --- Lado Direito (Recuado) --- */
+
+/* 1º à Direita */
+.position-right-1 {
+    transform: translate(calc(-50% + 150px), calc(-50% + 30px)) scale(.85);
+    opacity: 0.8;
+    z-index: 90;
+}
+
+/* 2º à Direita */
+.position-right-2 {
+    transform: translate(calc(-50% + 250px), calc(-50% + 60px)) scale(.75);
+    opacity: 0.6;
+    z-index: 80;
+}
+
+/* 3º à Direita */
+.position-right-3 {
+    transform: translate(calc(-50% + 350px), calc(-50% + 90px)) scale(.65);
+    opacity: 0.4;
+    z-index: 70;
+}
+
+/* --- Botões de Navegação --- */
+.carousel-nav-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 196, 0, 0.8); /* Amarelo Mazoy */
+    color: #000;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 110;
+    transition: background .3s ease, transform .3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.carousel-nav-button:hover {
+    background: #ffc400;
+    transform: translateY(-50%) scale(1.05);
+}
+
+.carousel-nav-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.carousel-nav-button.prev {
+    left: 10px;
+}
+
+.carousel-nav-button.next {
+    right: 10px;
+}
+
+/* Responsividade básica */
+@media (max-width: 950px) {
+    .rotating-carousel-container {
+        height: 350px;
+    }
+    .carousel-item {
+        width: 300px;
+        height: 225px;
+    }
+    
+    /* Ajuste de offsets para telas menores */
+    .position-left-1 { transform: translate(calc(-50% - 100px), calc(-50% + 20px)) scale(.85); }
+    .position-left-2 { transform: translate(calc(-50% - 180px), calc(-50% + 40px)) scale(.75); }
+    .position-left-3 { transform: translate(calc(-50% - 260px), calc(-50% + 60px)) scale(.65); }
+    
+    .position-right-1 { transform: translate(calc(-50% + 100px), calc(-50% + 20px)) scale(.85); }
+    .position-right-2 { transform: translate(calc(-50% + 180px), calc(-50% + 40px)) scale(.75); }
+    .position-right-3 { transform: translate(calc(-50% + 260px), calc(-50% + 60px)) scale(.65); }
+}
