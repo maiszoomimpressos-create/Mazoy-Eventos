@@ -19,9 +19,14 @@
   justify-content: center;
   align-items: center;
   
-  /* Adicionado: Garante que o slide não tenha margens verticais inesperadas */
+  /* Garante que o slide não tenha margens verticais inesperadas */
   margin-top: 0 !important;
   margin-bottom: 0 !important;
+}
+
+/* CORREÇÃO CRÍTICA: Força o wrapper a não ter transformações verticais */
+.swiper-wrapper {
+    transform: translate3d(var(--swiper-translate-x, 0), 0, 0) !important;
 }
 
 /* Ajuste para telas menores: usa 90% da largura da viewport, mantendo a proporção 6:4 */
