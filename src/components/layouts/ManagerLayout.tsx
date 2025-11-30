@@ -175,7 +175,7 @@ const ManagerLayout: React.FC = () => {
                                                         className="cursor-pointer hover:bg-yellow-500/10"
                                                     >
                                                         <SlidersHorizontal className="mr-2 h-4 w-4" />
-                                                        CRT
+                                                        Config. Carrossel
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem 
                                                         onClick={() => navigate('/admin/banners')}
@@ -260,7 +260,7 @@ const ManagerLayout: React.FC = () => {
                                                                 className="flex items-center p-2 rounded-xl text-gray-300 hover:bg-yellow-500/10 transition-colors duration-200 text-base w-full justify-start"
                                                             >
                                                                 <SlidersHorizontal className="mr-2 h-4 w-4" />
-                                                                CRT
+                                                                Config. Carrossel
                                                             </button>
                                                             <button 
                                                                 onClick={() => navigate('/admin/banners')}
