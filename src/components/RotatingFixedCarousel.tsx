@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import "./RotatingFixedCarousel.css";
+import { ImageOff } from "lucide-react"; // Importando ícone
 
 interface RotatingFixedCarouselProps {
   items: string[];
@@ -96,7 +97,23 @@ export default function RotatingFixedCarousel({ items }: RotatingFixedCarouselPr
                 }
             }}
           >
-            <img src={item} alt={`Carousel item ${i + 1}`} />
+            <img 
+                src={item} 
+                alt="" 
+                onError={(e) => {
+                    // Substitui a imagem por um placeholder visual em caso de erro
+                    e.currentTarget.onerror = null; 
+                    e.currentTarget.style.display = 'none';
+                    const parent = e.currentTarget.parentElement;
+                    if (parent) {
+                        parent.style.backgroundColor = '#333';
+                        parent.style.display = 'flex';
+                        parent.style.alignItems = 'center';
+                        parent.style.justifyContent = 'center';
+                        parent.innerHTML = `<div style="color: #FFC400; text-align: center;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-image-off"><line x1="2" x2="22" y1="2" y2="22"/><path d="M10.5 5H20a2 2 0 0 1 2 2v10a2 2 0 0 1-.5 1.37"/><path d="M9.5 3.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/><path d="M2 20h17.5"/><path d="M15 10l4.5 4.5"/><path d="M10 10l-5 5"/></svg><span style="font-size: 10px; display: block; margin-top: 4px;">Falha ao carregar</span></div>`;
+                    }
+                }}
+            />
           </div>
         );
       })}
