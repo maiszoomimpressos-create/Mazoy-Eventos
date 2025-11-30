@@ -85,7 +85,7 @@ const Index: React.FC = () => {
 
     return (
         <> {/* Removed fixed header from here, now handled by ClientLayout */}
-            <section id="home" className="pt-12 pb-12 sm:pb-20 px-0 sm:px-0"> {/* Ajustado o padding-top para 12 */}
+            <section id="home" className="pt-0 pb-12 sm:pb-20 px-0 sm:px-0">
                 {/* Contêiner para o Título (mantido centralizado) */}
                 <div className="max-w-7xl mx-auto px-4 sm:px-6">
                     <div className="text-center mb-10 sm:mb-16">
@@ -100,7 +100,7 @@ const Index: React.FC = () => {
                 </div>
             </section>
 
-            <section id="eventos" className="pt-12 pb-12 sm:pb-20 px-4 sm:px-6"> {/* Ajustado o padding-top para 12 */}
+            <section id="eventos" className="pt-20 pb-12 sm:pb-20 px-4 sm:px-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-10 sm:mb-16">
                         <h2 className="text-3xl sm:text-5xl font-serif text-yellow-500 mb-4">Lista de Eventos</h2>

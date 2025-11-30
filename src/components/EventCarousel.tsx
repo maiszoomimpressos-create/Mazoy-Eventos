@@ -196,7 +196,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
     const activeBanner = banners[activeIndex];
 
     return (
-        <div className="relative w-full overflow-hidden pb-20"> {/* Removida altura fixa, adicionado padding-bottom */}
+        <div className="relative w-full h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
             <Swiper
                 onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
                 slidesPerView={'auto'}
@@ -212,9 +212,9 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 effect={'coverflow'} 
                 grabCursor={true}
                 coverflowEffect={{
-                    rotate: 0, 
-                    stretch: 0, 
-                    depth: 100, 
+                    rotate: 0, // Rotação zerada para manter os slides mais planos
+                    stretch: 500, // Aumenta o alongamento para afastar os slides e mostrar mais laterais
+                    depth: 100, // Profundidade reduzida
                     modifier: 1, 
                     slideShadows: false, 
                 }}
@@ -274,7 +274,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
             
             {/* Detalhes do Evento Ativo (abaixo do carrossel) */}
             {activeBanner && (
-                <div className="absolute bottom-0 left-0 right-0 text-center animate-fadeInUp">
+                <div className="mt-8 text-center animate-fadeInUp">
                     <h3 className="text-xl font-semibold text-white mb-2">{activeBanner.headline}</h3>
                     {activeBanner.type === 'event' && (
                         <div className="flex items-center justify-center space-x-6 text-gray-400 text-sm">
