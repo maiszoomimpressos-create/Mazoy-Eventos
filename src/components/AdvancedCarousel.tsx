@@ -90,8 +90,8 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                     const zIndex = 15 - pos;
                     const transitionDelay = pos * 80;
                     
-                    // Opacidade do overlay: 0.3 + (pos * 0.15) -> 0.45, 0.60, 0.75
-                    const overlayOpacity = 0.3 + (pos * 0.15); 
+                    // Opacidade total (1) para o container
+                    const opacityValue = 1; 
 
                     return (
                         <div
@@ -102,7 +102,7 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                 height: `${baseHeight * scale}px`,
                                 transform: `translateX(${offsetX}px) translateY(${offsetY}px)`,
                                 zIndex: zIndex,
-                                opacity: isTransitioning ? 0 : 1, // Opacidade total (1) para o container
+                                opacity: isTransitioning ? 0 : opacityValue, // Opacidade total (1) para o container
                                 transition: `all 1000ms ease-out`,
                                 transitionDelay: isTransitioning ? `${transitionDelay}ms` : '0ms'
                             }}
@@ -117,11 +117,7 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                     transitionDelay: `${transitionDelay}ms`
                                 }}
                             />
-                            {/* Overlay escuro para simular profundidade e garantir solidez */}
-                            <div 
-                                className="absolute inset-0 bg-black/80 transition-opacity duration-1000"
-                                style={{ opacity: overlayOpacity }}
-                            ></div>
+                            {/* REMOVIDO: Overlay escuro para simular profundidade e garantir solidez */}
                         </div>
                     );
                 })}
@@ -137,7 +133,8 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                     const zIndex = 15 - pos;
                     const transitionDelay = pos * 80;
                     
-                    const overlayOpacity = 0.3 + (pos * 0.15); 
+                    // Opacidade total (1) para o container
+                    const opacityValue = 1; 
 
                     return (
                         <div
@@ -151,9 +148,9 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                 opacity: 0,
                                 transition: `all 1000ms ease-out`,
                                 transitionDelay: `${200 + transitionDelay}ms`,
-                                // A animação agora define a opacidade do container para 1
+                                // A opacidade final da animação é 1
                                 animation: `fadeInSide 1000ms ease-out ${200 + transitionDelay}ms forwards`,
-                                '--final-opacity': 1, 
+                                '--final-opacity': opacityValue, 
                             }}
                         >
                             <img
@@ -167,11 +164,7 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                     transitionDelay: `${200 + transitionDelay}ms`
                                 }}
                             />
-                            {/* Overlay escuro para simular profundidade e garantir solidez */}
-                            <div 
-                                className="absolute inset-0 bg-black/80 transition-opacity duration-1000"
-                                style={{ opacity: overlayOpacity }}
-                            ></div>
+                            {/* REMOVIDO: Overlay escuro para simular profundidade e garantir solidez */}
                         </div>
                     );
                 })}
