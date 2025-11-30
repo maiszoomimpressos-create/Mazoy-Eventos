@@ -71,7 +71,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
         staleTime: 1000 * 60 * 5,
     });
 
-    // Geolocation logic
+    // Geolocation logic (omitted for brevity, assuming it works)
     useEffect(() => {
         if (settings && settings.regional_distance_km > 0 && navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -92,7 +92,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
         }
     }, [settings]);
 
-    // Fetch banners logic
+    // Fetch banners logic (omitted for brevity, assuming it works)
     useEffect(() => {
         if (isLoadingSettings || !settings) return;
 
@@ -169,12 +169,15 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
     const updateIndex = useCallback((newIndex: number) => {
         if (isTransitioning) return;
         
+        // Ensure index wraps around
+        const normalizedIndex = (newIndex % banners.length + banners.length) % banners.length;
+
         setIsTransitioning(true);
         setTimeout(() => {
-            setActiveIndex(newIndex);
+            setActiveIndex(normalizedIndex);
             setIsTransitioning(false);
         }, 300); // Match the CSS transition time for opacity
-    }, [isTransitioning]);
+    }, [isTransitioning, banners.length]);
 
     // Auto-rotation effect
     useEffect(() => {
@@ -203,18 +206,17 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
         }
     };
     
-    // Helper function to get the indices for the 6 layers behind
-    const getBehindIndices = () => {
+    // Helper function to get the indices for the 3 side cards
+    const getSideCardIndices = () => {
         if (banners.length === 0) return [];
         const indices = [];
-        // The user's JS logic uses (index + i) % events.length for i=1 to i=6
-        for (let i = 1; i <= 6; i++) {
+        for (let i = 1; i <= 3; i++) {
             indices.push((activeIndex + i) % banners.length);
         }
         return indices;
     };
 
-    const behindIndices = getBehindIndices();
+    const sideCardIndices = getSideCardIndices();
 
     // --- Rendering Logic ---
 
@@ -243,27 +245,6 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
     return (
         <div className="carousel-wrapper">
             
-            {/* Camadas Atrás */}
-            <div className="behind-area" id="behindArea">
-                {behindIndices.map((index, i) => {
-                    const banner = banners[index];
-                    const className = `behind b${i + 1}`;
-                    
-                    return (
-                        <div 
-                            key={banner.id + i} 
-                            className={className} 
-                            style={{ 
-                                backgroundImage: `url(${banner.image_url})`,
-                                // Adicionando um fundo de fallback caso a imagem falhe
-                                backgroundColor: '#111', 
-                            }}
-                        >
-                        </div>
-                    );
-                })}
-            </div>
-
             {/* Card Central */}
             <div 
                 className="main cursor-pointer"
@@ -296,8 +277,36 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 </div>
             </div>
             
-            {/* Paginação (Bolinhas) */}
-            <div className="absolute bottom-0 z-30 flex space-x-2 mb-4">
+            {/* Cards Laterais (3 à direita) */}
+            <div className="side-area">
+                {sideCardIndices.map((index) => {
+                    const banner = banners[index];
+                    
+                    return (
+                        <div 
+                            key={banner.id} 
+                            className="side-card"
+                            onClick={() => handlePaginationClick(index)}
+                        >
+                            <img 
+                                src={banner.image_url} 
+                                alt={banner.headline} 
+                            />
+                            <div className="side-card-content">
+                                <div className="side-card-title">
+                                    {banner.headline}
+                                </div>
+                                <div className="side-card-sub">
+                                    {banner.subheadline}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+            
+            {/* Paginação (Bolinhas) - Mantida, mas posicionada de forma relativa ao wrapper */}
+            <div className="absolute bottom-0 z-30 flex space-x-2 mb-4 transform translate-x-[-100px]">
                 {banners.map((_, index) => (
                     <button
                         key={index}
