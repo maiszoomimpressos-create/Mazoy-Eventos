@@ -112,14 +112,14 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                 className="w-full h-full object-cover object-top transition-all duration-1000 ease-out"
                                 style={{
                                     transform: isTransitioning ? 'scale(0.95)' : 'scale(1)',
-                                    filter: 'blur(0px)', 
+                                    // REMOVIDO: filter: 'blur(0px)', 
                                     transitionDelay: `${transitionDelay}ms`
                                 }}
                             />
                             {/* Overlay escuro para garantir solidez e profundidade */}
                             <div 
-                                className="absolute inset-0 bg-black/80 transition-opacity duration-1000"
-                                style={{ opacity: 0.5 }}
+                                className="absolute inset-0 bg-black/90 transition-opacity duration-1000" // Aumentado para black/90
+                                style={{ opacity: 1 }} // Opacidade total para o overlay
                             ></div>
                         </div>
                     );
