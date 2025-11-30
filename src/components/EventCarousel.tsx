@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination, EffectCreative, Autoplay } from 'swiper/modules'; // Alterado EffectCoverflow para EffectCreative
+import { Pagination, EffectCreative, Autoplay, Navigation } from 'swiper/modules'; // Adicionado Navigation
 import 'swiper/css';
 import 'swiper/css/pagination';
-import 'swiper/css/effect-creative'; // Importando o CSS correto
+import 'swiper/css/effect-creative'; 
 import './EventCarousel.css';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -196,31 +196,34 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
     const activeBanner = banners[activeIndex];
 
     return (
-        <div className="relative w-full h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
+        <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden">
             <Swiper
                 onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
-                slidesPerView={'auto'}
-                centeredSlides={true}
-                spaceBetween={20}
-                initialSlide={banners.length >= 4 ? 3 : 0}
+                slidesPerView={1} // Apenas um slide visível por vez
+                centeredSlides={false} // Não centraliza, usa largura total
+                spaceBetween={0} // Sem espaço entre slides
+                initialSlide={0} // Começa no primeiro slide
                 loop={true}
                 pagination={{
                     clickable: true,
                 }}
-                autoplay={false} 
+                autoplay={{
+                    delay: settings?.rotation_time_seconds * 1000 || 5000,
+                    disableOnInteraction: false,
+                }}
                 navigation={true}
-                effect={'creative'} // Usando EffectCreative
+                effect={'creative'} 
                 creativeEffect={{
                     prev: {
                         shadow: true,
-                        translate: [0, 0, -400],
+                        translate: ['-100%', 0, -1], // Move para a esquerda, sem profundidade
                     },
                     next: {
-                        translate: ['100%', 0, 0],
+                        translate: ['100%', 0, -1], // Move para a direita, sem profundidade
                     },
                 }}
                 grabCursor={true}
-                modules={[Pagination, EffectCreative, Autoplay]} // Módulos atualizados
+                modules={[Pagination, EffectCreative, Autoplay, Navigation]} 
                 className="mySwiper w-full h-full event-carousel-perspective"
             >
                 {banners.map((banner, index) => (
@@ -230,7 +233,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                                 className={cn(
                                     "relative w-full h-full rounded-2xl transition-all duration-500",
                                     isActive 
-                                        ? "shadow-2xl shadow-yellow-500/30 border-2 border-yellow-500/50 scale-100" // Mantém o slide ativo em escala 100%
+                                        ? "shadow-2xl shadow-yellow-500/30 border-2 border-yellow-500/50 scale-100" 
                                         : "shadow-xl shadow-yellow-500/10 border border-yellow-500/20 opacity-70"
                                 )}
                                 onClick={() => navigate(banner.event_id ? `/events/${banner.event_id}` : banner.link_url || '/')}
