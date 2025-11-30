@@ -201,7 +201,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
                 slidesPerView={'auto'}
                 centeredSlides={true}
-                spaceBetween={0} // Slides se tocam
+                spaceBetween={30} // Aumentando o espaço entre slides
                 initialSlide={banners.length >= 4 ? 3 : 0} // Inicia no Banner 4 (índice 3)
                 loop={true} // Ativa o loop para rotação contínua
                 pagination={{
@@ -215,8 +215,8 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 effect={'coverflow'} 
                 grabCursor={true}
                 coverflowEffect={{
-                    rotate: 0, 
-                    stretch: 500, // Desloca 500px (600px - 100px)
+                    rotate: 50, // Adiciona rotação para efeito 3D
+                    stretch: 0, // Remove o stretch que estava causando o corte
                     depth: 100, // Adiciona profundidade 3D
                     modifier: 1, 
                     slideShadows: false, 
@@ -244,8 +244,6 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                                 />
                                 {/* Overlay escuro com gradiente */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/40"></div>
-                                
-                                {/* REMOVIDOS: Números de Debug */}
                                 
                                 <div className="absolute inset-0 flex items-end pb-10 pt-20">
                                     <div className="px-6 w-full">
