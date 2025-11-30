@@ -84,6 +84,6 @@
 /* Aumentando a margem negativa para dar mais espaço para os slides laterais */
 .event-carousel-perspective {
     overflow: visible !important;
-    margin: 0 -200px; /* Aumentado para -200px */
-    padding: 0 200px; /* Aumentado para 200px */
+    margin: 0 -100px; 
+    padding: 0 100px; 
 }
