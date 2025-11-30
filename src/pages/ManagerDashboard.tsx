@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { managerStats } from '@/data/events';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, QrCode, BarChart3, Download, Settings, ChevronDown } from 'lucide-react';
+import { Plus, QrCode, BarChart3, Download, Settings, ChevronDown, FileText } from 'lucide-react'; // Importando FileText
 
 const ManagerDashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -210,6 +210,13 @@ const ManagerDashboard: React.FC = () => {
                             >
                                 <QrCode className="mr-2 h-4 w-4" />
                                 Gerar Pulseiras
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                                onClick={() => navigate('/manager/crtevento')}
+                                className="cursor-pointer hover:bg-yellow-500/10"
+                            >
+                                <FileText className="mr-2 h-4 w-4" />
+                                CRT Evento
                             </DropdownMenuItem>
                             <DropdownMenuSeparator className="bg-yellow-500/20" />
                             <DropdownMenuItem 
