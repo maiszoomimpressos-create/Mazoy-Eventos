@@ -23,16 +23,13 @@ const CrtEvento: React.FC = () => {
                 </Button>
             </div>
 
-            {/* Conteúdo da funcionalidade CRT (sem o Card) */}
-            <div className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6 sm:p-8">
+            {/* Conteúdo removido, deixando apenas uma mensagem simples */}
+            <div className="text-center py-20 bg-black/60 border border-yellow-500/30 rounded-2xl">
+                <FileText className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
                 <h2 className="text-white text-xl sm:text-2xl font-semibold mb-2">Funcionalidade CRT</h2>
-                <p className="text-gray-400 text-sm mb-6">
-                    Esta página será usada para gerenciar a funcionalidade CRT (Certificado de Registro de Título) do evento.
+                <p className="text-gray-400 text-base">
+                    Esta funcionalidade está em desenvolvimento e será lançada em breve.
                 </p>
-                <div className="text-center py-10">
-                    <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
-                    <p className="text-gray-400">A funcionalidade de CRT está sendo implementada.</p>
-                </div>
             </div>
         </div>
     );
