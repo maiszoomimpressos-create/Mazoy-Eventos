@@ -10,21 +10,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { trackAdvancedFilterUse } from '@/utils/metrics';
 import { usePublicEvents, PublicEvent } from '@/hooks/use-public-events';
 import { Loader2 } from 'lucide-react';
-import RotatingFixedCarousel from '@/components/RotatingFixedCarousel'; // Importado o novo carrossel
+import FixedCarousel from '@/components/FixedCarousel'; // Importado o novo carrossel
 
 const EVENTS_PER_PAGE = 12;
-
-// Dados de teste para o carrossel (7+ itens necessários para o efeito 3D)
-const DUMMY_CAROUSEL_ITEMS = [
-    "https://readdy.ai/api/search-image?query=luxury%20black%20and%20gold%20event%20venue%20with%20elegant%20lighting&width=600&height=400&seq=c1",
-    "https://readdy.ai/api/search-image?query=premium%20concert%20hall%20with%20golden%20stage%20lighting&width=600&height=400&seq=c2",
-    "https://readdy.ai/api/search-image?query=elegant%20corporate%20event%20space%20with%20black%20and%20gold%20decor&width=600&height=400&seq=c3",
-    "https://readdy.ai/api/search-image?query=luxury%20art%20gallery%20exhibition%20with%20black%20walls&width=600&height=400&seq=c4",
-    "https://readdy.ai/api/search-image?query=elegant%20fine%20dining%20restaurant%20with%20black%20and%20gold%20interior&width=600&height=400&seq=c5",
-    "https://readdy.ai/api/search-image?query=luxury%20theater%20stage%20with%20black%20velvet%20curtains&width=600&height=400&seq=c6",
-    "https://readdy.ai/api/search-image?query=elegant%20wine%20tasting%20room%20with%20black%20and%20gold%20luxury%20decor&width=600&height=400&seq=c7",
-    "https://readdy.ai/api/search-image?query=luxury%20fashion%20show%20runway%20with%20black%20stage&width=600&height=400&seq=c8",
-];
 
 const getMinPriceDisplay = (price: number | null): string => {
     if (price === null || price === 0) return 'Grátis';
@@ -96,19 +84,11 @@ const Index: React.FC = () => {
     };
 
     return (
-        <> {/* Removed fixed header from here, now handled by ClientLayout */}
+        <>
             <section id="home" className="pt-0 pb-12 sm:pb-20 px-0 sm:px-0">
-                {/* Contêiner para o Título (mantido centralizado) */}
-                <div className="max-w-7xl mx-auto px-4 sm:px-6">
-                    <div className="text-center mb-10 sm:mb-16">
-                        <h2 className="text-3xl sm:text-5xl font-serif text-yellow-500 mb-4">Eventos em Destaque</h2>
-                        <div className="w-16 sm:w-24 h-px bg-yellow-500 mx-auto"></div>
-                    </div>
-                </div>
-                
                 {/* Carrossel (Largura Total) */}
                 <div className="mb-8">
-                    <RotatingFixedCarousel items={DUMMY_CAROUSEL_ITEMS} />
+                    <FixedCarousel />
                 </div>
             </section>
 
