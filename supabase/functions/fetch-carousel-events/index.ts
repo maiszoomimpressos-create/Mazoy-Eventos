@@ -74,36 +74,30 @@ serve(async (req) => {
       days_until_event_threshold: 30,
     };
 
-    const now = new Date().toISOString().split('T')[0]; // Apenas a data
-
     let allBanners: any[] = [];
 
-    // 2. Buscar banners de eventos do carrossel
+    // 2. Buscar banners de eventos do carrossel (AGORA ALEATÓRIO E SEM FILTRO DE DATA)
     const { data: eventCarouselBanners, error: eventCarouselError } = await supabase
       .from('event_carousel_banners')
       .select(`
         id, event_id, image_url, headline, subheadline, display_order, start_date, end_date,
         events (id, title, description, category, location, date, time, latitude, longitude)
       `)
-      .lte('start_date', now)
-      .gte('end_date', now)
-      .order('display_order', { ascending: true });
+      .order('display_order', { ascending: true })
+      .order('created_at', { ascending: false }); // Ordem secundária para estabilidade
 
     if (eventCarouselError) {
         console.error("[ERROR] Failed to fetch event carousel banners:", eventCarouselError);
-        // Se houver um erro de RLS aqui, ele pode estar relacionado ao JOIN com 'events'
-        // Mas a política 'Public read access to active event carousel banners' deve cobrir isso.
     }
 
-    // 3. Buscar banners promocionais
+    // 3. Buscar banners promocionais (AGORA ALEATÓRIO E SEM FILTRO DE DATA)
     const { data: promotionalBanners, error: promoBannersError } = await supabase
       .from('promotional_banners')
       .select(`
         id, image_url, headline, subheadline, display_order, start_date, end_date, link_url
       `)
-      .lte('start_date', now)
-      .gte('end_date', now)
-      .order('display_order', { ascending: true });
+      .order('display_order', { ascending: true })
+      .order('created_at', { ascending: false }); // Ordem secundária para estabilidade
 
     if (promoBannersError) console.error("[ERROR] Failed to fetch promotional banners:", promoBannersError);
 
@@ -167,6 +161,7 @@ serve(async (req) => {
     // Se não houver banners reais, usa os dados de exemplo
     if (allBanners.length === 0) {
         console.log("[DEBUG] No real banners found. Using dummy data for carousel.");
+        const now = new Date().toISOString().split('T')[0];
         allBanners = DUMMY_CAROUSEL_BANNERS.map(banner => ({
             ...banner,
             start_date: now,
@@ -174,8 +169,15 @@ serve(async (req) => {
         }));
     }
 
-    // 5. Ordenar e limitar os banners
-    allBanners.sort((a, b) => a.display_order - b.display_order);
+    // 5. Implementar ordenação aleatória (random shuffle no Deno)
+    // Nota: Para garantir que o limite seja aplicado após a seleção aleatória,
+    // fazemos o shuffle aqui no código da Edge Function.
+    for (let i = allBanners.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [allBanners[i], allBanners[j]] = [allBanners[j], allBanners[i]];
+    }
+
+    // 6. Limitar os banners
     allBanners = allBanners.slice(0, carouselSettings.max_banners_display);
 
     return new Response(JSON.stringify({ banners: allBanners }), {
