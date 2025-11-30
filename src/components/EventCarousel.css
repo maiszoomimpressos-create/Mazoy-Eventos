@@ -18,9 +18,6 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  
-  /* Adiciona transição para suavizar o efeito de escala/posição */
-  transition: transform 0.5s ease, opacity 0.5s ease;
 }
 
 /* Ajuste para telas menores: usa 90% da largura da viewport, mantendo a proporção 6:4 */
@@ -83,28 +80,3 @@
 .event-carousel-perspective .swiper-pagination {
     bottom: 100px !important; /* Move a paginação para cima, sobre o slide */
 }
-
-/* NOVO: Estilos para slides adjacentes (próximo e anterior) */
-/* O Swiper aplica transformações inline. Precisamos sobrescrever ou complementar. */
-/* Usamos o seletor de atributo para garantir que a transformação seja aplicada */
-.event-carousel-perspective .swiper-slide:not(.swiper-slide-active) {
-    /* Reduz a escala para simular profundidade e borda inferior reduzida */
-    transform: scale(0.85) !important; 
-    
-    /* Centraliza verticalmente (ajusta a translação vertical) */
-    /* O Swiper já aplica a translação X. Adicionamos a translação Y para centralizar. */
-    /* O valor de -5% é um ajuste visual para centralizar o slide reduzido */
-    transform: translate3d(var(--swiper-translate-x), -5%, var(--swiper-translate-z)) scale(0.85) !important;
-    
-    /* Reduz a opacidade para dar mais destaque ao slide central */
-    opacity: 0.6;
-}
-
-/* Garante que o slide ativo tenha escala normal e esteja centralizado */
-.event-carousel-perspective .swiper-slide-active {
-    transform: scale(1) !important;
-    opacity: 1;
-}
-
-/* Ajuste específico para os slides adjacentes (next e prev) para garantir que a translação X seja mantida */
-/* Nota: O Swiper Coverflow já lida com a translação X. O CSS acima deve ser suficiente. */
