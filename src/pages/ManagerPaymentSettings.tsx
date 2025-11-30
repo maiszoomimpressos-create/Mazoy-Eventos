@@ -1,3 +1,4 @@
+bg-black).">
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -137,7 +138,7 @@ const ManagerPaymentSettings: React.FC = () => {
                 </Button>
             </div>
 
-            <Card className="bg-black/90 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
+            <Card className="bg-black border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
                 <CardHeader>
                     <CardTitle className="text-white text-xl sm:text-2xl font-semibold">Integração de Gateway</CardTitle>
                     <CardDescription className="text-gray-400 text-sm">

@@ -1,3 +1,4 @@
+bg-black).">
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -206,7 +207,7 @@ const ManagerCompanyRegister: React.FC = () => {
                     <h1 className="text-xl sm:text-2xl font-semibold text-white mb-2">Cadastro de Gestor (Pessoa Jurídica)</h1>
                     <p className="text-gray-400 text-sm sm:text-base">Preencha os dados da sua empresa para se tornar um gestor.</p>
                 </div>
-                <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-yellow-500/10">
+                <Card className="bg-black border border-yellow-500/30 rounded-2xl p-6 sm:p-8 shadow-2xl shadow-yellow-500/10">
                     <CardHeader>
                         <CardTitle className="text-white text-xl sm:text-2xl font-semibold flex items-center">
                             <Building className="h-6 w-6 mr-2 text-yellow-500" />

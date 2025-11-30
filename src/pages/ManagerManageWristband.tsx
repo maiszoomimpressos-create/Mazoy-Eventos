@@ -1,3 +1,4 @@
+bg-black).">
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -326,7 +327,7 @@ const ManagerManageWristband: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Coluna de Detalhes e Status (CONSOLIDADA) */}
                 <div className="lg:col-span-1 space-y-6">
-                    <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
+                    <Card className="bg-black border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
                         <CardTitle className="text-white text-xl mb-4 flex items-center">
                             <Tag className="h-5 w-5 mr-2 text-yellow-500" />
                             Informações e Status
@@ -411,7 +412,7 @@ const ManagerManageWristband: React.FC = () => {
                                     className="flex-1 bg-yellow-500 text-black hover:bg-yellow-600 py-2 text-base font-semibold transition-all duration-300 cursor-pointer disabled:opacity-50 h-10"
                                 >
                                     {isUpdatingStatus ? (
-                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
                                     ) : (
                                         <>
                                             <Save className="w-4 h-4 mr-2" />
@@ -435,7 +436,7 @@ const ManagerManageWristband: React.FC = () => {
 
                 {/* Coluna de Histórico de Analytics (Grid/Tabela) */}
                 <div className="lg:col-span-2">
-                    <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
+                    <Card className="bg-black border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
                         <CardTitle className="text-white text-xl mb-4 flex items-center">
                             <Clock className="h-5 w-5 mr-2 text-yellow-500" />
                             Histórico de Uso (Analytics)

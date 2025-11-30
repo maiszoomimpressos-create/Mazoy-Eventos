@@ -1,3 +1,4 @@
+bg-black).">
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -183,7 +184,7 @@ const ManagerNotifications: React.FC = () => {
                 </div>
             </div>
 
-            <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
+            <Card className="bg-black border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
                 <CardHeader>
                     <CardTitle className="text-white text-xl sm:text-2xl font-semibold">Preferências de Alerta</CardTitle>
                     <CardDescription className="text-gray-400 text-sm">
@@ -200,7 +201,7 @@ const ManagerNotifications: React.FC = () => {
                                 <div>
                                     <h3 className="font-semibold text-white mb-1">E-mail da Empresa Ausente</h3>
                                     <p className="text-sm text-gray-300">
-                                        Para receber notificações por e-mail, cadastre o E-mail da Empresa.
+                                        Para receber notificações por e-mail, cadastre o E-mail da Empresa no Perfil da Empresa.
                                     </p>
                                 </div>
                             </div>

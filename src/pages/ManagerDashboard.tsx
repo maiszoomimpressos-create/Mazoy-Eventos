@@ -1,3 +1,4 @@
+bg-black).">
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ const ManagerDashboard: React.FC = () => {
 
             {/* Cartões de Estatísticas */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div className="bg-black/90 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6 hover:border-yellow-500/60 transition-all duration-300">
+                <div className="bg-black border border-yellow-500/30 rounded-2xl p-6 hover:border-yellow-500/60 transition-all duration-300">
                     <div className="flex items-center justify-between mb-4">
                         <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
                             <i className="fas fa-chart-line text-green-500 text-lg sm:text-xl"></i>
@@ -33,7 +34,7 @@ const ManagerDashboard: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="bg-black/90 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6 hover:border-yellow-500/60 transition-all duration-300">
+                <div className="bg-black border border-yellow-500/30 rounded-2xl p-6 hover:border-yellow-500/60 transition-all duration-300">
                     <div className="flex items-center justify-between mb-4">
                         <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
                             <i className="fas fa-ticket-alt text-blue-500 text-lg sm:text-xl"></i>
@@ -49,7 +50,7 @@ const ManagerDashboard: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="bg-black/90 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6 hover:border-yellow-500/60 transition-all duration-300">
+                <div className="bg-black border border-yellow-500/30 rounded-2xl p-6 hover:border-yellow-500/60 transition-all duration-300">
                     <div className="flex items-center justify-between mb-4">
                         <div className="w-10 h-10 sm:w-12 sm:h-12 bg-yellow-500/20 rounded-xl flex items-center justify-center">
                             <i className="fas fa-calendar-check text-yellow-500 text-lg sm:text-xl"></i>
@@ -65,7 +66,7 @@ const ManagerDashboard: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="bg-black/90 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6 hover:border-yellow-500/60 transition-all duration-300">
+                <div className="bg-black border border-yellow-500/30 rounded-2xl p-6 hover:border-yellow-500/60 transition-all duration-300">
                     <div className="flex items-center justify-between mb-4">
                         <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
                             <i className="fas fa-users text-purple-500 text-lg sm:text-xl"></i>
@@ -84,7 +85,7 @@ const ManagerDashboard: React.FC = () => {
 
             {/* Gráficos e Top Eventos */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                <div className="bg-black/90 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6">
+                <div className="bg-black border border-yellow-500/30 rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg sm:text-xl font-semibold text-white">Receita Mensal</h3>
                         <div className="flex items-center space-x-4">
@@ -103,7 +104,7 @@ const ManagerDashboard: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="bg-black/90 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6">
+                <div className="bg-black border border-yellow-500/30 rounded-2xl p-6">
                     <h3 className="text-lg sm:text-xl font-semibold text-white mb-6">Eventos Mais Vendidos</h3>
                     <div className="space-y-4">
                         {managerStats.topEvents.map((event, index) => (
@@ -132,7 +133,7 @@ const ManagerDashboard: React.FC = () => {
 
             {/* Vendas Recentes e Ações Rápidas */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-black/90 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6">
+                <div className="lg:col-span-2 bg-black border border-yellow-500/30 rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-lg sm:text-xl font-semibold text-white">Vendas Recentes</h3>
                         <Button className="bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30 text-xs sm:text-sm cursor-pointer px-3 py-1">
@@ -180,7 +181,7 @@ const ManagerDashboard: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="bg-black/90 backdrop-blur-sm border border-yellow-500/30 rounded-2xl p-6">
+                <div className="bg-black border border-yellow-500/30 rounded-2xl p-6">
                     <h3 className="text-lg sm:text-xl font-semibold text-white mb-6">Ações Rápidas</h3>
                     
                     {/* Menu Suspenso de Ações Rápidas */}

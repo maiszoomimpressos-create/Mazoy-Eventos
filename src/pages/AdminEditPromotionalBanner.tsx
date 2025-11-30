@@ -1,3 +1,4 @@
+bg-black).">
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -176,7 +177,7 @@ const AdminEditPromotionalBanner: React.FC = () => {
                 </Button>
             </div>
 
-            <Card className="bg-black/90 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
+            <Card className="bg-black border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
                 <CardHeader>
                     <CardTitle className="text-white text-xl sm:text-2xl font-semibold">Detalhes do Banner</CardTitle>
                     <CardDescription className="text-gray-400 text-sm">

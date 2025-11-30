@@ -1,3 +1,4 @@
+bg-black).">
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -100,7 +101,7 @@ const ManagerWristbandsList: React.FC = () => {
                 </Button>
             </div>
 
-            <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
+            <Card className="bg-black border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
                 {/* Botão movido para o topo do card, antes do campo de pesquisa */}
                 <Button 
                     onClick={() => navigate('/manager/wristbands/create')}
