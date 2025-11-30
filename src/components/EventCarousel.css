@@ -18,6 +18,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  
+  /* Adiciona transição para o transform, para suavizar o movimento */
+  transition: transform 0.3s ease, opacity 0.3s ease; 
 }
 
 /* Ajuste para telas menores: usa 90% da largura da viewport, mantendo a proporção 6:4 */
@@ -77,6 +80,6 @@
 }
 
 /* Ajuste para a posição da paginação */
-.event-carousel-perspective .swiper-pagination {
+.swiper-pagination {
     bottom: 100px !important; /* Move a paginação para cima, sobre o slide */
 }

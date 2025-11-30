@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination, EffectCoverflow, Autoplay } from 'swiper/modules';
+import { Pagination, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
-import 'swiper/css/effect-coverflow';
 import './EventCarousel.css';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -67,6 +66,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
     const [isLoadingBanners, setIsLoadingBanners] = useState(true);
     const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
     const [activeIndex, setActiveIndex] = useState(0);
+    const swiperRef = useRef<any>(null); // Ref to store Swiper instance
 
     // Busca as configurações do carrossel
     const { data: settings, isLoading: isLoadingSettings } = useQuery({
@@ -173,6 +173,32 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
         }
     }, [userId, userLocation, settings, isLoadingSettings]);
 
+    // Custom effect logic for staircase effect
+    const applyStaircaseEffect = (swiper: any) => {
+        const slides = swiper.slides;
+        
+        // Define o deslocamento vertical máximo em pixels
+        const maxOffset = 50; 
+        
+        slides.forEach((slide: HTMLElement) => {
+            const progress = slide.progress;
+            
+            // Calcula a distância absoluta do centro (0 é centro)
+            const distance = Math.abs(progress);
+            
+            // O deslocamento aumenta linearmente com a distância
+            const offset = distance * maxOffset;
+            
+            // Aplica translateY para empurrar o slide para baixo
+            slide.style.transform = `translateY(${offset}px) scale(1)`;
+            
+            // Aplica opacidade e zIndex para profundidade
+            slide.style.opacity = `${1 - distance * 0.3}`; 
+            slide.style.zIndex = `${100 - Math.floor(distance * 10)}`; 
+        });
+    };
+
+
     if (isLoadingSettings || isLoadingBanners) {
         return (
             <div className="w-full h-[400px] md:h-[500px] lg:h-[600px] bg-black/60 flex items-center justify-center rounded-2xl">
@@ -198,6 +224,11 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
     return (
         <div className="relative w-full h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
             <Swiper
+                onSwiper={(swiper) => {
+                    swiperRef.current = swiper;
+                    applyStaircaseEffect(swiper); // Aplica o efeito inicial
+                }}
+                onProgress={applyStaircaseEffect} // Aplica o efeito durante o scroll
                 onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
                 slidesPerView={'auto'}
                 centeredSlides={true}
@@ -209,16 +240,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 }}
                 autoplay={false} // Mantendo o autoplay desativado
                 navigation={false}
-                effect={'coverflow'} 
-                grabCursor={true}
-                coverflowEffect={{
-                    rotate: 0, // Rotação zerada para manter os slides mais planos
-                    stretch: 500, // Aumenta o alongamento para afastar os slides e mostrar mais laterais
-                    depth: 100, // Profundidade reduzida
-                    modifier: 1, 
-                    slideShadows: false, 
-                }}
-                modules={[Pagination, EffectCoverflow, Autoplay]}
+                modules={[Pagination, Autoplay]}
                 className="mySwiper w-full h-full event-carousel-perspective"
             >
                 {banners.map((banner, index) => (
