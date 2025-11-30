@@ -102,18 +102,6 @@ const Index: React.FC = () => {
 
             <section id="eventos" className="pt-20 pb-12 sm:pb-20 px-4 sm:px-6">
                 <div className="max-w-7xl mx-auto">
-                    {/* NOVO: Botão de Teste para a página /carousel */}
-                    <div className="mb-8 text-center">
-                        <Button 
-                            onClick={() => navigate('/carousel')}
-                            variant="outline"
-                            className="bg-black/60 border border-blue-500/30 text-blue-400 hover:bg-blue-500/10 text-sm"
-                        >
-                            Ver Página /carousel (Teste)
-                        </Button>
-                    </div>
-                    {/* FIM NOVO BOTÃO */}
-                    
                     <div className="text-center mb-10 sm:mb-16">
                         <h2 className="text-3xl sm:text-5xl font-serif text-yellow-500 mb-4">Lista de Eventos</h2>
                         <div className="w-16 sm:w-24 h-px bg-yellow-500 mx-auto"></div>

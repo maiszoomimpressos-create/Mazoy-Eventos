@@ -36,9 +36,8 @@ import ManagerIndividualProfile from "./pages/ManagerIndividualProfile";
 import ManagerCompanyRegister from "./pages/ManagerCompanyRegister"; 
 import AdminCarouselSettings from "./pages/AdminCarouselSettings"; 
 import AdminCreatePromotionalBanner from "./pages/AdminCreatePromotionalBanner"; 
-import AdminPromotionalBannersList from "./pages/AdminPromotionalBannersList"; 
-import AdminEditPromotionalBanner from "./pages/AdminEditPromotionalBanner"; 
-import CarouselPage from "./pages/CarouselPage"; 
+import AdminPromotionalBannersList from "./pages/AdminPromotionalBannersList"; // NOVO: Importação
+import AdminEditPromotionalBanner from "./pages/AdminEditPromotionalBanner"; // NOVO: Importação
 
 const queryClient = new QueryClient();
 
@@ -59,7 +58,6 @@ const App = () => (
             <Route path="profile" element={<Profile />} />
             <Route path="tickets" element={<MyTickets />} />
             <Route path="finalizar-compra" element={<FinalizarCompra />} />
-            <Route path="carousel" element={<CarouselPage />} /> 
           </Route>
           
           {/* Manager Login (outside layout for specific styling) */}
@@ -92,9 +90,9 @@ const App = () => (
             <Route element={<ManagerLayout />}>
                 <Route path="/admin/dashboard" element={<AdminDashboard />} />
                 <Route path="/admin/settings/carousel" element={<AdminCarouselSettings />} />
-                <Route path="/admin/banners" element={<AdminPromotionalBannersList />} /> 
+                <Route path="/admin/banners" element={<AdminPromotionalBannersList />} /> {/* NOVO: Lista de Banners */}
                 <Route path="/admin/banners/create" element={<AdminCreatePromotionalBanner />} />
-                <Route path="/admin/banners/edit/:id" element={<AdminEditPromotionalBanner />} /> 
+                <Route path="/admin/banners/edit/:id" element={<AdminEditPromotionalBanner />} /> {/* NOVO: Edição de Banners */}
                 <Route path="/manager/settings/advanced" element={<ManagerAdvancedSettings />} />
             </Route>
           </Route>

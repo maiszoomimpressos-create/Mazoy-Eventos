@@ -195,8 +195,9 @@ const AdminEditPromotionalBanner: React.FC = () => {
                                         userId={userId}
                                         currentImageUrl={form.watch('image_url')}
                                         onImageUpload={handleImageUpload}
-                                        heightClass="h-64" // Usando classe de altura
-                                        placeholderText="Clique para enviar ou arraste e solte uma imagem (Recomendado: 600x400px)"
+                                        width={600}
+                                        height={400}
+                                        placeholderText="Clique para enviar ou arraste e solte uma imagem (600px de largura por 400px de altura)"
                                         bucketName="promotional-banners"
                                         folderPath="banners"
                                         maxFileSizeMB={5}

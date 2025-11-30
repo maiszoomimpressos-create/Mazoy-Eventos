@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination, EffectCreative, Autoplay, Navigation } from 'swiper/modules'; // Adicionado Navigation
+import { Pagination, EffectCoverflow, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
-import 'swiper/css/effect-creative'; 
+import 'swiper/css/effect-coverflow';
 import './EventCarousel.css';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -196,34 +196,29 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
     const activeBanner = banners[activeIndex];
 
     return (
-        <div className="relative w-full h-[400px] md:h-[500px] lg:h-[600px] overflow-hidden">
+        <div className="relative w-full h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
             <Swiper
                 onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
-                slidesPerView={1} // Apenas um slide visível por vez
-                centeredSlides={false} // Não centraliza, usa largura total
-                spaceBetween={0} // Sem espaço entre slides
-                initialSlide={0} // Começa no primeiro slide
-                loop={true}
+                slidesPerView={'auto'}
+                centeredSlides={true}
+                spaceBetween={0} // Slides se tocam
+                initialSlide={banners.length >= 4 ? 3 : 0} // Inicia no Banner 4 (índice 3)
+                loop={true} // Ativa o loop para rotação contínua
                 pagination={{
                     clickable: true,
                 }}
-                autoplay={{
-                    delay: settings?.rotation_time_seconds * 1000 || 5000,
-                    disableOnInteraction: false,
-                }}
-                navigation={true}
-                effect={'creative'} 
-                creativeEffect={{
-                    prev: {
-                        shadow: true,
-                        translate: ['-100%', 0, -1], // Move para a esquerda, sem profundidade
-                    },
-                    next: {
-                        translate: ['100%', 0, -1], // Move para a direita, sem profundidade
-                    },
-                }}
+                autoplay={false} // Mantendo o autoplay desativado
+                navigation={false}
+                effect={'coverflow'} 
                 grabCursor={true}
-                modules={[Pagination, EffectCreative, Autoplay, Navigation]} 
+                coverflowEffect={{
+                    rotate: 0, // Rotação zerada para manter os slides mais planos
+                    stretch: 500, // Aumenta o alongamento para afastar os slides e mostrar mais laterais
+                    depth: 100, // Profundidade reduzida
+                    modifier: 1, 
+                    slideShadows: false, 
+                }}
+                modules={[Pagination, EffectCoverflow, Autoplay]}
                 className="mySwiper w-full h-full event-carousel-perspective"
             >
                 {banners.map((banner, index) => (
@@ -231,10 +226,11 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                         {({ isActive }) => (
                             <div 
                                 className={cn(
-                                    "relative w-full h-full rounded-2xl transition-all duration-500",
+                                    "relative w-full h-full rounded-2xl overflow-hidden transition-all duration-500",
+                                    // Aplica sombra amarela sutil nos slides adjacentes
                                     isActive 
-                                        ? "shadow-2xl shadow-yellow-500/30 border-2 border-yellow-500/50 scale-100" 
-                                        : "shadow-xl shadow-yellow-500/10 border border-yellow-500/20 opacity-70"
+                                        ? "shadow-2xl shadow-yellow-500/30 border-2 border-yellow-500/50" 
+                                        : "shadow-xl shadow-yellow-500/10 border border-yellow-500/20"
                                 )}
                                 onClick={() => navigate(banner.event_id ? `/events/${banner.event_id}` : banner.link_url || '/')}
                             >
@@ -246,20 +242,6 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                                 {/* Overlay escuro com gradiente */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/40"></div>
                                 
-                                {/* Numeração do Banner - Canto Superior Esquerdo */}
-                                {isActive && (
-                                    <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm font-semibold border border-yellow-500/50">
-                                        {index + 1} / {banners.length}
-                                    </div>
-                                )}
-                                
-                                {/* Numeração do Banner - Canto Superior Direito */}
-                                {isActive && (
-                                    <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm font-semibold border border-yellow-500/50">
-                                        {index + 1} / {banners.length}
-                                    </div>
-                                )}
-
                                 <div className="absolute inset-0 flex items-end pb-10 pt-20">
                                     <div className="px-6 w-full">
                                         <div className="max-w-full">
