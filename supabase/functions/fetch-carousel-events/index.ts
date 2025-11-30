@@ -23,7 +23,7 @@ const DUMMY_CAROUSEL_BANNERS = [
     type: "promotional",
     headline: "Torne-se um Gestor PRO!",
     subheadline: "Crie e gerencie seus eventos com ferramentas avançadas.",
-    image_url: "https://readdy.ai/api/search-image?query=premium%20concert%20hall%20with%20golden%20stage%20lighting%20and%20black%20elegant%20seating%2C%20luxury%20entertainment%20venue%20with%20sophisticated%20ambiance%20and%20dramatic%20illumination&width=1200&height=400&seq=banner2&orientation=landscape",
+    image_url: "https://readdy.ai/api/search-image?query=premium%20concert%20hall%20with%20golden%20stage%20lighting%20and%20black%20elegant%20seating%20C%20luxury%20entertainment%20venue%20with%20sophisticated%20ambiance%20and%20dramatic%20illumination&width=1200&height=400&seq=banner2&orientation=landscape",
     link_url: "/manager/register",
     display_order: 2,
   },
@@ -46,14 +46,14 @@ serve(async (req) => {
   try {
     let body: { user_id?: string, user_latitude?: number, user_longitude?: number } = {};
     
-    // Tenta ler o corpo da requisição de forma segura
-    if (req.headers.get('content-type')?.includes('application/json')) {
-        try {
+    // Tenta ler o corpo da requisição de forma mais robusta
+    try {
+        const contentType = req.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
             body = await req.json();
-        } catch (e) {
-            // Ignora erro de corpo vazio ou malformado, tratando como se não houvesse payload
-            console.log("[DEBUG] Request body was empty or malformed.");
         }
+    } catch (e) {
+        console.log("[DEBUG] Failed to parse request body as JSON. Proceeding with empty body.", e);
     }
     
     const { user_id, user_latitude, user_longitude } = body;
@@ -67,7 +67,7 @@ serve(async (req) => {
 
     if (settingsError && settingsError.code !== 'PGRST116') { // PGRST116 = No rows found
       console.error("[ERROR] Failed to fetch carousel settings:", settingsError);
-      throw settingsError;
+      // Não lançamos erro aqui, apenas usamos defaults
     }
 
     const carouselSettings = settings || {
@@ -96,8 +96,6 @@ serve(async (req) => {
 
     if (eventCarouselError) {
         console.error("[ERROR] Failed to fetch event carousel banners:", eventCarouselError);
-        // Se houver um erro de RLS aqui, ele pode estar relacionado ao JOIN com 'events'
-        // Mas a política 'Public read access to active event carousel banners' deve cobrir isso.
     }
 
     // 3. Buscar banners promocionais
