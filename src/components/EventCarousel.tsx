@@ -225,8 +225,11 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                         {({ isActive }) => (
                             <div 
                                 className={cn(
-                                    "relative w-full h-full rounded-2xl overflow-hidden shadow-2xl transition-all duration-500",
-                                    isActive ? "shadow-yellow-500/30" : "shadow-none"
+                                    "relative w-full h-full rounded-2xl overflow-hidden transition-all duration-500",
+                                    // Aplica sombra amarela sutil nos slides adjacentes
+                                    isActive 
+                                        ? "shadow-2xl shadow-yellow-500/30 border-2 border-yellow-500/50" 
+                                        : "shadow-xl shadow-yellow-500/10 border border-yellow-500/20"
                                 )}
                                 onClick={() => navigate(banner.event_id ? `/events/${banner.event_id}` : banner.link_url || '/')}
                             >
