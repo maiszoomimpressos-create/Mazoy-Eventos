@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination, Autoplay, EffectCoverflow } from 'swiper/modules'; // Importando EffectCoverflow
+import { Pagination, EffectCoverflow, Autoplay } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
-import 'swiper/css/effect-coverflow'; // Importando o CSS do efeito
+import 'swiper/css/effect-coverflow';
 import './EventCarousel.css';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -67,7 +67,6 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
     const [isLoadingBanners, setIsLoadingBanners] = useState(true);
     const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
     const [activeIndex, setActiveIndex] = useState(0);
-    const swiperRef = useRef<any>(null); // Ref to store Swiper instance
 
     // Busca as configurações do carrossel
     const { data: settings, isLoading: isLoadingSettings } = useQuery({
@@ -174,8 +173,6 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
         }
     }, [userId, userLocation, settings, isLoadingSettings]);
 
-    // Removendo a função applyStaircaseEffect customizada, pois usaremos EffectCoverflow
-
     if (isLoadingSettings || isLoadingBanners) {
         return (
             <div className="w-full h-[400px] md:h-[500px] lg:h-[600px] bg-black/60 flex items-center justify-center rounded-2xl">
@@ -201,32 +198,27 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
     return (
         <div className="relative w-full h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
             <Swiper
-                onSwiper={(swiper) => {
-                    swiperRef.current = swiper;
-                }}
                 onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
                 slidesPerView={'auto'}
                 centeredSlides={true}
-                spaceBetween={0}
-                initialSlide={banners.length >= 4 ? 3 : 0}
-                loop={true}
+                spaceBetween={0} // Slides se tocam
+                initialSlide={banners.length >= 4 ? 3 : 0} // Inicia no Banner 4 (índice 3)
+                loop={true} // Ativa o loop para rotação contínua
                 pagination={{
                     clickable: true,
                 }}
-                autoplay={false}
+                autoplay={false} // Mantendo o autoplay desativado
                 navigation={false}
-                
-                // Configuração do EffectCoverflow para criar o efeito de escadinha vertical
-                effect={'coverflow'}
+                effect={'coverflow'} 
                 grabCursor={true}
-                modules={[Pagination, Autoplay, EffectCoverflow]}
                 coverflowEffect={{
-                    rotate: 0, // Sem rotação horizontal
-                    stretch: 0, // Sem estiramento
-                    depth: 100, // Profundidade (para o efeito 3D)
-                    modifier: 1,
-                    slideShadows: false,
+                    rotate: 0, // Rotação zerada para manter os slides mais planos
+                    stretch: 500, // Aumenta o alongamento para afastar os slides e mostrar mais laterais
+                    depth: 100, // Profundidade reduzida
+                    modifier: 1, 
+                    slideShadows: false, 
                 }}
+                modules={[Pagination, EffectCoverflow, Autoplay]}
                 className="mySwiper w-full h-full event-carousel-perspective"
             >
                 {banners.map((banner, index) => (
