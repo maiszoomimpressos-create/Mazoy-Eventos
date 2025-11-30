@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { trackAdvancedFilterUse } from '@/utils/metrics';
 import { usePublicEvents, PublicEvent } from '@/hooks/use-public-events';
 import { Loader2 } from 'lucide-react';
-import EventCarousel from '@/components/EventCarousel'; // Importado o EventCarousel
+import FixedCenterCarousel from '@/components/FixedCenterCarousel'; // Importado o novo carrossel
 
 const EVENTS_PER_PAGE = 12;
 
@@ -96,7 +96,7 @@ const Index: React.FC = () => {
                 
                 {/* Carrossel (Largura Total) */}
                 <div className="mb-8">
-                    <EventCarousel userId={userId} />
+                    <FixedCenterCarousel />
                 </div>
             </section>
 
