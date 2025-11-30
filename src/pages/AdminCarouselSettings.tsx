@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/use-profile';
 
 interface CarouselSettingsState {
+    id?: string; // Adicionando ID opcional para rastrear o registro existente
     rotation_time_seconds: number;
     max_banners_display: number;
     regional_distance_km: number;
@@ -63,6 +64,7 @@ const AdminCarouselSettings: React.FC = () => {
                 setSettings(defaultSettings); // Fallback to defaults on error
             } else if (data) {
                 setSettings({
+                    id: data.id, // Captura o ID existente (UUID)
                     rotation_time_seconds: data.rotation_time_seconds,
                     max_banners_display: data.max_banners_display,
                     regional_distance_km: data.regional_distance_km,
@@ -73,8 +75,7 @@ const AdminCarouselSettings: React.FC = () => {
             } else {
                 // Se não houver configurações, usa os defaults e insere
                 setSettings(defaultSettings);
-                // Inserir os defaults no DB para que o admin possa editá-los
-                await supabase.from('carousel_settings').insert([defaultSettings]);
+                // Não insere aqui, pois o upsert no handleSave fará isso se o ID for undefined
             }
             setIsLoading(false);
         };
@@ -116,18 +117,21 @@ const AdminCarouselSettings: React.FC = () => {
         const toastId = showLoading("Salvando configurações do carrossel...");
 
         try {
-            // Usamos o ID 1 como chave de conflito para garantir que haja apenas um registro
+            const dataToSave = { 
+                ...settings, 
+                updated_by: userId, 
+                updated_at: new Date().toISOString() 
+            };
+            
+            // Remove o ID se for uma nova inserção (ID não definido)
+            if (!settings.id) {
+                delete dataToSave.id;
+            }
+
+            // Se o ID existir, usamos o upsert com onConflict: 'id'
             const { error } = await supabase
                 .from('carousel_settings')
-                .upsert(
-                    { 
-                        ...settings, 
-                        id: 1, // Força o ID 1 para o upsert
-                        updated_by: userId, 
-                        updated_at: new Date().toISOString() 
-                    },
-                    { onConflict: 'id' } 
-                );
+                .upsert(dataToSave, { onConflict: 'id' }); 
 
             if (error) {
                 throw error;
