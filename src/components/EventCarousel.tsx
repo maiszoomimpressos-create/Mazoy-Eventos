@@ -251,9 +251,13 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                     
                     return (
                         <div 
-                            key={banner.id + i} // Use index i for key stability in the behind layers
+                            key={banner.id + i} 
                             className={className} 
-                            style={{ backgroundImage: `url(${banner.image_url})` }}
+                            style={{ 
+                                backgroundImage: `url(${banner.image_url})`,
+                                // Adicionando um fundo de fallback caso a imagem falhe
+                                backgroundColor: '#111', 
+                            }}
                         >
                         </div>
                     );
@@ -268,7 +272,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 <img 
                     src={activeBanner.image_url} 
                     alt={activeBanner.headline} 
-                    style={{ opacity: isTransitioning ? 0 : 1 }} // Opacity transition
+                    style={{ opacity: isTransitioning ? 0 : 1 }} 
                 />
                 
                 {/* Conteúdo do Banner */}

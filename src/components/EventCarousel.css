@@ -28,7 +28,7 @@
   object-fit: cover;
   position: absolute;
   top:0; left:0;
-  transition: .3s ease; /* Reduced to 0.3s for React state transition */
+  transition: .3s ease; 
 }
 
 .card-content{
@@ -50,7 +50,7 @@
   margin-bottom:14px;
 }
 
-.btn-custom{ /* Renamed to avoid conflict with shadcn Button */
+.btn-custom{ 
   background:#FFC400;
   padding:10px 16px;
   color:#000;
@@ -76,11 +76,15 @@
   border-radius:15px;
   background-size:cover;
   background-position:center;
-  opacity:.3;
+  opacity:.3; /* Mantendo a opacidade baixa */
   filter:blur(2px);
-  transition: .6s ease; /* Keep transition for movement */
+  transition: .6s ease; 
+  /* Adicionando um fundo preto semi-transparente para garantir que a imagem seja visível */
+  background-color: rgba(0, 0, 0, 0.5); 
+  box-shadow: 0 0 15px rgba(255,200,0,.2); /* Adicionando sombra sutil */
 }
 
+/* As transformações de posição e escala para o efeito de escadinha */
 .b1{ transform:scale(.92) translate(-310px,25px);}
 .b2{ transform:scale(.86) translate(-220px,55px);}
 .b3{ transform:scale(.80) translate(-135px,85px);}
