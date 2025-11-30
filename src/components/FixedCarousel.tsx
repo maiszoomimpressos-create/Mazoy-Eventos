@@ -220,15 +220,6 @@ const FixedCarousel: React.FC = () => {
                 >
                     <i className="fas fa-chevron-right text-white text-2xl"></i>
                 </button>
-                {/* Title and description overlay */}
-                <div className="absolute bottom-10 left-12 z-30 text-white max-w-lg">
-                    <h2 className="text-4xl font-bold mb-4 text-shadow-xl text-yellow-400">
-                        Carrossel Premium 3D
-                    </h2>
-                    <p className="text-lg opacity-95 leading-relaxed text-shadow-lg">
-                        Navegue pela nossa coleção exclusiva com efeito de profundidade 3D. Banners em escadinha criam uma experiência visual imersiva e elegante.
-                    </p>
-                </div>
                 {/* Progress indicator */}
                 <div className="absolute top-10 right-12 z-30 bg-black/40 backdrop-blur-lg rounded-2xl px-6 py-3 border-2 border-yellow-400/30 shadow-2xl">
                     <span className="text-yellow-400 text-2xl font-bold">{String(currentIndex + 1).padStart(2, '0')}</span>
