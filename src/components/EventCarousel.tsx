@@ -200,7 +200,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 pagination={{
                     clickable: true,
                 }}
-                navigation={false} // Removendo navegação (setas)
+                navigation={false} // Mantendo navegação desativada
                 effect={'coverflow'} 
                 grabCursor={true}
                 coverflowEffect={{
@@ -210,10 +210,10 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                     modifier: 1, 
                     slideShadows: true, 
                 }}
-                modules={[Pagination, EffectCoverflow]} // Removendo Navigation
+                modules={[Pagination, EffectCoverflow]}
                 className="mySwiper w-full h-full event-carousel-perspective"
             >
-                {banners.map((banner) => (
+                {banners.map((banner, index) => (
                     <SwiperSlide key={banner.id} className="event-slide-item">
                         {({ isActive }) => (
                             <div 
@@ -231,7 +231,15 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                                 {/* Overlay escuro com gradiente */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/40"></div>
                                 
-                                {/* REMOVIDO: Números de Debug */}
+                                {/* REINTRODUZIDO: Número de Debug - Canto Superior Esquerdo */}
+                                <div className="absolute top-4 left-4 bg-black/70 text-yellow-500 px-3 py-1 rounded-full text-sm font-bold z-10">
+                                    {index + 1}
+                                </div>
+                                
+                                {/* NOVO: Número de Debug - Canto Superior Direito */}
+                                <div className="absolute top-4 right-4 bg-black/70 text-yellow-500 px-3 py-1 rounded-full text-sm font-bold z-10">
+                                    {index + 1}
+                                </div>
                                 
                                 <div className="absolute inset-0 flex items-end pb-10 pt-20">
                                     <div className="px-6 w-full">
