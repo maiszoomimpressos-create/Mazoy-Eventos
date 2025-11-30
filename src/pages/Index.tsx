@@ -87,7 +87,7 @@ const Index: React.FC = () => {
         <>
             <section id="home" className="pt-0 pb-12 sm:pb-20 px-0 sm:px-0">
                 {/* Carrossel (Largura Total) */}
-                <div className="mb-8 h-[calc(100vh-145px)] overflow-hidden rounded-b-3xl border-4 border-white/50">
+                <div className="mb-8 h-[calc(100vh-175px)] overflow-hidden rounded-b-3xl border-4 border-white/50">
                     <FixedCarousel />
                 </div>
             </section>
