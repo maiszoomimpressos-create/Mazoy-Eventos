@@ -1,4 +1,3 @@
-bg-black).">
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -45,9 +44,11 @@ const formatPriceInput = (value: string): string => {
     }
     
     // 3. Limita a 2 casas decimais após a vírgula
-    if (parts.length === 2) {
-        parts[1] = parts[1].substring(0, 2);
-        cleanValue = parts[0] + ',' + parts[1];
+    if (parts.length > 0 && cleanValue.includes(',')) {
+        const decimalPart = cleanValue.split(',')[1];
+        if (decimalPart && decimalPart.length > 2) {
+            cleanValue = cleanValue.split(',')[0] + ',' + decimalPart.substring(0, 2);
+        }
     }
 
     return cleanValue;
