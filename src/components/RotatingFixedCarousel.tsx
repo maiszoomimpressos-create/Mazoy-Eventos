@@ -42,6 +42,16 @@ const getPositionClass = (itemIndex: number, activeIndex: number, totalItems: nu
     return null;
 };
 
+// Define o z-index baseado na posição para garantir a sobreposição correta
+const getZIndex = (positionClass: PositionClass | null): number => {
+    if (positionClass === 'position-center') return 100;
+    if (positionClass?.includes('1')) return 90;
+    if (positionClass?.includes('2')) return 80;
+    if (positionClass?.includes('3')) return 70;
+    return 1;
+};
+
+
 const RotatingFixedCarousel: React.FC<RotatingFixedCarouselProps> = ({ items }) => {
     const [activeIndex, setActiveIndex] = useState(0);
     const totalItems = items.length;
@@ -61,7 +71,6 @@ const RotatingFixedCarousel: React.FC<RotatingFixedCarouselProps> = ({ items }) 
     // Se houver menos de 7 itens, o carrossel não funcionará corretamente com 3 camadas de cada lado.
     // Para simplificar, vamos garantir que haja pelo menos 7 itens para preencher todas as posições.
     if (totalItems < 7) {
-        console.warn("RotatingFixedCarousel requires at least 7 items for the full 3D effect.");
         // Renderiza apenas o item central se não houver itens suficientes
         return (
             <div className="rotating-carousel-container">
@@ -103,8 +112,7 @@ const RotatingFixedCarousel: React.FC<RotatingFixedCarouselProps> = ({ items }) 
                     <div
                         key={index}
                         className={cn("carousel-item", positionClass)}
-                        // Adiciona um z-index dinâmico para garantir que a ordem de sobreposição seja mantida
-                        style={{ zIndex: positionClass === 'position-center' ? 100 : (positionClass.includes('left') ? 90 - (index - activeIndex + totalItems) % totalItems * 10 : 90 - (index - activeIndex) * 10) }}
+                        style={{ zIndex: getZIndex(positionClass) }}
                         onClick={() => {
                             // Se clicar em um item lateral, ele se torna o item central
                             if (index !== activeIndex) {
