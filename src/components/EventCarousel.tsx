@@ -242,6 +242,13 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                                 {/* Overlay escuro com gradiente */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/40"></div>
                                 
+                                {/* NOVO: Numeração do Banner (Apenas no slide ativo) */}
+                                {isActive && (
+                                    <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm font-semibold border border-yellow-500/50">
+                                        {index + 1} / {banners.length}
+                                    </div>
+                                )}
+
                                 <div className="absolute inset-0 flex items-end pb-10 pt-20">
                                     <div className="px-6 w-full">
                                         <div className="max-w-full">
