@@ -199,26 +199,26 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
         <div className="relative w-full h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
             <Swiper
                 onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
-                slidesPerView={'auto'} // Voltando para 'auto'
+                slidesPerView={'auto'}
                 centeredSlides={true}
-                spaceBetween={20} // Espaçamento entre as caixas
-                initialSlide={banners.length >= 4 ? 3 : 0} // Inicia no Banner 4 (índice 3)
-                loop={true} // Ativa o loop para rotação contínua
+                spaceBetween={20}
+                initialSlide={banners.length >= 4 ? 3 : 0}
+                loop={true}
                 pagination={{
                     clickable: true,
                 }}
                 autoplay={false} 
-                navigation={true} // Ativa a navegação por setas
-                effect={'coverflow'} // Voltando para coverflow
+                navigation={true}
+                effect={'coverflow'}
                 coverflowEffect={{
-                    rotate: 50,
+                    rotate: 10, // Reduz a rotação para ser mais sutil
                     stretch: 0,
                     depth: 100,
                     modifier: 1,
                     slideShadows: true,
                 }}
                 grabCursor={true}
-                modules={[Pagination, EffectCoverflow, Autoplay]} // Voltando EffectCoverflow
+                modules={[Pagination, EffectCoverflow, Autoplay]}
                 className="mySwiper w-full h-full event-carousel-perspective"
             >
                 {banners.map((banner, index) => (
@@ -226,11 +226,10 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                         {({ isActive }) => (
                             <div 
                                 className={cn(
-                                    "relative w-full h-full rounded-2xl overflow-hidden transition-all duration-500",
-                                    // Aplica sombra amarela sutil nos slides adjacentes
+                                    "relative w-full h-full rounded-2xl transition-all duration-500",
                                     isActive 
-                                        ? "shadow-2xl shadow-yellow-500/30 border-2 border-yellow-500/50 scale-105" // Aumenta o slide ativo
-                                        : "shadow-xl shadow-yellow-500/10 border border-yellow-500/20 opacity-70" // Diminui a opacidade dos inativos
+                                        ? "shadow-2xl shadow-yellow-500/30 border-2 border-yellow-500/50 scale-100" // Mantém o slide ativo em escala 100%
+                                        : "shadow-xl shadow-yellow-500/10 border border-yellow-500/20 opacity-70"
                                 )}
                                 onClick={() => navigate(banner.event_id ? `/events/${banner.event_id}` : banner.link_url || '/')}
                             >
