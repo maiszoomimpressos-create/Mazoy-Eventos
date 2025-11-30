@@ -206,18 +206,17 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
         }
     };
     
-    // Helper function to get the indices for the 6 layers behind
-    const getBehindIndices = () => {
+    // Helper function to get the indices for the 3 side cards
+    const getSideCardIndices = () => {
         if (banners.length === 0) return [];
         const indices = [];
-        // Layers 1, 2, 3 (left side) and 4, 5, 6 (right side)
-        for (let i = 1; i <= 6; i++) {
+        for (let i = 1; i <= 3; i++) {
             indices.push((activeIndex + i) % banners.length);
         }
         return indices;
     };
 
-    const behindIndices = getBehindIndices();
+    const sideCardIndices = getSideCardIndices();
 
     // --- Rendering Logic ---
 
@@ -246,25 +245,8 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
     return (
         <div className="carousel-wrapper">
             
-            {/* Camadas Atrás (Efeito Cascata/Profundidade) */}
-            <div className="behind-area" id="behindArea">
-                {behindIndices.map((index, i) => {
-                    const banner = banners[index];
-                    const className = `behind b${i + 1}`;
-                    
-                    return (
-                        <div 
-                            key={banner.id + i} 
-                            className={className} 
-                            style={{ 
-                                backgroundImage: `url(${banner.image_url})`,
-                                backgroundColor: '#111', 
-                            }}
-                        >
-                        </div>
-                    );
-                })}
-            </div>
+            {/* REMOVIDO: Camadas Atrás (Efeito Cascata/Profundidade) */}
+            {/* O CSS agora esconde .behind-area e .behind */}
 
             {/* Card Central */}
             <div 
@@ -298,8 +280,36 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 </div>
             </div>
             
-            {/* Paginação (Bolinhas) - Centralizada */}
-            <div className="absolute bottom-0 z-30 flex space-x-2 mb-4">
+            {/* Cards Laterais (3 à direita) com efeito cascata/sobreposição via CSS */}
+            <div className="side-area">
+                {sideCardIndices.map((index) => {
+                    const banner = banners[index];
+                    
+                    return (
+                        <div 
+                            key={banner.id} 
+                            className="side-card"
+                            onClick={() => handlePaginationClick(index)}
+                        >
+                            <img 
+                                src={banner.image_url} 
+                                alt={banner.headline} 
+                            />
+                            <div className="side-card-content">
+                                <div className="side-card-title">
+                                    {banner.headline}
+                                </div>
+                                <div className="side-card-sub">
+                                    {banner.subheadline}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+            
+            {/* Paginação (Bolinhas) - Centralizada, ajustada para o novo layout */}
+            <div className="absolute bottom-0 z-30 flex space-x-2 mb-4 transform translate-x-[-100px]">
                 {banners.map((_, index) => (
                     <button
                         key={index}

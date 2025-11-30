@@ -21,8 +21,8 @@
   box-shadow: 0 0 35px rgba(255,200,0,.45);
   position: relative;
   z-index: 10;
-  /* Centraliza o card principal */
-  transform: translateX(0); 
+  /* Move o card principal para a esquerda para dar espaço aos laterais */
+  transform: translateX(-100px); 
 }
 
 .main img{
@@ -63,50 +63,102 @@
   display:inline-block;
 }
 
-/* REMOVIDO: .side-area e .side-card */
-
-/* CAMADAS ATRÁS (escadinhas) */
-.behind-area{
+/* Área dos Cards Laterais */
+.side-area{
   position:absolute;
-  bottom:0;
-  width:900px;
-  height:280px;
-  pointer-events:none;
-  z-index: 5; /* Abaixo do card principal */
-}
-
-.behind{
-  position:absolute;
-  width:460px;
-  height:260px;
-  border-radius:15px;
-  background-size:cover;
-  background-position:center;
-  opacity:.3; /* Mantendo a opacidade baixa */
-  filter:blur(2px);
-  transition: .6s ease; 
-  background-color: rgba(0, 0, 0, 0.5); 
-  box-shadow: 0 0 15px rgba(255,200,0,.2); 
-  
-  /* Centraliza a base das camadas */
+  right: 0;
   top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%); 
+  /* Ajuste para centralizar a área verticalmente */
+  transform: translateY(-50%); 
+  width: 200px; 
+  height: 330px; /* Altura igual ao card principal */
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* Distribui os 3 cards */
+  padding: 0;
 }
 
-/* As transformações de posição e escala para o efeito de escadinha */
-.b1{ transform:scale(.92) translate(-310px,25px);}
-.b2{ transform:scale(.86) translate(-220px,55px);}
-.b3{ transform:scale(.80) translate(-135px,85px);}
-.b4{ transform:scale(.80) translate(135px,85px);}
-.b5{ transform:scale(.86) translate(220px,55px);}
-.b6{ transform:scale(.92) translate(310px,25px);}
+.side-card{
+  width: 100%;
+  height: 100px; 
+  border-radius: 12px;
+  overflow: hidden;
+  background: #111;
+  box-shadow: 0 0 10px rgba(255,200,0,.1);
+  position: relative;
+  cursor: pointer;
+  transition: .3s ease;
+  border: 1px solid rgba(255, 196, 0, 0.2);
+  
+  /* Efeito Cascata/Sobreposição */
+  margin-left: 10px; /* Move para a direita para sobrepor */
+}
+
+/* Ajuste de Z-index para a sobreposição (o primeiro card deve estar no topo) */
+.side-card:nth-child(1) {
+    z-index: 3;
+    transform: translateX(-10px); /* Move o primeiro card para a esquerda para sobrepor */
+}
+.side-card:nth-child(2) {
+    z-index: 2;
+    opacity: 0.8;
+    transform: translateX(-5px);
+}
+.side-card:nth-child(3) {
+    z-index: 1;
+    opacity: 0.6;
+    transform: translateX(0);
+}
+
+.side-card:hover{
+  transform: scale(1.05);
+  border-color: rgba(255, 196, 0, 0.5);
+  opacity: 1 !important; /* Garante que o hover traga o card para frente */
+}
+
+.side-card img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top:0; left:0;
+  opacity: 0.6; 
+}
+
+.side-card-content{
+  position: absolute;
+  top: 50%;
+  left: 15px;
+  transform: translateY(-50%);
+  color: #fff;
+  z-index: 2;
+}
+
+.side-card-title{
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.side-card-sub{
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+/* REMOVIDO: CAMADAS ATRÁS (behind-area e behind) */
+.behind-area, .behind {
+    display: none;
+}
+
 
 /* Responsive adjustments for smaller screens */
-@media (max-width: 768px) {
+@media (max-width: 950px) {
     .carousel-wrapper {
         width: 100%;
-        height: 350px; 
+        height: auto; 
+        flex-direction: column;
+        padding: 20px 0;
     }
     .main {
         width: 90vw;
@@ -114,23 +166,31 @@
         max-width: 580px;
         max-height: 330px;
         transform: translateX(0); 
+        margin-bottom: 20px;
     }
-    .behind-area {
-        width: 100%;
-        height: 280px;
+    .side-area {
+        position: relative;
+        right: auto;
+        top: auto;
+        transform: none;
+        width: 90vw;
+        max-width: 580px;
+        height: auto;
+        flex-direction: row; 
+        overflow-x: auto;
+        padding-bottom: 10px;
+        justify-content: flex-start;
+        gap: 10px;
     }
-    .behind {
-        width: 70vw;
-        height: 40vw;
-        max-width: 460px;
-        max-height: 260px;
+    .side-card {
+        min-width: 150px; 
+        height: 80px;
+        margin-left: 0; /* Remove margin-left for horizontal stacking */
+        opacity: 1 !important;
+        transform: none !important;
+        z-index: auto !important;
     }
-    
-    /* Adjust transforms using viewport units for better scaling */
-    .b1{ transform:scale(.92) translate(-35vw,25px);}
-    .b2{ transform:scale(.86) translate(-25vw,55px);}
-    .b3{ transform:scale(.80) translate(-15vw,85px);}
-    .b4{ transform:scale(.80) translate(15vw,85px);}
-    .b5{ transform:scale(.86) translate(25vw,55px);}
-    .b6{ transform:scale(.92) translate(35vw,25px);}
+    .side-card:hover{
+        transform: none;
+    }
 }
