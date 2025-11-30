@@ -11,6 +11,7 @@ import { trackAdvancedFilterUse } from '@/utils/metrics';
 import { usePublicEvents, PublicEvent } from '@/hooks/use-public-events';
 import { Loader2 } from 'lucide-react';
 import FixedCarousel from '@/components/FixedCarousel'; // Importado o novo carrossel
+import { useCarouselBanners } from '@/hooks/use-carousel-banners'; // NOVO: Importando hook do carrossel
 
 const EVENTS_PER_PAGE = 12;
 
@@ -24,6 +25,7 @@ const Index: React.FC = () => {
     const [userId, setUserId] = useState<string | undefined>(undefined);
     
     const { events: allEvents, isLoading: isLoadingEvents, isError: isErrorEvents } = usePublicEvents();
+    const { banners, isLoading: isLoadingBanners } = useCarouselBanners(); // NOVO: Busca dos banners
     
     const [currentPage, setCurrentPage] = useState(1);
     const totalPages = Math.ceil(allEvents.length / EVENTS_PER_PAGE);
@@ -88,7 +90,13 @@ const Index: React.FC = () => {
             <section id="home" className="pt-0 pb-12 sm:pb-20 px-0 sm:px-0">
                 {/* Carrossel (Largura Total) */}
                 <div className="mb-8 h-[calc(100vh-195px)] overflow-hidden rounded-b-3xl border-4 border-white/50">
-                    <FixedCarousel />
+                    {isLoadingBanners ? (
+                        <div className="w-full h-full flex items-center justify-center bg-black/80">
+                            <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
+                        </div>
+                    ) : (
+                        <FixedCarousel banners={banners} />
+                    )}
                 </div>
             </section>
 

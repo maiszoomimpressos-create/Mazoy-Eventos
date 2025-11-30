@@ -1,23 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { CarouselBanner } from '@/hooks/use-carousel-banners';
+import { Button } from '@/components/ui/button';
 
-const FixedCarousel: React.FC = () => {
+interface FixedCarouselProps {
+    banners: CarouselBanner[];
+}
+
+const FixedCarousel: React.FC<FixedCarouselProps> = ({ banners }) => {
     const navigate = useNavigate();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [nextIndex, setNextIndex] = useState(0);
-    const images = [
-        'https://readdy.ai/api/search-image?query=modern%20luxury%20sports%20car%20in%20elegant%20showroom%20with%20soft%20golden%20lighting%20and%20minimalist%20white%20background%20creating%20premium%20automotive%20photography%20atmosphere&width=700&height=450&seq=img1&orientation=landscape',
-        'https://readdy.ai/api/search-image?query=sophisticated%20fashion%20model%20wearing%20designer%20clothing%20in%20contemporary%20studio%20setting%20with%20clean%20white%20backdrop%20and%20professional%20lighting%20setup&width=700&height=450&seq=img2&orientation=landscape',
-        'https://readdy.ai/api/search-image?query=premium%20watch%20collection%20displayed%20on%20marble%20surface%20with%20elegant%20lighting%20and%20luxurious%20minimalist%20background%20showcasing%20fine%20craftsmanship%20and%20precision&width=700&height=450&seq=img3&orientation=landscape',
-        'https://readdy.ai/api/search-image?query=high-end%20technology%20gadgets%20arranged%20artistically%20on%20clean%20white%20surface%20with%20modern%20lighting%20creating%20sleek%20product%20photography%20composition&width=700&height=450&seq=img4&orientation=landscape',
-        'https://readdy.ai/api/search-image?query=elegant%20jewelry%20pieces%20displayed%20on%20sophisticated%20velvet%20surface%20with%20dramatic%20lighting%20and%20luxurious%20background%20creating%20premium%20product%20showcase&width=700&height=450&seq=img5&orientation=landscape',
-        'https://readdy.ai/api/search-image?query=modern%20architectural%20interior%20with%20clean%20lines%20and%20minimalist%20design%20featuring%20natural%20lighting%20and%20contemporary%20furniture%20in%20neutral%20color%20palette&width=700&height=450&seq=img6&orientation=landscape',
-        'https://readdy.ai/api/search-image?query=premium%20cosmetics%20and%20beauty%20products%20arranged%20on%20marble%20surface%20with%20soft%20lighting%20and%20elegant%20white%20background%20creating%20luxury%20brand%20photography&width=700&height=450&seq=img7&orientation=landscape',
-        'https://readdy.ai/api/search-image?query=sophisticated%20home%20decor%20items%20displayed%20in%20modern%20living%20space%20with%20natural%20lighting%20and%20contemporary%20design%20elements%20in%20neutral%20tones&width=700&height=450&seq=img8&orientation=landscape'
-    ];
+    
+    // Se não houver banners, não renderiza nada
+    if (banners.length === 0) {
+        return (
+            <div className="w-full h-full flex items-center justify-center bg-black/80">
+                <p className="text-gray-400">Nenhum banner ativo no momento.</p>
+            </div>
+        );
+    }
+    
+    const currentBanner = banners[currentIndex];
+    const nextBanner = banners[nextIndex];
+
     const updateSlide = () => {
-        const next = (currentIndex + 1) % images.length;
+        const next = (currentIndex + 1) % banners.length;
         setNextIndex(next);
         setIsTransitioning(true);
         setTimeout(() => {
@@ -25,27 +34,31 @@ const FixedCarousel: React.FC = () => {
             setIsTransitioning(false);
         }, 1000);
     };
+    
+    // Efeito para rotação automática
     useEffect(() => {
-        const interval = setInterval(updateSlide, 4000);
+        // Usar um tempo de rotação dinâmico (mockado para 5s por enquanto, mas pode vir do DB)
+        const rotationTime = 5000; 
+        const interval = setInterval(updateSlide, rotationTime);
         return () => clearInterval(interval);
-    }, [currentIndex]);
+    }, [currentIndex, banners.length]);
 
     const getSideImages = (indexToUse = currentIndex) => {
         const sideImages = [];
         // Lado esquerdo - 3 imagens
         for (let i = 1; i <= 3; i++) {
-            const leftIndex = (indexToUse - i + images.length) % images.length;
+            const leftIndex = (indexToUse - i + banners.length) % banners.length;
             sideImages.push({
-                image: images[leftIndex],
+                image: banners[leftIndex].image_url,
                 side: 'left',
                 position: i
             });
         }
         // Lado direito - 3 imagens
         for (let i = 1; i <= 3; i++) {
-            const rightIndex = (indexToUse + i) % images.length;
+            const rightIndex = (indexToUse + i) % banners.length;
             sideImages.push({
-                image: images[rightIndex],
+                image: banners[rightIndex].image_url,
                 side: 'right',
                 position: i
             });
@@ -54,8 +67,16 @@ const FixedCarousel: React.FC = () => {
     };
 
     const handleCenterCardClick = () => {
-        // Implement navigation logic here if needed
-        console.log("Center card clicked. Implement navigation here.");
+        const link = currentBanner.type === 'event' 
+            ? `/events/${currentBanner.event_id}` 
+            : currentBanner.link_url || '/';
+            
+        navigate(link);
+    };
+    
+    const getMinPriceDisplay = (price: number | null | undefined): string => {
+        if (price === null || price === undefined || price === 0) return 'Grátis';
+        return `A partir de R$ ${price.toFixed(2).replace('.', ',')}`;
     };
 
     return (
@@ -150,8 +171,8 @@ const FixedCarousel: React.FC = () => {
                 >
                     {/* Imagem atual */}
                     <img
-                        src={images[currentIndex]}
-                        alt="Carousel Image"
+                        src={currentBanner.image_url}
+                        alt={currentBanner.headline}
                         className={`absolute inset-0 w-full h-full object-cover object-top transition-all duration-[1200ms] ease-out ${
                             isTransitioning ? 'opacity-0 scale-110 blur-sm' : 'opacity-100 scale-100 blur-0'
                         }`}
@@ -159,8 +180,8 @@ const FixedCarousel: React.FC = () => {
                     {/* Imagem seguinte para transição suave */}
                     {isTransitioning && (
                         <img
-                            src={images[nextIndex]}
-                            alt="Next Carousel Image"
+                            src={nextBanner.image_url}
+                            alt={nextBanner.headline}
                             className="absolute inset-0 w-full h-full object-cover object-top transition-all duration-[1200ms] ease-out opacity-0 scale-95 animate-in"
                             style={{
                                 animation: 'fadeInScale 1200ms ease-out forwards'
@@ -170,12 +191,36 @@ const FixedCarousel: React.FC = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                     <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/10 via-transparent to-yellow-400/10"></div>
                     
+                    {/* Conteúdo do Banner */}
+                    <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
+                        <h2 className="text-4xl font-serif font-bold mb-2 text-shadow-lg">
+                            {currentBanner.headline}
+                        </h2>
+                        <p className="text-lg text-gray-200 mb-4 text-shadow-lg">
+                            {currentBanner.subheadline}
+                        </p>
+                        
+                        <div className="flex items-center space-x-4">
+                            {currentBanner.type === 'event' && currentBanner.min_price !== null && (
+                                <span className="text-2xl font-bold text-yellow-400">
+                                    {getMinPriceDisplay(currentBanner.min_price)}
+                                </span>
+                            )}
+                            <Button
+                                onClick={handleCenterCardClick}
+                                className="bg-yellow-500 text-black hover:bg-yellow-600 px-6 py-2 text-base font-semibold transition-all duration-300"
+                            >
+                                {currentBanner.type === 'event' ? 'Ver Evento' : 'Saiba Mais'}
+                            </Button>
+                        </div>
+                    </div>
+                    
                     {/* Control buttons - Posicionados DENTRO do banner central */}
                     <button
                         onClick={(e) => {
                             e.stopPropagation(); // Previne o clique no card central
                             if (!isTransitioning) {
-                                const prev = currentIndex === 0 ? images.length - 1 : currentIndex - 1;
+                                const prev = currentIndex === 0 ? banners.length - 1 : currentIndex - 1;
                                 setNextIndex(prev);
                                 setIsTransitioning(true);
                                 setTimeout(() => {
@@ -203,7 +248,7 @@ const FixedCarousel: React.FC = () => {
                 
                 {/* Navigation dots */}
                 <div className="absolute left-1/2 transform -translate-x-1/2 flex space-x-6 z-30" style={{bottom: '-25px'}}>
-                    {images.map((_, index) => (
+                    {banners.map((_, index) => (
                         <button
                             key={index}
                             onClick={() => {
