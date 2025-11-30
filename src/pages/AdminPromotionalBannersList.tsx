@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { showError, showSuccess, showLoading, dismissToast } from '@/utils/toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useProfile } from '@/hooks/use-profile'; // Importando useProfile
 
 interface PromotionalBanner {
     id: string;
@@ -90,37 +91,65 @@ const DeleteBannerDialog: React.FC<{ banner: PromotionalBanner, onDeleteSuccess:
 
     return (
         <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <AlertDialogHeader>
-                <AlertDialogTitle className="text-red-400">Tem certeza absoluta?</AlertDialogTitle>
-                <AlertDialogDescription className="text-gray-400">
-                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o banner 
-                    <span className="font-semibold text-white"> "{banner.headline}" </span>.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel className="bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10">
-                    Cancelar
-                </AlertDialogCancel>
-                <AlertDialogAction 
-                    onClick={handleDelete} 
-                    className="bg-red-600 text-white hover:bg-red-700"
-                    disabled={isDeleting}
-                >
-                    {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Excluir Banner'}
-                </AlertDialogAction>
-            </AlertDialogFooter>
+            <AlertDialogContent className="bg-black/90 border border-red-500/30 text-white">
+                <AlertDialogHeader>
+                    <AlertDialogTitle className="text-red-400">Tem certeza absoluta?</AlertDialogTitle>
+                    <AlertDialogDescription className="text-gray-400">
+                        Esta ação não pode ser desfeita. Isso excluirá permanentemente o banner 
+                        <span className="font-semibold text-white"> "{banner.headline}" </span>.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel className="bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10">
+                        Cancelar
+                    </AlertDialogCancel>
+                    <AlertDialogAction 
+                        onClick={handleDelete} 
+                        className="bg-red-600 text-white hover:bg-red-700"
+                        disabled={isDeleting}
+                    >
+                        {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Excluir Banner'}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
         </AlertDialog>
     );
 };
 
+const ADMIN_MASTER_USER_TYPE_ID = 1;
 
 const AdminPromotionalBannersList: React.FC = () => {
     const navigate = useNavigate();
+    const [userId, setUserId] = useState<string | undefined>(undefined);
+    
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            setUserId(user?.id);
+        });
+    }, []);
+    
+    const { profile, isLoading: isLoadingProfile } = useProfile(userId);
     const { banners, isLoading, isError, invalidateBanners } = usePromotionalBanners();
 
     const handleEditClick = (bannerId: string) => {
         navigate(`/admin/banners/edit/${bannerId}`);
     };
+
+    if (isLoadingProfile || userId === undefined) {
+        return (
+            <div className="max-w-7xl mx-auto text-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-yellow-500 mx-auto mb-4" />
+                <p className="text-gray-400">Verificando permissões...</p>
+            </div>
+        );
+    }
+    
+    if (profile?.tipo_usuario_id !== ADMIN_MASTER_USER_TYPE_ID) {
+        showError("Acesso negado. Você não tem permissão de Administrador Master.");
+        navigate('/manager/dashboard');
+        return null;
+    }
+
 
     if (isLoading) {
         return (

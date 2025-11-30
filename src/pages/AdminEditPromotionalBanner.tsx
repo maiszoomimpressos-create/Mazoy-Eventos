@@ -17,6 +17,7 @@ import { format, parseISO } from 'date-fns';
 import { DatePicker } from '@/components/DatePicker';
 import ImageUploadPicker from '@/components/ImageUploadPicker';
 import { useQueryClient } from '@tanstack/react-query';
+import { useProfile } from '@/hooks/use-profile'; // Importando useProfile
 
 // Zod schema for promotional banner validation
 const promotionalBannerSchema = z.object({
@@ -30,6 +31,8 @@ const promotionalBannerSchema = z.object({
 });
 
 type PromotionalBannerFormData = z.infer<typeof promotionalBannerSchema>;
+
+const ADMIN_MASTER_USER_TYPE_ID = 1;
 
 const AdminEditPromotionalBanner: React.FC = () => {
     const navigate = useNavigate();
@@ -51,6 +54,8 @@ const AdminEditPromotionalBanner: React.FC = () => {
             link_url: '',
         },
     });
+    
+    const { profile, isLoading: isLoadingProfile } = useProfile(userId || undefined);
 
     useEffect(() => {
         const fetchBanner = async () => {
@@ -95,8 +100,8 @@ const AdminEditPromotionalBanner: React.FC = () => {
     };
 
     const onSubmit = async (values: PromotionalBannerFormData) => {
-        if (!userId || !id) {
-            showError("Usuário ou ID do banner não identificados.");
+        if (!userId || !id || profile?.tipo_usuario_id !== ADMIN_MASTER_USER_TYPE_ID) {
+            showError("Acesso negado. Apenas Administradores Master podem editar banners.");
             return;
         }
 
@@ -142,13 +147,19 @@ const AdminEditPromotionalBanner: React.FC = () => {
         }
     };
 
-    if (isFetching) {
+    if (isFetching || isLoadingProfile) {
         return (
             <div className="max-w-4xl mx-auto px-4 sm:px-0 text-center py-20">
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
                 <p className="text-gray-400">Carregando detalhes do banner...</p>
             </div>
         );
+    }
+    
+    if (profile?.tipo_usuario_id !== ADMIN_MASTER_USER_TYPE_ID) {
+        showError("Acesso negado. Você não tem permissão de Administrador Master.");
+        navigate('/manager/dashboard');
+        return null;
     }
 
     return (

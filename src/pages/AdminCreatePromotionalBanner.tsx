@@ -16,6 +16,7 @@ import { Loader2, ImageOff, CalendarDays, ListOrdered, Heading, Subtitles, Arrow
 import { format } from 'date-fns';
 import { DatePicker } from '@/components/DatePicker';
 import ImageUploadPicker from '@/components/ImageUploadPicker';
+import { useProfile } from '@/hooks/use-profile'; // Importando useProfile
 
 // Zod schema for promotional banner validation
 const promotionalBannerSchema = z.object({
@@ -30,10 +31,20 @@ const promotionalBannerSchema = z.object({
 
 type PromotionalBannerFormData = z.infer<typeof promotionalBannerSchema>;
 
+const ADMIN_MASTER_USER_TYPE_ID = 1;
+
 const AdminCreatePromotionalBanner: React.FC = () => {
     const navigate = useNavigate();
     const [isSaving, setIsSaving] = useState(false);
     const [userId, setUserId] = useState<string | null>(null);
+
+    useEffect(() => {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            setUserId(user?.id || null);
+        });
+    }, []);
+    
+    const { profile, isLoading: isLoadingProfile } = useProfile(userId || undefined);
 
     const form = useForm<PromotionalBannerFormData>({
         resolver: zodResolver(promotionalBannerSchema),
@@ -48,19 +59,13 @@ const AdminCreatePromotionalBanner: React.FC = () => {
         },
     });
 
-    useEffect(() => {
-        supabase.auth.getUser().then(({ data: { user } }) => {
-            setUserId(user?.id || null);
-        });
-    }, []);
-
     const handleImageUpload = (url: string) => {
         form.setValue('image_url', url, { shouldValidate: true });
     };
 
     const onSubmit = async (values: PromotionalBannerFormData) => {
-        if (!userId) {
-            showError("Usuário não autenticado.");
+        if (!userId || profile?.tipo_usuario_id !== ADMIN_MASTER_USER_TYPE_ID) {
+            showError("Acesso negado. Apenas Administradores Master podem criar banners.");
             return;
         }
 
@@ -93,7 +98,7 @@ const AdminCreatePromotionalBanner: React.FC = () => {
             dismissToast(toastId);
             showSuccess(`Banner promocional "${values.headline}" criado com sucesso!`);
             form.reset(); // Clear form
-            navigate('/admin/dashboard'); // Redirect to admin dashboard or a banner list page
+            navigate('/admin/banners'); // Redirect to banner list
 
         } catch (error: any) {
             dismissToast(toastId);
@@ -103,18 +108,34 @@ const AdminCreatePromotionalBanner: React.FC = () => {
             setIsSaving(false);
         }
     };
+    
+    if (isLoadingProfile) {
+        return (
+            <div className="max-w-4xl mx-auto px-4 sm:px-0 text-center py-20">
+                <Loader2 className="h-10 w-10 animate-spin text-yellow-500 mx-auto mb-4" />
+                <p className="text-gray-400">Verificando permissões...</p>
+            </div>
+        );
+    }
+
+    if (profile?.tipo_usuario_id !== ADMIN_MASTER_USER_TYPE_ID) {
+        showError("Acesso negado. Você não tem permissão de Administrador Master.");
+        navigate('/manager/dashboard');
+        return null;
+    }
+
 
     return (
         <div className="max-w-4xl mx-auto px-4 sm:px-0">
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-2xl sm:text-3xl font-serif text-yellow-500 mb-4 sm:mb-0">Criar Banner Promocional</h1>
                 <Button 
-                    onClick={() => navigate('/admin/dashboard')}
+                    onClick={() => navigate('/admin/banners')}
                     variant="outline"
                     className="bg-black/60 border border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 text-sm"
                 >
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Voltar ao Dashboard
+                    Voltar para a Lista
                 </Button>
             </div>
 
@@ -304,7 +325,7 @@ const AdminCreatePromotionalBanner: React.FC = () => {
                                 </Button>
                                 <Button
                                     type="button"
-                                    onClick={() => navigate('/admin/dashboard')}
+                                    onClick={() => navigate('/admin/banners')}
                                     variant="outline"
                                     className="flex-1 bg-black/60 border-yellow-500/30 text-yellow-500 hover:bg-yellow-500/10 py-3 text-lg font-semibold transition-all duration-300 cursor-pointer"
                                     disabled={isSaving}
