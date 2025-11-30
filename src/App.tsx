@@ -39,7 +39,6 @@ import AdminCreatePromotionalBanner from "./pages/AdminCreatePromotionalBanner";
 import AdminPromotionalBannersList from "./pages/AdminPromotionalBannersList"; 
 import AdminEditPromotionalBanner from "./pages/AdminEditPromotionalBanner"; 
 import CarouselPage from "./pages/CarouselPage"; 
-import CrtEvento from "./pages/CrtEvento"; // NOVO: Importação
 
 const queryClient = new QueryClient();
 
@@ -86,7 +85,6 @@ const App = () => (
             <Route path="/manager/settings/individual-profile" element={<ManagerIndividualProfile />} />
             <Route path="/manager/settings/notifications" element={<ManagerNotifications />} />
             <Route path="/manager/settings/payment" element={<ManagerPaymentSettings />} />
-            <Route path="/manager/crtevento" element={<CrtEvento />} /> {/* NOVO: Rota CRT Evento */}
           </Route>
           
           {/* Admin Master Routes (tipo_usuario_id = 1) */}
