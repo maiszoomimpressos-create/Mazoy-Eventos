@@ -188,7 +188,6 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                 }, 1000);
                             }
                         }}
-                        // Alterado para bg-black e removido backdrop-blur-sm
                         className="absolute left-4 top-1/2 transform -translate-y-1/2 w-14 h-14 bg-black hover:bg-black/90 rounded-xl flex items-center justify-center transition-all duration-400 z-30 cursor-pointer border border-yellow-400/30 shadow-2xl"
                     >
                         <i className="fas fa-chevron-left text-white text-xl"></i>
@@ -200,7 +199,6 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                 updateSlide();
                             }
                         }}
-                        // Alterado para bg-black e removido backdrop-blur-sm
                         className="absolute right-4 top-1/2 transform -translate-y-1/2 w-14 h-14 bg-black hover:bg-black/90 rounded-xl flex items-center justify-center transition-all duration-400 z-30 cursor-pointer border border-yellow-400/30 shadow-2xl"
                     >
                         <i className="fas fa-chevron-right text-white text-xl"></i>
