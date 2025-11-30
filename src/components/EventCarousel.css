@@ -29,12 +29,12 @@
     transform: translate3d(var(--swiper-translate-x, 0), 0, 0) !important;
 }
 
-/* CORREÇÃO DE ESTABILIDADE: Neutraliza o deslocamento vertical que o coverflow aplica nos slides adjacentes */
-.swiper-slide-prev,
-.swiper-slide-next {
-    transform: translate3d(var(--swiper-translate-x, 0), 0, var(--swiper-translate-z, 0)) rotateY(var(--swiper-rotate-y, 0deg)) !important;
+/* CORREÇÃO DE ESTABILIDADE: Neutraliza o deslocamento vertical (translateY) que o coverflow aplica nos slides adjacentes */
+.swiper-slide:not(.swiper-slide-active) {
+    /* O Swiper aplica transform: translate3d(X, Y, Z) rotateY(R) */
+    /* Precisamos garantir que o Y seja 0, mantendo X, Z e R */
+    transform: translate3d(var(--swiper-translate-x, 0), 0px, var(--swiper-translate-z, 0)) rotateY(var(--swiper-rotate-y, 0deg)) !important;
 }
-
 
 /* Ajuste para telas menores: usa 90% da largura da viewport, mantendo a proporção 6:4 */
 @media (max-width: 768px) {
