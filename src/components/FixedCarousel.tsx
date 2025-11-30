@@ -225,12 +225,6 @@ const FixedCarousel: React.FC = () => {
                     ))}
                 </div>
                 
-                {/* Progress indicator */}
-                <div className="absolute top-10 right-12 z-30 bg-black/40 backdrop-blur-lg rounded-2xl px-6 py-3 border-2 border-yellow-400/30 shadow-2xl">
-                    <span className="text-yellow-400 text-2xl font-bold">{String(currentIndex + 1).padStart(2, '0')}</span>
-                    <span className="mx-3 text-white/70 text-xl">/</span>
-                    <span className="text-white/90 text-2xl font-semibold">{String(images.length).padStart(2, '0')}</span>
-                </div>
                 {/* Glow effects */}
                 <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-radial from-yellow-400/10 via-yellow-400/5 to-transparent rounded-full blur-3xl"></div>
