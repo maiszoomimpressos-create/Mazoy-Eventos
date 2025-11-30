@@ -89,6 +89,10 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                     const offsetY = 0;
                     const zIndex = 15 - pos;
                     const transitionDelay = pos * 80;
+                    
+                    // NOVO CÁLCULO DE OPACIDADE: 1 - (pos * 0.05)
+                    const opacityValue = 1 - (pos * 0.05);
+
                     return (
                         <div
                             key={`current-${sideImg.side}-${pos}-${currentIndex}`}
@@ -98,7 +102,7 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                 height: `${baseHeight * scale}px`,
                                 transform: `translateX(${offsetX}px) translateY(${offsetY}px)`,
                                 zIndex: zIndex,
-                                opacity: isTransitioning ? 0 : (1 - (pos * 0.15)), // Mantendo a opacidade lateral para profundidade
+                                opacity: isTransitioning ? 0 : opacityValue, // Usando o novo valor de opacidade
                                 transition: `all 1000ms ease-out`,
                                 transitionDelay: isTransitioning ? `${transitionDelay}ms` : '0ms'
                             }}
@@ -113,7 +117,6 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                     transitionDelay: `${transitionDelay}ms`
                                 }}
                             />
-                            {/* Removendo overlays de opacidade do código do usuário para manter a imagem clara */}
                         </div>
                     );
                 })}
@@ -128,6 +131,10 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                     const offsetY = 0;
                     const zIndex = 15 - pos;
                     const transitionDelay = pos * 80;
+                    
+                    // NOVO CÁLCULO DE OPACIDADE para a animação
+                    const opacityValue = 1 - (pos * 0.05);
+
                     return (
                         <div
                             key={`next-${sideImg.side}-${pos}-${nextIndex}`}
@@ -140,7 +147,9 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                 opacity: 0,
                                 transition: `all 1000ms ease-out`,
                                 transitionDelay: `${200 + transitionDelay}ms`,
-                                animation: `fadeInSide 1000ms ease-out ${200 + transitionDelay}ms forwards`
+                                // Ajustando a opacidade final da animação para o novo valor
+                                animation: `fadeInSide 1000ms ease-out ${200 + transitionDelay}ms forwards`,
+                                '--final-opacity': opacityValue, 
                             }}
                         >
                             <img
@@ -154,7 +163,6 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                     transitionDelay: `${200 + transitionDelay}ms`
                                 }}
                             />
-                            {/* Removendo overlays de opacidade do código do usuário para manter a imagem clara */}
                         </div>
                     );
                 })}
