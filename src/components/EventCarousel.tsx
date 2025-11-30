@@ -96,7 +96,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 
                 const normalizedBanners: CarouselBanner[] = fetchedBanners.map((item: any) => ({
                     id: item.id,
-                    type: item.type || 'event',
+                    type: item.type || 'event', // Assume 'event' se não especificado
                     image_url: item.image_url,
                     headline: item.headline || item.title,
                     subheadline: item.subheadline || item.description,
@@ -151,10 +151,9 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 slidesPerView={'auto'}
                 centeredSlides={true}
                 spaceBetween={30}
-                autoplay={{
-                    delay: 5000,
-                    disableOnInteraction: false,
-                }}
+                // DESATIVANDO AUTOPLAY E LOOP PARA AJUSTE
+                autoplay={false} 
+                loop={false}
                 pagination={{
                     clickable: true,
                 }}
@@ -168,10 +167,10 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                     modifier: 1, 
                     slideShadows: true, 
                 }}
-                modules={[Autoplay, Pagination, Navigation, EffectCoverflow]}
+                modules={[Pagination, Navigation, EffectCoverflow]} // Removendo Autoplay
                 className="mySwiper w-full h-full event-carousel-perspective"
             >
-                {banners.map((banner) => (
+                {banners.map((banner, index) => (
                     <SwiperSlide key={banner.id} className="event-slide-item">
                         {({ isActive }) => (
                             <div 
@@ -188,6 +187,11 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                                 />
                                 {/* Overlay escuro com gradiente */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/40"></div>
+                                
+                                {/* NOVO: Número do Banner para Debug */}
+                                <div className="absolute top-4 left-4 bg-black/70 text-yellow-500 px-3 py-1 rounded-lg font-bold text-lg z-10">
+                                    {index + 1}
+                                </div>
                                 
                                 <div className="absolute inset-0 flex items-end pb-10 pt-20">
                                     <div className="px-6 w-full">
