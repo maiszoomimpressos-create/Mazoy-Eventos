@@ -36,21 +36,21 @@ export default function RotatingFixedCarousel({ items }: RotatingFixedCarouselPr
     if (dist === 0)
       return { scale: 1, x: 0, y: 0, opacity: 1, zIndex: 10 };
 
-    const map = {
+    const map: { [key: number]: { scale: number; x: number; y: number; zIndex: number } } = {
       1: { scale: 0.85, x: 150, y: 30, zIndex: 9 },
       2: { scale: 0.75, x: 250, y: 60, zIndex: 8 },
       3: { scale: 0.65, x: 350, y: 90, zIndex: 7 },
     };
 
     if (dist <= 3) {
-      const { zIndex, ...rest } = map[dist];
-      return { ...rest, zIndex, opacity: 0.9 };
+        const { zIndex, ...rest } = map[dist];
+        return { ...rest, zIndex, opacity: 0.9 };
     }
 
     const leftDist = total - dist;
     if (leftDist <= 3) {
-      const { zIndex, ...m } = map[leftDist];
-      return { scale: m.scale, x: -m.x, y: m.y, zIndex, opacity: 0.9 };
+      const m = map[leftDist];
+      return { scale: m.scale, x: -m.x, y: m.y, zIndex: m.zIndex, opacity: 0.9 };
     }
 
     return { scale: 0.6, x: 0, y: 120, opacity: 0, zIndex: 1 };
