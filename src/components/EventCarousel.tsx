@@ -202,6 +202,26 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
             updateIndex(index);
         }
     };
+    
+    // Helper function to get index relative to current activeIndex
+    const getRelativeIndex = (offset: number) => {
+        if (banners.length === 0) return -1;
+        let index = (activeIndex + offset) % banners.length;
+        if (index < 0) {
+            index += banners.length;
+        }
+        return index;
+    };
+
+    // Indices for the 6 behind cards (we only use b1 and b6 for 1 slide each side)
+    const behindIndices = [
+        getRelativeIndex(1), // b1 (Próximo 1)
+        getRelativeIndex(2), // b2 (Próximo 2) - Oculto no CSS
+        getRelativeIndex(3), // b3 (Próximo 3) - Oculto no CSS
+        getRelativeIndex(-3), // b4 (Anterior 3) - Oculto no CSS
+        getRelativeIndex(-2), // b5 (Anterior 2) - Oculto no CSS
+        getRelativeIndex(-1), // b6 (Anterior 1)
+    ];
 
     // --- Rendering Logic ---
 
@@ -230,9 +250,26 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
     return (
         <div className="carousel-wrapper">
             
-            {/* Camadas Atrás - REMOVIDAS */}
+            {/* Camadas Atrás - REATIVADAS */}
             <div className="behind-area" id="behindArea">
-                {/* Conteúdo removido */}
+                {behindIndices.map((index, i) => {
+                    if (index === -1) return null; // Skip if index is invalid
+                    
+                    // Renderiza apenas b1 (próximo) e b6 (anterior)
+                    if (i !== 0 && i !== 5) return null; 
+                    
+                    const banner = banners[index];
+                    const className = `behind b${i + 1}`;
+                    
+                    return (
+                        <div 
+                            key={banner.id} 
+                            className={className} 
+                            style={{ backgroundImage: `url(${banner.image_url})` }}
+                        >
+                        </div>
+                    );
+                })}
             </div>
 
             {/* Card Central */}
