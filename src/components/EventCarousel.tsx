@@ -212,8 +212,8 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 grabCursor={true}
                 coverflowEffect={{
                     rotate: 0, 
-                    stretch: 500, // Ajustado para 500px (600px - 100px)
-                    depth: 0, 
+                    stretch: 500, // Desloca 500px (600px - 100px)
+                    depth: 100, // Adiciona profundidade 3D
                     modifier: 1, 
                     slideShadows: false, 
                 }}
