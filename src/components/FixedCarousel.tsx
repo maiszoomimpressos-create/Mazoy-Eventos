@@ -1,31 +1,45 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input'; // Importando Input para evitar erro de importação não resolvida
+import { Input } from '@/components/ui/input'; 
+import { useCarouselBanners, CarouselBanner } from '@/hooks/use-carousel-banners';
+import { Loader2 } from 'lucide-react';
 
 const FixedCarousel: React.FC = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
   const navigate = useNavigate();
+  const { banners, isLoading, isError } = useCarouselBanners();
+  const [currentIndex, setCurrentIndex] = useState(0);
   
-  // Usando URLs de exemplo para o carrossel
-  const items = [
-    'https://readdy.ai/api/search-image?query=modern%20luxury%20sports%20car%20in%20elegant%20showroom%20with%20soft%20lighting%20and%20minimalist%20background%20clean%20white%20environment%20professional%20photography&width=620&height=350&seq=1&orientation=landscape',
-    'https://readdy.ai/api/search-image?query=beautiful%20mountain%20landscape%20with%20serene%20lake%20reflection%20during%20golden%20hour%20sunset%20peaceful%20nature%20scene%20professional%20photography&width=620&height=350&seq=2&orientation=landscape',
-    'https://readdy.ai/api/search-image?query=contemporary%20architecture%20building%20with%20glass%20facade%20and%20modern%20design%20elements%20urban%20cityscape%20professional%20photography%20clean%20background&width=620&height=350&seq=3&orientation=landscape',
-    'https://readdy.ai/api/search-image?query=gourmet%20food%20presentation%20on%20elegant%20white%20plate%20fine%20dining%20restaurant%20atmosphere%20professional%20culinary%20photography%20minimalist%20background&width=620&height=350&seq=4&orientation=landscape',
-    'https://readdy.ai/api/search-image?query=tropical%20beach%20paradise%20with%20crystal%20clear%20turquoise%20water%20and%20white%20sand%20peaceful%20vacation%20destination%20professional%20travel%20photography&width=620&height=350&seq=5&orientation=landscape',
-    'https://readdy.ai/api/search-image?query=modern%20technology%20workspace%20with%20sleek%20devices%20and%20minimalist%20design%20clean%20professional%20environment%20contemporary%20office%20setup&width=620&height=350&seq=6&orientation=landscape',
-    'https://readdy.ai/api/search-image?query=elegant%20fashion%20model%20wearing%20stylish%20clothing%20in%20sophisticated%20studio%20setting%20professional%20fashion%20photography%20clean%20background&width=620&height=350&seq=7&orientation=landscape'
-  ];
-
+  const items = banners;
   const itemCount = items.length;
 
+  // Sincroniza o índice quando os banners são carregados ou mudam
+  useEffect(() => {
+    if (itemCount > 0) {
+        setCurrentIndex(0);
+    }
+  }, [itemCount]);
+
+  // Helper function to get the minimum price display
+  const getMinPriceDisplay = (price: number | null | undefined): string => {
+    if (price === null || price === undefined || price === 0) return 'Grátis';
+    return `R$ ${price.toFixed(2).replace('.', ',')}`;
+  };
+
   const getCardPosition = (index: number) => {
-    const distance = (index - currentIndex + itemCount) % itemCount;
+    if (itemCount === 0) return { translateX: 0, translateY: 0, scale: 0, opacity: 0, zIndex: 0 };
     
+    // Calcula a distância cíclica
+    let distance = (index - currentIndex + itemCount) % itemCount;
+    
+    // Se a distância for maior que a metade, significa que é mais perto ir para trás
+    if (distance > itemCount / 2) {
+        distance = distance - itemCount;
+    }
+
     // Card central
     if (distance === 0) {
       return {
@@ -37,8 +51,8 @@ const FixedCarousel: React.FC = () => {
       };
     }
     
-    // Cards à direita
-    if (distance <= 3) {
+    // Cards à direita (distância positiva)
+    if (distance > 0 && distance <= 3) {
       const rightPositions = [
         { x: 160, y: 30, scale: 0.85 },
         { x: 260, y: 60, scale: 0.75 },
@@ -54,9 +68,9 @@ const FixedCarousel: React.FC = () => {
       };
     }
     
-    // Cards à esquerda
-    const leftDistance = itemCount - distance;
-    if (leftDistance <= 3) {
+    // Cards à esquerda (distância negativa)
+    if (distance < 0 && distance >= -3) {
+      const leftDistance = Math.abs(distance);
       const leftPositions = [
         { x: -160, y: 30, scale: 0.85 },
         { x: -260, y: 60, scale: 0.75 },
@@ -83,27 +97,50 @@ const FixedCarousel: React.FC = () => {
   };
 
   const handlePrevious = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    } else {
-      setCurrentIndex(itemCount - 1);
-    }
+    setCurrentIndex((prevIndex) => (prevIndex - 1 + itemCount) % itemCount);
   };
 
   const handleNext = () => {
-    setCurrentIndex((currentIndex + 1) % itemCount);
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % itemCount);
   };
   
-  const handleCardClick = (index: number) => {
-    const position = getCardPosition(index);
-    if (position.opacity > 0.1 && index !== currentIndex) {
+  const handleCardClick = (index: number, banner: CarouselBanner) => {
+    if (index === currentIndex) {
+        // Se for o card central, navega
+        if (banner.type === 'event' && banner.event_id) {
+            navigate(`/events/${banner.event_id}`);
+        } else if (banner.type === 'promotional' && banner.link_url) {
+            // Para links externos, usamos window.open
+            if (banner.link_url.startsWith('http')) {
+                window.open(banner.link_url, '_blank');
+            } else {
+                navigate(banner.link_url);
+            }
+        }
+    } else {
+        // Se for um card lateral, move para o centro
         setCurrentIndex(index);
     }
-    // Se for o card central, pode-se adicionar uma ação de navegação aqui
-    if (index === currentIndex) {
-        // Exemplo: navigate('/events/details/' + index);
-    }
   };
+
+  if (isLoading) {
+    return (
+        <div className="bg-black text-white py-12 sm:py-16 h-[500px] flex items-center justify-center">
+            <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
+        </div>
+    );
+  }
+  
+  if (isError || itemCount === 0) {
+    return (
+        <div className="bg-black text-white py-12 sm:py-16 h-[500px] flex items-center justify-center">
+            <div className="text-center text-gray-500">
+                <i className="fas fa-exclamation-triangle text-4xl mb-4"></i>
+                <p>Não foi possível carregar os banners do carrossel.</p>
+            </div>
+        </div>
+    );
+  }
 
   return (
     <div className="bg-black text-white py-12 sm:py-16">
@@ -135,15 +172,18 @@ const FixedCarousel: React.FC = () => {
             </button>
 
             {/* Cards */}
-            {items.map((imageUrl, index) => {
+            {items.map((banner, index) => {
               const position = getCardPosition(index);
               
               // Não renderiza cards totalmente invisíveis para otimização
               if (position.opacity === 0 && position.zIndex === 0) return null;
+              
+              const isCenter = index === currentIndex;
+              const minPriceDisplay = banner.type === 'event' ? getMinPriceDisplay(banner.min_price) : null;
 
               return (
                 <div
-                  key={index}
+                  key={banner.id}
                   style={{
                     position: 'absolute',
                     left: '50%',
@@ -155,12 +195,12 @@ const FixedCarousel: React.FC = () => {
                     pointerEvents: position.opacity > 0.1 ? 'auto' : 'none',
                     cursor: position.opacity > 0.1 ? 'pointer' : 'default',
                   }}
-                  onClick={() => handleCardClick(index)}
+                  onClick={() => handleCardClick(index, banner)}
                 >
                   <div className="relative overflow-hidden shadow-2xl shadow-yellow-500/20 rounded-2xl border border-yellow-500/30">
                     <img
-                      src={imageUrl}
-                      alt={`Slide ${index + 1}`}
+                      src={banner.image_url}
+                      alt={banner.headline}
                       style={{
                         width: '620px',
                         height: '350px',
@@ -170,11 +210,36 @@ const FixedCarousel: React.FC = () => {
                       className="w-[300px] h-[170px] sm:w-[620px] sm:h-[350px] transition-transform duration-300"
                     />
                     {/* Overlay para o card central */}
-                    {index === currentIndex && (
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent rounded-2xl flex items-end p-6">
+                    {isCenter && (
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent rounded-2xl flex flex-col justify-end p-6">
                             <div className="text-white">
-                                <h3 className="text-2xl font-bold font-serif mb-1">Destaque {index + 1}</h3>
-                                <p className="text-sm text-gray-200">Clique para ver detalhes.</p>
+                                <span className="bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-semibold mb-2 inline-block">
+                                    {banner.type === 'event' ? banner.category : 'Promoção'}
+                                </span>
+                                <h3 className="text-2xl sm:text-3xl font-bold font-serif mb-1 line-clamp-1">{banner.headline}</h3>
+                                <p className="text-sm text-gray-200 mb-3 line-clamp-2">{banner.subheadline}</p>
+                                
+                                {banner.type === 'event' && minPriceDisplay && (
+                                    <div className="flex items-center space-x-4">
+                                        <span className="text-xl font-bold text-yellow-500">
+                                            A partir de {minPriceDisplay}
+                                        </span>
+                                        <Button 
+                                            className="bg-yellow-500 text-black hover:bg-yellow-600 px-4 py-2 h-8 text-sm font-semibold"
+                                            onClick={(e) => { e.stopPropagation(); handleCardClick(index, banner); }}
+                                        >
+                                            Ver Detalhes
+                                        </Button>
+                                    </div>
+                                )}
+                                {banner.type === 'promotional' && (
+                                    <Button 
+                                        className="bg-yellow-500 text-black hover:bg-yellow-600 px-4 py-2 h-8 text-sm font-semibold"
+                                        onClick={(e) => { e.stopPropagation(); handleCardClick(index, banner); }}
+                                    >
+                                        {banner.link_url ? 'Acessar' : 'Ver Promoção'}
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     )}
