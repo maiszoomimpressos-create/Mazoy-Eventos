@@ -34,7 +34,7 @@ const ClientLayout: React.FC = () => {
                     </div>
                 </div>
             </header>
-            <main className="pt-20"> {/* Ajustado o padding-top */}
+            <main className="pt-[45px]"> {/* Ajustado o padding-top para 45px */}
                 <Outlet />
             </main>
         </div>
