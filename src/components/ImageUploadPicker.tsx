@@ -12,13 +12,13 @@ interface ImageUploadPickerProps {
     currentImageUrl: string | null;
     onImageUpload: (url: string) => void;
     disabled?: boolean;
-    width: number;
-    height: number;
+    // Removidas width e height
     placeholderText: string;
     bucketName?: string; // Default to 'event-banners'
     folderPath?: string; // Default to 'banners'
     maxFileSizeMB?: number; // Default to 5MB
     isInvalid?: boolean; // Adicionando a prop isInvalid
+    heightClass?: string; // NOVO: Classe Tailwind para altura (ex: 'h-64')
 }
 
 const ImageUploadPicker: React.FC<ImageUploadPickerProps> = ({
@@ -26,13 +26,13 @@ const ImageUploadPicker: React.FC<ImageUploadPickerProps> = ({
     currentImageUrl,
     onImageUpload,
     disabled = false,
-    width,
-    height,
+    // Removidas width e height
     placeholderText,
     bucketName = 'event-banners',
     folderPath = 'banners',
     maxFileSizeMB = 5,
     isInvalid = false, // Valor padrão
+    heightClass = 'h-64', // Valor padrão para altura
 }) => {
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -102,9 +102,9 @@ const ImageUploadPicker: React.FC<ImageUploadPickerProps> = ({
                 className={cn(
                     "w-full bg-black/60 border rounded-xl overflow-hidden flex items-center justify-center relative",
                     "group cursor-pointer hover:border-yellow-500/60 transition-all duration-300",
-                    isInvalid ? "border-red-500" : "border-yellow-500/30" // Aplica borda vermelha se inválido
+                    isInvalid ? "border-red-500" : "border-yellow-500/30",
+                    heightClass // Aplica a classe de altura dinâmica
                 )}
-                style={{ height: `${height}px` }}
                 onClick={disabled || uploading ? undefined : handleButtonClick}
             >
                 {currentImageUrl ? (
@@ -122,7 +122,7 @@ const ImageUploadPicker: React.FC<ImageUploadPickerProps> = ({
                     <div className="text-center text-gray-500 p-4">
                         <ImageOff className="h-8 w-8 mx-auto mb-2" />
                         <p className="text-sm">{placeholderText}</p>
-                        <p className="text-xs mt-1">({width}px de largura por {height}px de altura)</p>
+                        {/* Removida a recomendação de dimensão fixa do placeholder */}
                     </div>
                 )}
                 
@@ -163,7 +163,7 @@ const ImageUploadPicker: React.FC<ImageUploadPickerProps> = ({
                     </>
                 )}
             </Button>
-            <p className="text-gray-500 text-xs mt-1">JPG, PNG ou GIF (máx. {maxFileSizeMB}MB). Dimensões recomendadas: {width}x{height}px.</p>
+            <p className="text-gray-500 text-xs mt-1">JPG, PNG ou GIF (máx. {maxFileSizeMB}MB).</p>
         </div>
     );
 };

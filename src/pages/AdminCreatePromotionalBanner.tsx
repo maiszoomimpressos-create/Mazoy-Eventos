@@ -158,9 +158,8 @@ const AdminCreatePromotionalBanner: React.FC = () => {
                                         userId={userId}
                                         currentImageUrl={form.watch('image_url')}
                                         onImageUpload={handleImageUpload}
-                                        width={600} // ALTERADO: 600px de largura
-                                        height={400} // ALTERADO: 400px de altura
-                                        placeholderText="Clique para enviar ou arraste e solte uma imagem (600px de largura por 400px de altura)"
+                                        heightClass="h-64" // Usando classe de altura
+                                        placeholderText="Clique para enviar ou arraste e solte uma imagem (Recomendado: 600x400px)"
                                         bucketName="promotional-banners" // Novo bucket para banners promocionais
                                         folderPath="banners"
                                         maxFileSizeMB={5}
