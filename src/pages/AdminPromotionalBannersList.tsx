@@ -190,7 +190,7 @@ const AdminPromotionalBannersList: React.FC = () => {
                 </div>
             </div>
 
-            <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
+            <Card className="bg-black/90 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10 p-6">
                 {banners.length === 0 ? (
                     <div className="text-center py-10">
                         <Image className="h-12 w-12 text-gray-600 mx-auto mb-4" />
