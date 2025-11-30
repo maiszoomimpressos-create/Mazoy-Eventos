@@ -14,26 +14,48 @@ import { supabase } from '@/integrations/supabase/client';
 import { showError } from '@/utils/toast';
 import { Loader2, SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useQuery } from '@tanstack/react-query';
 
 // Interface para os dados do banner retornados pela Edge Function
 interface CarouselBanner {
     id: string;
-    type: 'event' | 'promotional'; // Novo campo para diferenciar
+    type: 'event' | 'promotional';
     image_url: string;
     headline: string;
     subheadline: string;
-    category?: string; // Opcional para banners promocionais
-    min_price?: number | null; // Opcional para banners promocionais
-    location?: string; // Opcional para banners promocionais
-    date?: string; // Opcional para banners promocionais
-    time?: string; // Opcional para banners promocionais
-    link_url?: string; // Para banners promocionais
-    event_id?: string; // Para banners de evento
+    category?: string;
+    min_price?: number | null;
+    location?: string;
+    date?: string;
+    time?: string;
+    link_url?: string;
+    event_id?: string;
+}
+
+interface CarouselSettings {
+    rotation_time_seconds: number;
+    regional_distance_km: number;
+    max_banners_display: number;
 }
 
 interface EventCarouselProps {
     userId: string | undefined;
 }
+
+const fetchCarouselSettings = async (): Promise<CarouselSettings> => {
+    const { data, error } = await supabase
+        .from('carousel_settings')
+        .select('rotation_time_seconds, regional_distance_km, max_banners_display')
+        .limit(1)
+        .single();
+
+    if (error && error.code !== 'PGRST116') {
+        console.error("Error fetching carousel settings:", error);
+        throw error;
+    }
+    
+    return data || { rotation_time_seconds: 5, regional_distance_km: 100, max_banners_display: 5 };
+};
 
 const getMinPriceDisplay = (price: number | null | undefined): string => {
     if (price === null || price === undefined || price === 0) return 'Grátis';
@@ -43,13 +65,20 @@ const getMinPriceDisplay = (price: number | null | undefined): string => {
 const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
     const navigate = useNavigate();
     const [banners, setBanners] = useState<CarouselBanner[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoadingBanners, setIsLoadingBanners] = useState(true);
     const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-    const [activeIndex, setActiveIndex] = useState(0); // Estado para rastrear o slide ativo
+    const [activeIndex, setActiveIndex] = useState(0);
+
+    // Busca as configurações do carrossel
+    const { data: settings, isLoading: isLoadingSettings } = useQuery({
+        queryKey: ['carouselSettings'],
+        queryFn: fetchCarouselSettings,
+        staleTime: 1000 * 60 * 5, // 5 minutes
+    });
 
     useEffect(() => {
-        // Tenta obter a localização do usuário
-        if (navigator.geolocation) {
+        // 1. Tenta obter a localização do usuário APENAS se a distância regional for > 0
+        if (settings && settings.regional_distance_km > 0 && navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     setUserLocation({
@@ -59,24 +88,38 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 },
                 (error) => {
                     console.warn("Geolocation error:", error);
-                    // Não é um erro crítico, apenas não usaremos a localização
+                    setUserLocation(null); // Garante que a localização seja nula se houver erro
                 },
                 { enableHighAccuracy: false, timeout: 5000, maximumAge: 0 }
             );
+        } else if (settings && settings.regional_distance_km === 0) {
+            setUserLocation(null); // Se a distância for 0, não precisamos da localização
         }
-    }, []);
+    }, [settings]);
 
     useEffect(() => {
+        if (isLoadingSettings || !settings) return;
+
         const fetchCarouselBanners = async () => {
-            setIsLoading(true);
+            setIsLoadingBanners(true);
             try {
                 const token = (await supabase.auth.getSession()).data.session?.access_token;
                 
+                let locationPayload = {};
+                
+                // Se a distância regional for > 0 E tivermos a localização do usuário, enviamos a localização
+                if (settings.regional_distance_km > 0 && userLocation) {
+                    locationPayload = {
+                        user_latitude: userLocation.latitude,
+                        user_longitude: userLocation.longitude,
+                    };
+                }
+                
+                // A Edge Function agora recebe a localização APENAS se for relevante (distância > 0)
                 const { data, error } = await supabase.functions.invoke('fetch-carousel-events', {
                     body: {
                         user_id: userId,
-                        user_latitude: userLocation?.latitude,
-                        user_longitude: userLocation?.longitude,
+                        ...locationPayload,
                     },
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -96,7 +139,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 
                 const normalizedBanners: CarouselBanner[] = fetchedBanners.map((item: any) => ({
                     id: item.id,
-                    type: item.type || 'event', // Assume 'event' se não especificado
+                    type: item.type || 'event',
                     image_url: item.image_url,
                     headline: item.headline || item.title,
                     subheadline: item.subheadline || item.description,
@@ -115,14 +158,17 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 console.error("Error fetching carousel banners:", error);
                 showError(`Falha ao carregar banners do carrossel: ${error.message || 'Erro desconhecido'}`);
             } finally {
-                setIsLoading(false);
+                setIsLoadingBanners(false);
             }
         };
 
-        fetchCarouselBanners();
-    }, [userId, userLocation]);
+        // Só busca os banners se as configurações estiverem carregadas
+        if (settings) {
+            fetchCarouselBanners();
+        }
+    }, [userId, userLocation, settings, isLoadingSettings]);
 
-    if (isLoading) {
+    if (isLoadingSettings || isLoadingBanners) {
         return (
             <div className="w-full h-[400px] md:h-[500px] lg:h-[600px] bg-black/60 flex items-center justify-center rounded-2xl">
                 <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
@@ -188,8 +234,13 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                                 {/* Overlay escuro com gradiente */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/40"></div>
                                 
-                                {/* NOVO: Número do Banner para Debug */}
+                                {/* NOVO: Número do Banner para Debug (Canto Superior Esquerdo) */}
                                 <div className="absolute top-4 left-4 bg-black/70 text-yellow-500 px-3 py-1 rounded-lg font-bold text-lg z-10">
+                                    {index + 1}
+                                </div>
+                                
+                                {/* NOVO: Número do Banner para Debug (Canto Superior Direito) */}
+                                <div className="absolute top-4 right-4 bg-black/70 text-yellow-500 px-3 py-1 rounded-lg font-bold text-lg z-10">
                                     {index + 1}
                                 </div>
                                 

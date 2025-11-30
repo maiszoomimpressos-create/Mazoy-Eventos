@@ -48,9 +48,19 @@ const AdminCarouselSettings: React.FC = () => {
                 .limit(1)
                 .single();
 
+            const defaultSettings: CarouselSettingsState = {
+                rotation_time_seconds: 5,
+                max_banners_display: 5,
+                regional_distance_km: 100,
+                min_regional_banners: 3,
+                fallback_strategy: 'latest_events',
+                days_until_event_threshold: 30,
+            };
+
             if (error && error.code !== 'PGRST116') { // PGRST116 = No rows found
                 console.error("Error fetching carousel settings:", error);
                 showError("Erro ao carregar configurações do carrossel.");
+                setSettings(defaultSettings); // Fallback to defaults on error
             } else if (data) {
                 setSettings({
                     rotation_time_seconds: data.rotation_time_seconds,
@@ -62,14 +72,6 @@ const AdminCarouselSettings: React.FC = () => {
                 });
             } else {
                 // Se não houver configurações, usa os defaults e insere
-                const defaultSettings: CarouselSettingsState = {
-                    rotation_time_seconds: 5,
-                    max_banners_display: 5,
-                    regional_distance_km: 100,
-                    min_regional_banners: 3,
-                    fallback_strategy: 'latest_events',
-                    days_until_event_threshold: 30,
-                };
                 setSettings(defaultSettings);
                 // Inserir os defaults no DB para que o admin possa editá-los
                 await supabase.from('carousel_settings').insert([defaultSettings]);
@@ -80,7 +82,24 @@ const AdminCarouselSettings: React.FC = () => {
     }, [navigate]);
 
     const handleInputChange = (key: keyof CarouselSettingsState, value: string | number) => {
-        setSettings(prev => prev ? { ...prev, [key]: value } : null);
+        let numericValue: number;
+        
+        if (typeof value === 'string') {
+            // Garante que a string vazia ou inválida se torne 0 ou o valor mínimo
+            numericValue = parseInt(value) || 0;
+        } else {
+            numericValue = value;
+        }
+        
+        // Aplica limites mínimos
+        if (key === 'rotation_time_seconds' && numericValue < 1) numericValue = 1;
+        if (key === 'max_banners_display' && numericValue < 1) numericValue = 1;
+        if (key === 'regional_distance_km' && numericValue < 0) numericValue = 0;
+        if (key === 'min_regional_banners' && numericValue < 0) numericValue = 0;
+        if (key === 'days_until_event_threshold' && numericValue < 0) numericValue = 0;
+
+
+        setSettings(prev => prev ? { ...prev, [key]: numericValue } : null);
     };
 
     const handleSelectChange = (key: keyof CarouselSettingsState, value: string) => {
@@ -97,15 +116,17 @@ const AdminCarouselSettings: React.FC = () => {
         const toastId = showLoading("Salvando configurações do carrossel...");
 
         try {
+            // Usamos o ID 1 como chave de conflito para garantir que haja apenas um registro
             const { error } = await supabase
                 .from('carousel_settings')
                 .upsert(
                     { 
                         ...settings, 
+                        id: 1, // Força o ID 1 para o upsert
                         updated_by: userId, 
                         updated_at: new Date().toISOString() 
                     },
-                    { onConflict: 'id' } // Assume que sempre haverá um único registro com um ID
+                    { onConflict: 'id' } 
                 );
 
             if (error) {
@@ -114,7 +135,7 @@ const AdminCarouselSettings: React.FC = () => {
 
             dismissToast(toastId);
             showSuccess("Configurações do carrossel salvas com sucesso!");
-            navigate('/admin/dashboard'); // Ou para uma página de visualização do carrossel
+            navigate('/admin/dashboard'); 
 
         } catch (e: any) {
             dismissToast(toastId);
@@ -137,7 +158,7 @@ const AdminCarouselSettings: React.FC = () => {
     // Verifica se o usuário é Admin Master
     if (profile?.tipo_usuario_id !== 1) {
         showError("Acesso negado. Você não tem permissão de Administrador Master para esta página.");
-        navigate('/manager/dashboard'); // Redireciona para o dashboard do gestor
+        navigate('/manager/dashboard'); 
         return null;
     }
 
@@ -177,7 +198,7 @@ const AdminCarouselSettings: React.FC = () => {
                             id="rotation_time_seconds" 
                             type="number"
                             value={settings.rotation_time_seconds} 
-                            onChange={(e) => handleInputChange('rotation_time_seconds', Number(e.target.value))} 
+                            onChange={(e) => handleInputChange('rotation_time_seconds', e.target.value)} 
                             placeholder="5"
                             className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                             min={1}
@@ -196,7 +217,7 @@ const AdminCarouselSettings: React.FC = () => {
                             id="max_banners_display" 
                             type="number"
                             value={settings.max_banners_display} 
-                            onChange={(e) => handleInputChange('max_banners_display', Number(e.target.value))} 
+                            onChange={(e) => handleInputChange('max_banners_display', e.target.value)} 
                             placeholder="5"
                             className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                             min={1}
@@ -216,13 +237,13 @@ const AdminCarouselSettings: React.FC = () => {
                             id="regional_distance_km" 
                             type="number"
                             value={settings.regional_distance_km} 
-                            onChange={(e) => handleInputChange('regional_distance_km', Number(e.target.value))} 
+                            onChange={(e) => handleInputChange('regional_distance_km', e.target.value)} 
                             placeholder="100"
                             className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                             min={0}
                             disabled={isSaving}
                         />
-                        <p className="text-xs text-gray-500 mt-1">Raio em KM para priorizar eventos próximos à localização do usuário.</p>
+                        <p className="text-xs text-gray-500 mt-1">Raio em KM para priorizar eventos próximos à localização do usuário. Use 0 para ignorar a distância.</p>
                     </div>
 
                     {/* Mínimo de Banners Regionais */}
@@ -235,7 +256,7 @@ const AdminCarouselSettings: React.FC = () => {
                             id="min_regional_banners" 
                             type="number"
                             value={settings.min_regional_banners} 
-                            onChange={(e) => handleInputChange('min_regional_banners', Number(e.target.value))} 
+                            onChange={(e) => handleInputChange('min_regional_banners', e.target.value)} 
                             placeholder="3"
                             className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                             min={0}
@@ -280,7 +301,7 @@ const AdminCarouselSettings: React.FC = () => {
                             id="days_until_event_threshold" 
                             type="number"
                             value={settings.days_until_event_threshold} 
-                            onChange={(e) => handleInputChange('days_until_event_threshold', Number(e.target.value))} 
+                            onChange={(e) => handleInputChange('days_until_event_threshold', e.target.value)} 
                             placeholder="30"
                             className="bg-black/60 border-yellow-500/30 text-white placeholder-gray-500 focus:border-yellow-500"
                             min={0}
