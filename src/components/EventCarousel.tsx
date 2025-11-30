@@ -203,25 +203,18 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
         }
     };
     
-    // Helper function to get index relative to current activeIndex
-    const getRelativeIndex = (offset: number) => {
-        if (banners.length === 0) return -1;
-        let index = (activeIndex + offset) % banners.length;
-        if (index < 0) {
-            index += banners.length;
+    // Helper function to get the indices for the 6 layers behind
+    const getBehindIndices = () => {
+        if (banners.length === 0) return [];
+        const indices = [];
+        // The user's JS logic uses (index + i) % events.length for i=1 to i=6
+        for (let i = 1; i <= 6; i++) {
+            indices.push((activeIndex + i) % banners.length);
         }
-        return index;
+        return indices;
     };
 
-    // Indices for the 6 behind cards (we only use b1 and b6 for 1 slide each side)
-    const behindIndices = [
-        getRelativeIndex(1), // b1 (Próximo 1)
-        getRelativeIndex(2), // b2 (Próximo 2) - Oculto no CSS
-        getRelativeIndex(3), // b3 (Próximo 3) - Oculto no CSS
-        getRelativeIndex(-3), // b4 (Anterior 3) - Oculto no CSS
-        getRelativeIndex(-2), // b5 (Anterior 2) - Oculto no CSS
-        getRelativeIndex(-1), // b6 (Anterior 1)
-    ];
+    const behindIndices = getBehindIndices();
 
     // --- Rendering Logic ---
 
@@ -250,20 +243,15 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
     return (
         <div className="carousel-wrapper">
             
-            {/* Camadas Atrás - REATIVADAS */}
+            {/* Camadas Atrás */}
             <div className="behind-area" id="behindArea">
                 {behindIndices.map((index, i) => {
-                    if (index === -1) return null; // Skip if index is invalid
-                    
-                    // Renderiza apenas b1 (próximo) e b6 (anterior)
-                    if (i !== 0 && i !== 5) return null; 
-                    
                     const banner = banners[index];
                     const className = `behind b${i + 1}`;
                     
                     return (
                         <div 
-                            key={banner.id} 
+                            key={banner.id + i} // Use index i for key stability in the behind layers
                             className={className} 
                             style={{ backgroundImage: `url(${banner.image_url})` }}
                         >
@@ -284,25 +272,23 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 />
                 
                 {/* Conteúdo do Banner */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex flex-col justify-end p-8">
-                    <h2 className="text-3xl sm:text-4xl font-serif text-white mb-2 leading-tight drop-shadow-lg line-clamp-2">
+                <div className="card-content">
+                    <div className="card-title">
                         {activeBanner.headline}
-                    </h2>
-                    <p className="text-base text-gray-200 mb-4 leading-relaxed line-clamp-2 drop-shadow-md">
+                    </div>
+                    <div className="card-sub">
                         {activeBanner.subheadline}
-                    </p>
+                    </div>
                     
                     {activeBanner.type === 'event' && activeBanner.min_price !== null && (
-                        <p className="text-xl font-bold text-yellow-500 mb-4">
+                        <p className="text-xl font-bold text-yellow-500 mb-4 drop-shadow-lg">
                             A partir de {getMinPriceDisplay(activeBanner.min_price)}
                         </p>
                     )}
                     
-                    <Button 
-                        className="w-full sm:w-auto bg-yellow-500 text-black hover:bg-yellow-600 px-6 py-2 text-base font-semibold transition-all duration-300 cursor-pointer"
-                    >
+                    <div className="btn-custom">
                         {activeBanner.type === 'event' ? 'Ver Detalhes' : 'Saiba Mais'}
-                    </Button>
+                    </div>
                 </div>
             </div>
             
