@@ -212,10 +212,10 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 effect={'coverflow'} 
                 grabCursor={true}
                 coverflowEffect={{
-                    rotate: 0, // Rotação zerada para manter os slides mais planos
-                    stretch: 500, // Aumenta o alongamento para afastar os slides e mostrar mais laterais
-                    depth: 100, // Profundidade reduzida
-                    modifier: 1, 
+                    rotate: 0, 
+                    stretch: 0, // Reduzindo o stretch para 0 para focar no depth/modifier
+                    depth: 100, 
+                    modifier: 2, // Aumentando o modifier para acentuar o efeito de perspectiva/recuo
                     slideShadows: false, 
                 }}
                 modules={[Pagination, EffectCoverflow, Autoplay]}
