@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination, EffectCoverflow, Autoplay } from 'swiper/modules';
+import { Pagination, EffectCreative, Autoplay } from 'swiper/modules'; // Alterado EffectCoverflow para EffectCreative
 import 'swiper/css';
 import 'swiper/css/pagination';
-import 'swiper/css/effect-coverflow';
+import 'swiper/css/effect-creative'; // Importando o CSS correto
 import './EventCarousel.css';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -209,16 +209,18 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 }}
                 autoplay={false} 
                 navigation={true}
-                effect={'coverflow'}
-                coverflowEffect={{
-                    rotate: 10, // Rotação sutil
-                    stretch: 50, // Aumenta a distância horizontal entre os slides
-                    depth: 150, // Aumenta a profundidade 3D
-                    modifier: 1,
-                    slideShadows: true,
+                effect={'creative'} // Usando EffectCreative
+                creativeEffect={{
+                    prev: {
+                        shadow: true,
+                        translate: [0, 0, -400],
+                    },
+                    next: {
+                        translate: ['100%', 0, 0],
+                    },
                 }}
                 grabCursor={true}
-                modules={[Pagination, EffectCoverflow, Autoplay]}
+                modules={[Pagination, EffectCreative, Autoplay]} // Módulos atualizados
                 className="mySwiper w-full h-full event-carousel-perspective"
             >
                 {banners.map((banner, index) => (
