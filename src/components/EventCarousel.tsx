@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination, EffectCoverflow } from 'swiper/modules'; // Removendo Autoplay
+import { Pagination, EffectCoverflow } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-coverflow'; // Importar o CSS do Coverflow
@@ -212,12 +212,12 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 grabCursor={true}
                 coverflowEffect={{
                     rotate: 0, 
-                    stretch: 100, // Reduzido para ver mais slides laterais
+                    stretch: 10, // Reduzido drasticamente para afastar os slides
                     depth: 100, 
-                    modifier: 2.5, // Aumentado para espaçar mais os slides
+                    modifier: 5, // Aumentado para espaçar mais os slides
                     slideShadows: false, 
                 }}
-                modules={[Pagination, EffectCoverflow]} // Removendo Autoplay
+                modules={[Pagination, EffectCoverflow]}
                 className="mySwiper w-full h-full event-carousel-perspective"
             >
                 {banners.map((banner, index) => (
