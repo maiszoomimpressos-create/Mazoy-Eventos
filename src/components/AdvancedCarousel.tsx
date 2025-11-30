@@ -39,7 +39,8 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
     };
 
     useEffect(() => {
-        const interval = setInterval(updateSlide, 4000);
+        // Usando 4500ms como você sugeriu
+        const interval = setInterval(updateSlide, 4500);
         return () => clearInterval(interval);
     }, [currentIndex, banners.length]);
 
@@ -117,7 +118,7 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                             />
                             {/* Overlay escuro para garantir solidez e profundidade */}
                             <div 
-                                className="absolute inset-0 bg-black transition-opacity duration-1000" // Alterado para bg-black (100% opaco)
+                                className="absolute inset-0 bg-black transition-opacity duration-1000" // Usando bg-black para 100% de opacidade
                                 style={{ opacity: 1 }}
                             ></div>
                         </div>
@@ -148,8 +149,8 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                             }}
                         />
                     )}
-                    {/* Overlay escuro para o texto ser legível */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                    {/* Overlay escuro para o texto ser legível - Usando from-black para 100% de opacidade na base */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
                     
                     {/* Conteúdo do Banner */}
                     <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
@@ -188,6 +189,7 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                 }, 1000);
                             }
                         }}
+                        // Usando bg-black para 100% de opacidade
                         className="absolute left-4 top-1/2 transform -translate-y-1/2 w-14 h-14 bg-black hover:bg-black/90 rounded-xl flex items-center justify-center transition-all duration-400 z-30 cursor-pointer border border-yellow-400/30 shadow-2xl"
                     >
                         <i className="fas fa-chevron-left text-white text-xl"></i>
@@ -199,6 +201,7 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                 updateSlide();
                             }
                         }}
+                        // Usando bg-black para 100% de opacidade
                         className="absolute right-4 top-1/2 transform -translate-y-1/2 w-14 h-14 bg-black hover:bg-black/90 rounded-xl flex items-center justify-center transition-all duration-400 z-30 cursor-pointer border border-yellow-400/30 shadow-2xl"
                     >
                         <i className="fas fa-chevron-right text-white text-xl"></i>
