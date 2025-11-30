@@ -9,12 +9,14 @@ interface RotatingFixedCarouselProps {
     items: string[]; // Array de URLs de imagens
 }
 
-// Define as 7 posições fixas no carrossel
+// Define as 9 posições fixas no carrossel (4 esquerda, 1 centro, 4 direita)
 const POSITIONS = [
     'position-center',
     'position-right-1',
     'position-right-2',
     'position-right-3',
+    'position-right-4', // NOVO
+    'position-left-4',  // NOVO
     'position-left-3',
     'position-left-2',
     'position-left-1',
@@ -26,19 +28,20 @@ type PositionClass = typeof POSITIONS[number];
 const getPositionClass = (itemIndex: number, activeIndex: number, totalItems: number): PositionClass | null => {
     const diff = (itemIndex - activeIndex + totalItems) % totalItems;
     
-    // O carrossel tem 7 slots visíveis (3 esquerda, 1 centro, 3 direita)
+    // O carrossel tem 9 slots visíveis (4 esquerda, 1 centro, 4 direita)
     if (diff === 0) return 'position-center';
     if (diff === 1) return 'position-right-1';
     if (diff === 2) return 'position-right-2';
     if (diff === 3) return 'position-right-3';
+    if (diff === 4) return 'position-right-4'; // NOVO
     
     // Para a rotação circular, os itens mais distantes à esquerda
-    // são mapeados para os índices mais altos (totalItems - 1, totalItems - 2, etc.)
     if (diff === totalItems - 1) return 'position-left-1';
     if (diff === totalItems - 2) return 'position-left-2';
     if (diff === totalItems - 3) return 'position-left-3';
+    if (diff === totalItems - 4) return 'position-left-4'; // NOVO
 
-    // Se o item estiver fora das 7 posições visíveis, ele não recebe classe de posição
+    // Se o item estiver fora das 9 posições visíveis, ele não recebe classe de posição
     return null;
 };
 
@@ -48,6 +51,7 @@ const getZIndex = (positionClass: PositionClass | null): number => {
     if (positionClass?.includes('1')) return 90;
     if (positionClass?.includes('2')) return 80;
     if (positionClass?.includes('3')) return 70;
+    if (positionClass?.includes('4')) return 60; // NOVO
     return 1;
 };
 
@@ -68,9 +72,8 @@ const RotatingFixedCarousel: React.FC<RotatingFixedCarouselProps> = ({ items }) 
         return <div className="rotating-carousel-container text-gray-400 justify-center">Nenhum item para exibir no carrossel.</div>;
     }
     
-    // Se houver menos de 7 itens, o carrossel não funcionará corretamente com 3 camadas de cada lado.
-    // Para simplificar, vamos garantir que haja pelo menos 7 itens para preencher todas as posições.
-    if (totalItems < 7) {
+    // O carrossel agora requer um mínimo de 9 itens para preencher todas as posições (4+1+4)
+    if (totalItems < 9) {
         // Renderiza apenas o item central se não houver itens suficientes
         return (
             <div className="rotating-carousel-container">
