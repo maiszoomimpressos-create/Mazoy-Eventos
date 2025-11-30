@@ -1,4 +1,3 @@
-bg-black).">
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -101,7 +100,7 @@ const AdminEditPromotionalBanner: React.FC = () => {
     };
 
     const onSubmit = async (values: PromotionalBannerFormData) => {
-        if (!userId || !id || profile?.tipo_usuario_id !== ADMIN_MASTER_USER_TYPE_ID) {
+        if (!userId || profile?.tipo_usuario_id !== ADMIN_MASTER_USER_TYPE_ID) {
             showError("Acesso negado. Apenas Administradores Master podem editar banners.");
             return;
         }
@@ -352,7 +351,7 @@ const AdminEditPromotionalBanner: React.FC = () => {
                                     {isSaving ? (
                                         <div className="flex items-center justify-center">
                                             <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                                            Atualizando Banner...
+                                            Salvando Alterações...
                                         </div>
                                     ) : (
                                         <>
