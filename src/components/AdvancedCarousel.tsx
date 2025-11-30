@@ -16,7 +16,6 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
     const navigate = useNavigate();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
-    const [nextIndex, setNextIndex] = useState(0);
 
     if (banners.length === 0) {
         return (
@@ -27,11 +26,11 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
     }
 
     const currentBanner = banners[currentIndex];
+    const nextIndex = (currentIndex + 1) % banners.length;
     const nextBanner = banners[nextIndex];
 
     const updateSlide = () => {
         const next = (currentIndex + 1) % banners.length;
-        setNextIndex(next);
         setIsTransitioning(true);
         setTimeout(() => {
             setCurrentIndex(next);
@@ -78,7 +77,7 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
     return (
         <div className="h-full bg-black flex justify-center items-center pt-5 overflow-hidden font-sans">
             <div className="max-w-[1600px] w-full h-[600px] relative flex justify-center items-center px-4">
-                {/* Banners laterais em escadinha - Imagens atuais */}
+                {/* Banners laterais em escadinha - SEMPRE SÓLIDOS */}
                 {getSideImages(currentIndex).map((sideImg, index) => {
                     const isLeft = sideImg.side === 'left';
                     const pos = sideImg.position;
@@ -90,7 +89,7 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                     const zIndex = 15 - pos;
                     const transitionDelay = pos * 80;
                     
-                    // Opacidade total (1) para o container
+                    // Opacidade total (1) garantida
                     const opacityValue = 1; 
 
                     return (
@@ -102,7 +101,7 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                 height: `${baseHeight * scale}px`,
                                 transform: `translateX(${offsetX}px) translateY(${offsetY}px)`,
                                 zIndex: zIndex,
-                                opacity: isTransitioning ? 0 : opacityValue, // Opacidade total (1) para o container
+                                opacity: opacityValue, // SEMPRE 1
                                 transition: `all 1000ms ease-out`,
                                 transitionDelay: isTransitioning ? `${transitionDelay}ms` : '0ms'
                             }}
@@ -113,64 +112,11 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                 className="w-full h-full object-cover object-top transition-all duration-1000 ease-out"
                                 style={{
                                     transform: isTransitioning ? 'scale(0.95)' : 'scale(1)',
-                                    // Removendo o blur da imagem
-                                    filter: isTransitioning ? 'blur(0px)' : 'blur(0px)', 
+                                    filter: 'blur(0px)', 
                                     transitionDelay: `${transitionDelay}ms`
                                 }}
                             />
-                            {/* Overlay escuro para simular profundidade e garantir solidez */}
-                            {/* Mantendo o overlay para escurecer, mas com opacidade fixa para não ser transparente */}
-                            <div 
-                                className="absolute inset-0 bg-black/80 transition-opacity duration-1000"
-                                style={{ opacity: 0.5 }} // Opacidade fixa para escurecer, mas não transparente
-                            ></div>
-                        </div>
-                    );
-                })}
-                {/* Banners laterais em escadinha - Próximas imagens (durante transição) */}
-                {isTransitioning && getSideImages(nextIndex).map((sideImg, index) => {
-                    const isLeft = sideImg.side === 'left';
-                    const pos = sideImg.position;
-                    const baseWidth = 320;
-                    const baseHeight = 400;
-                    const scale = 1 - (pos * 0.08);
-                    const offsetX = isLeft ? -(172 + (pos * 90)) : (172 + (pos * 90));
-                    const offsetY = 0;
-                    const zIndex = 15 - pos;
-                    const transitionDelay = pos * 80;
-                    
-                    const opacityValue = 1; 
-
-                    return (
-                        <div
-                            key={`next-${sideImg.side}-${pos}-${nextIndex}`}
-                            className="absolute rounded-2xl overflow-hidden shadow-2xl border border-white/20"
-                            style={{
-                                width: `${baseWidth * scale}px`,
-                                height: `${baseHeight * scale}px`,
-                                transform: `translateX(${offsetX}px) translateY(${offsetY}px)`,
-                                zIndex: zIndex,
-                                // Opacidade inicial 0, opacidade final 1
-                                opacity: 0,
-                                transition: `all 1000ms ease-out`,
-                                transitionDelay: `${200 + transitionDelay}ms`,
-                                // Usando a transição CSS para a opacidade
-                                opacity: 1,
-                            }}
-                        >
-                            <img
-                                src={sideImg.image}
-                                alt={`Next side image ${pos}`}
-                                className="w-full h-full object-cover object-top"
-                                style={{
-                                    transform: 'scale(0.9)',
-                                    // Removendo o blur da imagem
-                                    filter: 'blur(0px)',
-                                    transition: 'all 1000ms ease-out',
-                                    transitionDelay: `${200 + transitionDelay}ms`
-                                }}
-                            />
-                            {/* Overlay escuro para simular profundidade e garantir solidez */}
+                            {/* Overlay escuro para garantir solidez e profundidade */}
                             <div 
                                 className="absolute inset-0 bg-black/80 transition-opacity duration-1000"
                                 style={{ opacity: 0.5 }}
@@ -178,6 +124,7 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                         </div>
                     );
                 })}
+                
                 {/* Banner central principal */}
                 <div 
                     className="w-[700px] h-[450px] rounded-3xl overflow-hidden relative z-20 shadow-[0_0_80px_rgba(255,210,0,0.6)] border-4 border-yellow-400/30 cursor-pointer"
@@ -235,7 +182,6 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                             e.stopPropagation(); // Previne o clique no card central
                             if (!isTransitioning) {
                                 const prev = currentIndex === 0 ? banners.length - 1 : currentIndex - 1;
-                                setNextIndex(prev);
                                 setIsTransitioning(true);
                                 setTimeout(() => {
                                     setCurrentIndex(prev);
@@ -267,7 +213,6 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                             key={index}
                             onClick={() => {
                                 if (index !== currentIndex && !isTransitioning) {
-                                    setNextIndex(index);
                                     setIsTransitioning(true);
                                     setTimeout(() => {
                                         setCurrentIndex(index);
