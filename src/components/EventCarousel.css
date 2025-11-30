@@ -54,14 +54,15 @@
   /* Usando background-image para a imagem de fundo */
 }
 
-/* ESCADINHAS PARA BAIXO — COPIE IGUAL */
+/* ESCADINHAS PARA BAIXO — AJUSTADO */
 /* Usando variáveis CSS para facilitar a adaptação responsiva */
-.b1 { transform: scale(.90) translate(var(--b1-x, -300px), var(--b1-y, 30px)); }
-.b2 { transform: scale(.85) translate(var(--b2-x, -220px), var(--b2-y, 60px)); }
-.b3 { transform: scale(.80) translate(var(--b3-x, -140px), var(--b3-y, 90px)); }
-.b4 { transform: scale(.80) translate(var(--b4-x, 140px), var(--b4-y, 90px)); }
-.b5 { transform: scale(.85) translate(var(--b5-x, 220px), var(--b5-y, 60px)); }
-.b6 { transform: scale(.90) translate(var(--b6-x, 300px), var(--b6-y, 30px)); }
+/* Ajuste: Reduzindo a distância X e Y para empilhar mais perto */
+.b1 { transform: scale(.95) translate(var(--b1-x, -180px), var(--b1-y, 15px)); }
+.b2 { transform: scale(.90) translate(var(--b2-x, -120px), var(--b2-y, 30px)); }
+.b3 { transform: scale(.85) translate(var(--b3-x, -60px), var(--b3-y, 45px)); }
+.b4 { transform: scale(.85) translate(var(--b4-x, 60px), var(--b4-y, 45px)); }
+.b5 { transform: scale(.90) translate(var(--b5-x, 120px), var(--b5-y, 30px)); }
+.b6 { transform: scale(.95) translate(var(--b6-x, 180px), var(--b6-y, 15px)); }
 
 /* Responsive adjustments for smaller screens */
 @media (max-width: 768px) {
@@ -82,10 +83,10 @@
     }
     
     /* Adjust transforms using viewport units for better scaling */
-    .b1 { --b1-x: -30vw; --b1-y: 30px; }
-    .b2 { --b2-x: -22vw; --b2-y: 45px; }
-    .b3 { --b3-x: -14vw; --b3-y: 60px; }
-    .b4 { --b4-x: 14vw; --b4-y: 60px; }
-    .b5 { --b5-x: 22vw; --b5-y: 45px; }
-    .b6 { --b6-x: 30vw; --b6-y: 30px; }
+    .b1 { --b1-x: -18vw; --b1-y: 15px; }
+    .b2 { --b2-x: -12vw; --b2-y: 30px; }
+    .b3 { --b3-x: -6vw; --b3-y: 45px; }
+    .b4 { --b4-x: 6vw; --b4-y: 45px; }
+    .b5 { --b5-x: 12vw; --b5-y: 30px; }
+    .b6 { --b6-x: 18vw; --b6-y: 15px; }
 }
