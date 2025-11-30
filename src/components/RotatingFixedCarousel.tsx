@@ -16,6 +16,28 @@ interface Position {
   opacity: number;
 }
 
+// Parâmetros fixos para as posições laterais
+const MAP_POSITIONS: { [key: number]: { scale: number; x: number; y: number; zIndex: number; opacity: number } } = {
+  0: { scale: 1, x: 0, y: 0, zIndex: 10, opacity: 1 },
+  1: { scale: 0.85, x: 150, y: 30, zIndex: 9, opacity: 0.95 },
+  2: { scale: 0.75, x: 250, y: 60, zIndex: 8, opacity: 0.85 },
+  3: { scale: 0.65, x: 350, y: 90, zIndex: 7, opacity: 0.75 },
+};
+
+/**
+ * Normaliza a diferença de índice para um valor simétrico no intervalo [-floor(total/2), floor(total/2)].
+ * Ex: Se total=7 e index=0:
+ *   i=1 -> diff=1
+ *   i=6 -> diff=-1
+ */
+function normalizePos(rawDiff: number, total: number): number {
+    let diff = (rawDiff + total) % total;
+    if (diff > total / 2) {
+        diff = diff - total;
+    }
+    return diff;
+}
+
 export default function RotatingFixedCarousel({ items }: RotatingFixedCarouselProps) {
   const [index, setIndex] = useState(0);
 
@@ -29,30 +51,36 @@ export default function RotatingFixedCarousel({ items }: RotatingFixedCarouselPr
 
   const getPosition = (i: number): Position => {
     const total = items.length;
-    if (total === 0) return { scale: 0, x: 0, y: 0, zIndex: 1, opacity: 0 };
+    if (total === 0) return MAP_POSITIONS.hidden;
     
-    const dist = (i - index + total) % total;
+    const rawDiff = i - index;
+    const diff = normalizePos(rawDiff, total);
 
-    if (dist === 0)
-      return { scale: 1, x: 0, y: 0, opacity: 1, zIndex: 10 };
-
-    const map: { [key: number]: { scale: number; x: number; y: number; zIndex: number } } = {
-      1: { scale: 0.85, x: 150, y: 30, zIndex: 9 },
-      2: { scale: 0.75, x: 250, y: 60, zIndex: 8 },
-      3: { scale: 0.65, x: 350, y: 90, zIndex: 7 },
-    };
-
-    if (dist <= 3) {
-        const { zIndex, ...rest } = map[dist];
-        return { ...rest, zIndex, opacity: 0.9 };
+    // Posição Central
+    if (diff === 0) {
+      return MAP_POSITIONS[0];
     }
 
-    const leftDist = total - dist;
-    if (leftDist <= 3) {
-      const m = map[leftDist];
-      return { scale: m.scale, x: -m.x, y: m.y, zIndex: m.zIndex, opacity: 0.9 };
+    // Posições à Direita (diff > 0)
+    if (diff > 0 && diff <= 3) {
+      return MAP_POSITIONS[diff];
     }
 
+    // Posições à Esquerda (diff < 0)
+    if (diff < 0 && diff >= -3) {
+      const absDiff = Math.abs(diff);
+      const base = MAP_POSITIONS[absDiff];
+      
+      return {
+        scale: base.scale,
+        x: -base.x, // Inverte o X para a esquerda
+        y: base.y,
+        zIndex: base.zIndex,
+        opacity: base.opacity,
+      };
+    }
+
+    // Posição Oculta (Hidden)
     return { scale: 0.6, x: 0, y: 120, opacity: 0, zIndex: 1 };
   };
   
