@@ -59,7 +59,7 @@ const FixedCarousel: React.FC = () => {
     };
 
     return (
-        <div className="h-full bg-black flex justify-center items-center overflow-hidden font-sans">
+        <div className="h-full bg-black flex justify-center items-start pt-12 overflow-hidden font-sans">
             <div className="max-w-[1600px] w-full h-[600px] relative flex justify-center items-center px-4">
                 {/* Banners laterais em escadinha - Imagens atuais */}
                 {getSideImages(currentIndex).map((sideImg, index) => {
