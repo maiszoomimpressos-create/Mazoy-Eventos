@@ -199,7 +199,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
         <div className="relative w-full h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
             <Swiper
                 onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
-                slidesPerView={3} // Exibe 3 slides por vez (Caixa 3, 4, 5)
+                slidesPerView={'auto'} // Voltando para 'auto'
                 centeredSlides={true}
                 spaceBetween={20} // Espaçamento entre as caixas
                 initialSlide={banners.length >= 4 ? 3 : 0} // Inicia no Banner 4 (índice 3)
@@ -209,9 +209,16 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 }}
                 autoplay={false} 
                 navigation={true} // Ativa a navegação por setas
-                effect={'slide'} // Usando o efeito slide padrão
+                effect={'coverflow'} // Voltando para coverflow
+                coverflowEffect={{
+                    rotate: 50,
+                    stretch: 0,
+                    depth: 100,
+                    modifier: 1,
+                    slideShadows: true,
+                }}
                 grabCursor={true}
-                modules={[Pagination, Autoplay]} // Removendo EffectCoverflow
+                modules={[Pagination, EffectCoverflow, Autoplay]} // Voltando EffectCoverflow
                 className="mySwiper w-full h-full event-carousel-perspective"
             >
                 {banners.map((banner, index) => (
