@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination, Autoplay } from 'swiper/modules';
+import { Pagination, Autoplay, EffectCoverflow } from 'swiper/modules'; // Importando EffectCoverflow
 import 'swiper/css';
 import 'swiper/css/pagination';
+import 'swiper/css/effect-coverflow'; // Importando o CSS do efeito
 import './EventCarousel.css';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -173,31 +174,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
         }
     }, [userId, userLocation, settings, isLoadingSettings]);
 
-    // Custom effect logic for staircase effect
-    const applyStaircaseEffect = (swiper: any) => {
-        const slides = swiper.slides;
-        
-        // Define o deslocamento vertical máximo em pixels
-        const maxOffset = 50; 
-        
-        slides.forEach((slide: HTMLElement) => {
-            const progress = slide.progress;
-            
-            // Calcula a distância absoluta do centro (0 é centro)
-            const distance = Math.abs(progress);
-            
-            // O deslocamento aumenta linearmente com a distância
-            const offset = distance * maxOffset;
-            
-            // Aplica translateY para empurrar o slide para baixo
-            slide.style.transform = `translateY(${offset}px) scale(1)`;
-            
-            // Aplica opacidade e zIndex para profundidade
-            slide.style.opacity = `${1 - distance * 0.3}`; 
-            slide.style.zIndex = `${100 - Math.floor(distance * 10)}`; 
-        });
-    };
-
+    // Removendo a função applyStaircaseEffect customizada, pois usaremos EffectCoverflow
 
     if (isLoadingSettings || isLoadingBanners) {
         return (
@@ -226,21 +203,30 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
             <Swiper
                 onSwiper={(swiper) => {
                     swiperRef.current = swiper;
-                    applyStaircaseEffect(swiper); // Aplica o efeito inicial
                 }}
-                onProgress={applyStaircaseEffect} // Aplica o efeito durante o scroll
                 onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
                 slidesPerView={'auto'}
                 centeredSlides={true}
-                spaceBetween={0} // Slides se tocam
-                initialSlide={banners.length >= 4 ? 3 : 0} // Inicia no Banner 4 (índice 3)
-                loop={true} // Ativa o loop para rotação contínua
+                spaceBetween={0}
+                initialSlide={banners.length >= 4 ? 3 : 0}
+                loop={true}
                 pagination={{
                     clickable: true,
                 }}
-                autoplay={false} // Mantendo o autoplay desativado
+                autoplay={false}
                 navigation={false}
-                modules={[Pagination, Autoplay]}
+                
+                // Configuração do EffectCoverflow para criar o efeito de escadinha vertical
+                effect={'coverflow'}
+                grabCursor={true}
+                modules={[Pagination, Autoplay, EffectCoverflow]}
+                coverflowEffect={{
+                    rotate: 0, // Sem rotação horizontal
+                    stretch: 0, // Sem estiramento
+                    depth: 100, // Profundidade (para o efeito 3D)
+                    modifier: 1,
+                    slideShadows: false,
+                }}
                 className="mySwiper w-full h-full event-carousel-perspective"
             >
                 {banners.map((banner, index) => (
