@@ -1,282 +1,247 @@
-"use client";
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input'; 
-import { useCarouselBanners, CarouselBanner } from '@/hooks/use-carousel-banners';
-import { Loader2 } from 'lucide-react';
 
 const FixedCarousel: React.FC = () => {
-  const navigate = useNavigate();
-  const { banners, isLoading, isError } = useCarouselBanners();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  
-  const items = banners;
-  const itemCount = items.length;
-
-  // Sincroniza o índice quando os banners são carregados ou mudam
-  useEffect(() => {
-    if (itemCount > 0) {
-        setCurrentIndex(0);
-    }
-  }, [itemCount]);
-
-  // Helper function to get the minimum price display
-  const getMinPriceDisplay = (price: number | null | undefined): string => {
-    if (price === null || price === undefined || price === 0) return 'Grátis';
-    return `R$ ${price.toFixed(2).replace('.', ',')}`;
-  };
-
-  const getCardPosition = (index: number) => {
-    if (itemCount === 0) return { translateX: 0, translateY: 0, scale: 0, opacity: 0, zIndex: 0 };
-    
-    // Calcula a distância cíclica
-    let distance = (index - currentIndex + itemCount) % itemCount;
-    
-    // Se a distância for maior que a metade, significa que é mais perto ir para trás
-    if (distance > itemCount / 2) {
-        distance = distance - itemCount;
-    }
-
-    // Card central
-    if (distance === 0) {
-      return {
-        translateX: 0,
-        translateY: 0,
-        scale: 1,
-        opacity: 1,
-        zIndex: 10
-      };
-    }
-    
-    // Cards à direita (distância positiva)
-    if (distance > 0 && distance <= 3) {
-      const rightPositions = [
-        { x: 160, y: 30, scale: 0.85 },
-        { x: 260, y: 60, scale: 0.75 },
-        { x: 360, y: 90, scale: 0.65 }
-      ];
-      const pos = rightPositions[distance - 1];
-      return {
-        translateX: pos.x,
-        translateY: pos.y,
-        scale: pos.scale,
-        opacity: 0.9,
-        zIndex: 10 - distance
-      };
-    }
-    
-    // Cards à esquerda (distância negativa)
-    if (distance < 0 && distance >= -3) {
-      const leftDistance = Math.abs(distance);
-      const leftPositions = [
-        { x: -160, y: 30, scale: 0.85 },
-        { x: -260, y: 60, scale: 0.75 },
-        { x: -360, y: 90, scale: 0.65 }
-      ];
-      const pos = leftPositions[leftDistance - 1];
-      return {
-        translateX: pos.x,
-        translateY: pos.y,
-        scale: pos.scale,
-        opacity: 0.9,
-        zIndex: 10 - leftDistance
-      };
-    }
-    
-    // Cards invisíveis
-    return {
-      translateX: 0,
-      translateY: 200,
-      scale: 0.4,
-      opacity: 0,
-      zIndex: 0
+    const navigate = useNavigate();
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [isTransitioning, setIsTransitioning] = useState(false);
+    const [nextIndex, setNextIndex] = useState(0);
+    const images = [
+        'https://readdy.ai/api/search-image?query=modern%20luxury%20sports%20car%20in%20elegant%20showroom%20with%20soft%20golden%20lighting%20and%20minimalist%20white%20background%20creating%20premium%20automotive%20photography%20atmosphere&width=700&height=450&seq=img1&orientation=landscape',
+        'https://readdy.ai/api/search-image?query=sophisticated%20fashion%20model%20wearing%20designer%20clothing%20in%20contemporary%20studio%20setting%20with%20clean%20white%20backdrop%20and%20professional%20lighting%20setup&width=700&height=450&seq=img2&orientation=landscape',
+        'https://readdy.ai/api/search-image?query=premium%20watch%20collection%20displayed%20on%20marble%20surface%20with%20elegant%20lighting%20and%20luxurious%20minimalist%20background%20showcasing%20fine%20craftsmanship%20and%20precision&width=700&height=450&seq=img3&orientation=landscape',
+        'https://readdy.ai/api/search-image?query=high-end%20technology%20gadgets%20arranged%20artistically%20on%20clean%20white%20surface%20with%20modern%20lighting%20creating%20sleek%20product%20photography%20composition&width=700&height=450&seq=img4&orientation=landscape',
+        'https://readdy.ai/api/search-image?query=elegant%20jewelry%20pieces%20displayed%20on%20sophisticated%20velvet%20surface%20with%20dramatic%20lighting%20and%20luxurious%20background%20creating%20premium%20product%20showcase&width=700&height=450&seq=img5&orientation=landscape',
+        'https://readdy.ai/api/search-image?query=modern%20architectural%20interior%20with%20clean%20lines%20and%20minimalist%20design%20featuring%20natural%20lighting%20and%20contemporary%20furniture%20in%20neutral%20color%20palette&width=700&height=450&seq=img6&orientation=landscape',
+        'https://readdy.ai/api/search-image?query=premium%20cosmetics%20and%20beauty%20products%20arranged%20on%20marble%20surface%20with%20soft%20lighting%20and%20elegant%20white%20background%20creating%20luxury%20brand%20photography&width=700&height=450&seq=img7&orientation=landscape',
+        'https://readdy.ai/api/search-image?query=sophisticated%20home%20decor%20items%20displayed%20in%20modern%20living%20space%20with%20natural%20lighting%20and%20contemporary%20design%20elements%20in%20neutral%20tones&width=700&height=450&seq=img8&orientation=landscape'
+    ];
+    const updateSlide = () => {
+        const next = (currentIndex + 1) % images.length;
+        setNextIndex(next);
+        setIsTransitioning(true);
+        setTimeout(() => {
+            setCurrentIndex(next);
+            setIsTransitioning(false);
+        }, 1000);
     };
-  };
+    useEffect(() => {
+        const interval = setInterval(updateSlide, 4000);
+        return () => clearInterval(interval);
+    }, [currentIndex]);
 
-  const handlePrevious = () => {
-    setCurrentIndex((prevIndex) => (prevIndex - 1 + itemCount) % itemCount);
-  };
-
-  const handleNext = () => {
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % itemCount);
-  };
-  
-  const handleCardClick = (index: number, banner: CarouselBanner) => {
-    if (index === currentIndex) {
-        // Se for o card central, navega
-        if (banner.type === 'event' && banner.event_id) {
-            navigate(`/events/${banner.event_id}`);
-        } else if (banner.type === 'promotional' && banner.link_url) {
-            // Para links externos, usamos window.open
-            if (banner.link_url.startsWith('http')) {
-                window.open(banner.link_url, '_blank');
-            } else {
-                navigate(banner.link_url);
-            }
+    const getSideImages = (indexToUse = currentIndex) => {
+        const sideImages = [];
+        // Lado esquerdo - 3 imagens
+        for (let i = 1; i <= 3; i++) {
+            const leftIndex = (indexToUse - i + images.length) % images.length;
+            sideImages.push({
+                image: images[leftIndex],
+                side: 'left',
+                position: i
+            });
         }
-    } else {
-        // Se for um card lateral, move para o centro
-        setCurrentIndex(index);
-    }
-  };
+        // Lado direito - 3 imagens
+        for (let i = 1; i <= 3; i++) {
+            const rightIndex = (indexToUse + i) % images.length;
+            sideImages.push({
+                image: images[rightIndex],
+                side: 'right',
+                position: i
+            });
+        }
+        return sideImages;
+    };
 
-  if (isLoading) {
+    const handleCenterCardClick = () => {
+        // Implement navigation logic here if needed
+        console.log("Center card clicked. Implement navigation here.");
+    };
+
     return (
-        <div className="bg-black text-white py-12 sm:py-16 h-[500px] flex items-center justify-center">
-            <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
-        </div>
-    );
-  }
-  
-  if (isError || itemCount === 0) {
-    return (
-        <div className="bg-black text-white py-12 sm:py-16 h-[500px] flex items-center justify-center">
-            <div className="text-center text-gray-500">
-                <i className="fas fa-exclamation-triangle text-4xl mb-4"></i>
-                <p>Não foi possível carregar os banners do carrossel.</p>
+        <div className="min-h-screen bg-black flex justify-center items-center pt-20 overflow-hidden font-sans">
+            <div className="max-w-[1600px] w-full h-[600px] relative flex justify-center items-center px-4">
+                {/* Banners laterais em escadinha - Imagens atuais */}
+                {getSideImages(currentIndex).map((sideImg, index) => {
+                    const isLeft = sideImg.side === 'left';
+                    const pos = sideImg.position;
+                    const baseWidth = 320;
+                    const baseHeight = 400;
+                    const scale = 1 - (pos * 0.08);
+                    const offsetX = isLeft ? -(172 + (pos * 90)) : (172 + (pos * 90));
+                    const offsetY = 0;
+                    const zIndex = 15 - pos;
+                    const transitionDelay = pos * 80;
+                    return (
+                        <div
+                            key={`current-${sideImg.side}-${pos}-${currentIndex}`}
+                            className="absolute rounded-2xl overflow-hidden shadow-2xl border border-white/20"
+                            style={{
+                                width: `${baseWidth * scale}px`,
+                                height: `${baseHeight * scale}px`,
+                                transform: `translateX(${offsetX}px) translateY(${offsetY}px)`,
+                                zIndex: zIndex,
+                                opacity: isTransitioning ? 0 : (1 - (pos * 0.15)),
+                                transition: `all 1000ms ease-out`,
+                                transitionDelay: isTransitioning ? `${transitionDelay}ms` : '0ms'
+                            }}
+                        >
+                            <img
+                                src={sideImg.image}
+                                alt={`Side image ${pos}`}
+                                className="w-full h-full object-cover object-top transition-all duration-1000 ease-out"
+                                style={{
+                                    transform: isTransitioning ? 'scale(0.95)' : 'scale(1)',
+                                    filter: isTransitioning ? 'blur(2px)' : 'blur(0px)',
+                                    transitionDelay: `${transitionDelay}ms`
+                                }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent"></div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/5 to-transparent"></div>
+                        </div>
+                    );
+                })}
+                {/* Banners laterais em escadinha - Próximas imagens (durante transição) */}
+                {isTransitioning && getSideImages(nextIndex).map((sideImg, index) => {
+                    const isLeft = sideImg.side === 'left';
+                    const pos = sideImg.position;
+                    const baseWidth = 320;
+                    const baseHeight = 400;
+                    const scale = 1 - (pos * 0.08);
+                    const offsetX = isLeft ? -(172 + (pos * 90)) : (172 + (pos * 90));
+                    const offsetY = 0;
+                    const zIndex = 15 - pos;
+                    const transitionDelay = pos * 80;
+                    return (
+                        <div
+                            key={`next-${sideImg.side}-${pos}-${nextIndex}`}
+                            className="absolute rounded-2xl overflow-hidden shadow-2xl border border-white/20"
+                            style={{
+                                width: `${baseWidth * scale}px`,
+                                height: `${baseHeight * scale}px`,
+                                transform: `translateX(${offsetX}px) translateY(${offsetY}px)`,
+                                zIndex: zIndex,
+                                opacity: 0,
+                                transition: `all 1000ms ease-out`,
+                                transitionDelay: `${200 + transitionDelay}ms`,
+                                animation: `fadeInSide 1000ms ease-out ${200 + transitionDelay}ms forwards`
+                            }}
+                        >
+                            <img
+                                src={sideImg.image}
+                                alt={`Next side image ${pos}`}
+                                className="w-full h-full object-cover object-top"
+                                style={{
+                                    transform: 'scale(0.9)',
+                                    filter: 'blur(1px)',
+                                    transition: 'all 1000ms ease-out',
+                                    transitionDelay: `${200 + transitionDelay}ms`
+                                }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent"></div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/5 to-transparent"></div>
+                        </div>
+                    );
+                })}
+                {/* Banner central principal */}
+                <div 
+                    className="w-[700px] h-[450px] rounded-3xl overflow-hidden relative z-20 shadow-[0_0_80px_rgba(255,210,0,0.6)] border-4 border-yellow-400/30 cursor-pointer"
+                    onClick={handleCenterCardClick}
+                >
+                    {/* Imagem atual */}
+                    <img
+                        src={images[currentIndex]}
+                        alt="Carousel Image"
+                        className={`absolute inset-0 w-full h-full object-cover object-top transition-all duration-[1200ms] ease-out ${
+                            isTransitioning ? 'opacity-0 scale-110 blur-sm' : 'opacity-100 scale-100 blur-0'
+                        }`}
+                    />
+                    {/* Imagem seguinte para transição suave */}
+                    {isTransitioning && (
+                        <img
+                            src={images[nextIndex]}
+                            alt="Next Carousel Image"
+                            className="absolute inset-0 w-full h-full object-cover object-top transition-all duration-[1200ms] ease-out opacity-0 scale-95 animate-in"
+                            style={{
+                                animation: 'fadeInScale 1200ms ease-out forwards'
+                            }}
+                        />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/10 via-transparent to-yellow-400/10"></div>
+                </div>
+                {/* Navigation dots */}
+                <div className="absolute left-1/2 transform -translate-x-1/2 flex space-x-6 z-30" style={{bottom: '-25px'}}>
+                    {images.map((_, index) => (
+                        <button
+                            key={index}
+                            onClick={() => {
+                                if (index !== currentIndex && !isTransitioning) {
+                                    setNextIndex(index);
+                                    setIsTransitioning(true);
+                                    setTimeout(() => {
+                                        setCurrentIndex(index);
+                                        setIsTransitioning(false);
+                                    }, 1000);
+                                }
+                            }}
+                            className={`w-5 h-5 rounded-full transition-all duration-400 cursor-pointer !rounded-button whitespace-nowrap ${
+                                index === currentIndex
+                                    ? 'bg-yellow-400 shadow-[0_0_20px_rgba(255,210,0,0.9)] scale-140'
+                                    : 'bg-white/50 hover:bg-white/70 hover:scale-125'
+                            }`}
+                        />
+                    ))}
+                </div>
+                {/* Control buttons */}
+                <button
+                    onClick={() => {
+                        if (!isTransitioning) {
+                            const prev = currentIndex === 0 ? images.length - 1 : currentIndex - 1;
+                            setNextIndex(prev);
+                            setIsTransitioning(true);
+                            setTimeout(() => {
+                                setCurrentIndex(prev);
+                                setIsTransitioning(false);
+                            }, 1000);
+                        }
+                    }}
+                    className="absolute left-12 top-1/2 transform -translate-y-1/2 w-16 h-16 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all duration-400 z-30 cursor-pointer !rounded-button whitespace-nowrap backdrop-blur-lg border-2 border-white/20 shadow-2xl"
+                >
+                    <i className="fas fa-chevron-left text-white text-2xl"></i>
+                </button>
+                <button
+                    onClick={() => {
+                        if (!isTransitioning) {
+                            updateSlide();
+                        }
+                    }}
+                    className="absolute right-12 top-1/2 transform -translate-y-1/2 w-16 h-16 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all duration-400 z-30 cursor-pointer !rounded-button whitespace-nowrap backdrop-blur-lg border-2 border-white/20 shadow-2xl"
+                >
+                    <i className="fas fa-chevron-right text-white text-2xl"></i>
+                </button>
+                {/* Title and description overlay */}
+                <div className="absolute bottom-10 left-12 z-30 text-white max-w-lg">
+                    <h2 className="text-4xl font-bold mb-4 text-shadow-xl text-yellow-400">
+                        Carrossel Premium 3D
+                    </h2>
+                    <p className="text-lg opacity-95 leading-relaxed text-shadow-lg">
+                        Navegue pela nossa coleção exclusiva com efeito de profundidade 3D. Banners em escadinha criam uma experiência visual imersiva e elegante.
+                    </p>
+                </div>
+                {/* Progress indicator */}
+                <div className="absolute top-10 right-12 z-30 bg-black/40 backdrop-blur-lg rounded-2xl px-6 py-3 border-2 border-yellow-400/30 shadow-2xl">
+                    <span className="text-yellow-400 text-2xl font-bold">{String(currentIndex + 1).padStart(2, '0')}</span>
+                    <span className="mx-3 text-white/70 text-xl">/</span>
+                    <span className="text-white/90 text-2xl font-semibold">{String(images.length).padStart(2, '0')}</span>
+                </div>
+                {/* Glow effects */}
+                <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-radial from-yellow-400/10 via-yellow-400/5 to-transparent rounded-full blur-3xl"></div>
+                </div>
             </div>
         </div>
     );
-  }
-
-  return (
-    <div className="bg-black text-white py-12 sm:py-16">
-      <div className="container mx-auto px-4">
-        {/* Header */}
-        <div className="text-center mb-10 sm:mb-16">
-            <h2 className="text-3xl sm:text-5xl font-serif text-yellow-500 mb-4">Eventos em Destaque</h2>
-            <div className="w-16 sm:w-24 h-px bg-yellow-500 mx-auto"></div>
-        </div>
-
-        {/* Carousel Container */}
-        <div className="flex justify-center mb-10">
-          <div 
-            style={{
-              position: 'relative',
-              width: '900px',
-              height: '420px',
-              margin: 'auto'
-            }}
-            className="max-w-full sm:max-w-[900px] overflow-hidden"
-          >
-            {/* Previous Button */}
-            <button
-              onClick={handlePrevious}
-              className="cursor-pointer absolute left-0 top-1/2 transform -translate-y-1/2 bg-black/60 border border-yellow-500/30 hover:bg-yellow-500/10 shadow-lg transition-all duration-300 text-yellow-500 z-20 w-12 h-12 flex items-center justify-center text-xl font-bold rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={itemCount < 2}
-            >
-              <i className="fas fa-chevron-left"></i>
-            </button>
-
-            {/* Cards */}
-            {items.map((banner, index) => {
-              const position = getCardPosition(index);
-              
-              // Não renderiza cards totalmente invisíveis para otimização
-              if (position.opacity === 0 && position.zIndex === 0) return null;
-              
-              const isCenter = index === currentIndex;
-              const minPriceDisplay = banner.type === 'event' ? getMinPriceDisplay(banner.min_price) : null;
-
-              return (
-                <div
-                  key={banner.id}
-                  style={{
-                    position: 'absolute',
-                    left: '50%',
-                    top: '50%',
-                    transform: `translate(-50%, -50%) translate(${position.translateX}px, ${position.translateY}px) scale(${position.scale})`,
-                    opacity: position.opacity,
-                    zIndex: position.zIndex,
-                    transition: 'all 0.4s ease-in-out',
-                    pointerEvents: position.opacity > 0.1 ? 'auto' : 'none',
-                    cursor: position.opacity > 0.1 ? 'pointer' : 'default',
-                  }}
-                  onClick={() => handleCardClick(index, banner)}
-                >
-                  <div className="relative overflow-hidden shadow-2xl shadow-yellow-500/20 rounded-2xl border border-yellow-500/30">
-                    <img
-                      src={banner.image_url}
-                      alt={banner.headline}
-                      style={{
-                        width: '620px',
-                        height: '350px',
-                        objectFit: 'cover',
-                        borderRadius: '16px'
-                      }}
-                      className="w-[300px] h-[170px] sm:w-[620px] sm:h-[350px] transition-transform duration-300"
-                    />
-                    {/* Overlay para o card central */}
-                    {isCenter && (
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent rounded-2xl flex flex-col justify-end p-6">
-                            <div className="text-white">
-                                <span className="bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-semibold mb-2 inline-block">
-                                    {banner.type === 'event' ? banner.category : 'Promoção'}
-                                </span>
-                                <h3 className="text-2xl sm:text-3xl font-bold font-serif mb-1 line-clamp-1">{banner.headline}</h3>
-                                <p className="text-sm text-gray-200 mb-3 line-clamp-2">{banner.subheadline}</p>
-                                
-                                {banner.type === 'event' && minPriceDisplay && (
-                                    <div className="flex items-center space-x-4">
-                                        <span className="text-xl font-bold text-yellow-500">
-                                            A partir de {minPriceDisplay}
-                                        </span>
-                                        <Button 
-                                            className="bg-yellow-500 text-black hover:bg-yellow-600 px-4 py-2 h-8 text-sm font-semibold"
-                                            onClick={(e) => { e.stopPropagation(); handleCardClick(index, banner); }}
-                                        >
-                                            Ver Detalhes
-                                        </Button>
-                                    </div>
-                                )}
-                                {banner.type === 'promotional' && (
-                                    <Button 
-                                        className="bg-yellow-500 text-black hover:bg-yellow-600 px-4 py-2 h-8 text-sm font-semibold"
-                                        onClick={(e) => { e.stopPropagation(); handleCardClick(index, banner); }}
-                                    >
-                                        {banner.link_url ? 'Acessar' : 'Ver Promoção'}
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Next Button */}
-            <button
-              onClick={handleNext}
-              className="cursor-pointer absolute right-0 top-1/2 transform -translate-y-1/2 bg-black/60 border border-yellow-500/30 hover:bg-yellow-500/10 shadow-lg transition-all duration-300 text-yellow-500 z-20 w-12 h-12 flex items-center justify-center text-xl font-bold rounded-full disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={itemCount < 2}
-            >
-              <i className="fas fa-chevron-right"></i>
-            </button>
-          </div>
-        </div>
-
-        {/* Navigation Dots */}
-        <div className="flex justify-center space-x-3 mb-10">
-          {items.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentIndex(index)}
-              className={cn(
-                "cursor-pointer w-3 h-3 rounded-full transition-all duration-300",
-                index === currentIndex 
-                  ? 'bg-yellow-500 scale-125 shadow-md shadow-yellow-500/50' 
-                  : 'bg-gray-600 hover:bg-gray-400'
-              )}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
 };
 
 export default FixedCarousel;

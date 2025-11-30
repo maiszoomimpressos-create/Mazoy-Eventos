@@ -125,3 +125,60 @@ body {
 .animate-fadeInUp {
     animation: fadeInUp 0.6s ease-out;
 }
+
+/* Custom Carousel Styles */
+.text-shadow-lg {
+    text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.8);
+}
+.text-shadow-xl {
+    text-shadow: 3px 3px 8px rgba(0, 0, 0, 0.9);
+}
+.scale-140 {
+    transform: scale(1.4);
+}
+.scale-125 {
+    transform: scale(1.25);
+}
+.\!rounded-button {
+    border-radius: 12px !important;
+}
+
+@keyframes fadeInScale {
+    0% {
+        opacity: 0;
+        transform: scale(0.95) translateY(20px);
+        filter: blur(4px);
+    }
+    30% {
+        opacity: 0.3;
+        transform: scale(0.97) translateY(10px);
+        filter: blur(2px);
+    }
+    60% {
+        opacity: 0.7;
+        transform: scale(0.99) translateY(5px);
+        filter: blur(1px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0px);
+        filter: blur(0px);
+    }
+}
+@keyframes fadeInSide {
+    0% {
+        opacity: 0;
+        transform: scale(0.9) translateY(15px);
+        filter: blur(3px);
+    }
+    40% {
+        opacity: 0.4;
+        transform: scale(0.95) translateY(8px);
+        filter: blur(1.5px);
+    }
+    100% {
+        opacity: var(--final-opacity, 0.85);
+        transform: scale(1) translateY(0px);
+        filter: blur(0px);
+    }
+}
