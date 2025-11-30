@@ -80,3 +80,10 @@
 .event-carousel-perspective .swiper-pagination {
     bottom: 100px !important; /* Move a paginação para cima, sobre o slide */
 }
+
+/* Adicionando margem negativa para garantir que os slides laterais não sejam cortados pelo contêiner do Swiper */
+.event-carousel-perspective {
+    overflow: visible !important;
+    margin: 0 -100px; /* Adiciona margem negativa para expandir a área de visualização */
+    padding: 0 100px; /* Adiciona padding para compensar a margem negativa */
+}
