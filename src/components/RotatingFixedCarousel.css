@@ -1,156 +1,45 @@
-.rotating-carousel-container {
-    position: relative;
-    width: 100%;
-    max-width: 900px; /* Largura máxima no desktop */
-    height: 450px; /* Altura fixa para acomodar a perspectiva */
-    margin: 50px auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden; /* Esconde itens que saem da área */
+.rfc-container {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  height: 380px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.carousel-item {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 400px; /* Largura base do item */
-    height: 300px; /* Altura base do item */
-    border-radius: 12px;
-    overflow: hidden;
-    background-color: #1f2937; /* bg-gray-800 */
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-    cursor: pointer;
-    
-    /* Ponto de origem para transformações (centro) */
-    transform-origin: center center;
-    
-    /* Transições suaves para todas as transformações */
-    transition: transform .4s ease, opacity .4s ease;
-    
-    /* Inicialmente, todos os itens estão escondidos e centralizados */
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 0;
-    z-index: 1;
+.rfc-item {
+  position: absolute;
+  transition: transform .4s ease, opacity .4s ease;
+  pointer-events: none;
 }
 
-.carousel-item img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.rfc-item img {
+  width: 260px;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0px 7px 25px rgba(0,0,0,.25);
 }
 
-/* --- Posições Fixas --- */
-
-/* Item Central (Active) */
-.position-center {
-    transform: translate(-50%, -50%) scale(1.0);
-    opacity: 1;
-    z-index: 100;
+.rfc-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 26px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border: none;
+  background: rgba(0,0,0,.2);
+  color: white;
+  border-radius: 8px;
+  z-index: 20;
 }
 
-/* --- Lado Esquerdo (Recuado) --- */
-
-/* 1º à Esquerda */
-.position-left-1 {
-    /* Removido o deslocamento vertical (+ 20px) */
-    transform: translate(calc(-50% - 180px), -50%) scale(.85);
-    opacity: 0.8;
-    z-index: 90;
+.rfc-btn.left {
+  left: -50px;
 }
-
-/* 2º à Esquerda */
-.position-left-2 {
-    /* Removido o deslocamento vertical (+ 40px) */
-    transform: translate(calc(-50% - 300px), -50%) scale(.75);
-    opacity: 0.6;
-    z-index: 80;
-}
-
-/* 3º à Esquerda */
-.position-left-3 {
-    /* Removido o deslocamento vertical (+ 60px) */
-    transform: translate(calc(-50% - 400px), -50%) scale(.65);
-    opacity: 0.4;
-    z-index: 70;
-}
-
-/* --- Lado Direito (Recuado) --- */
-
-/* 1º à Direita */
-.position-right-1 {
-    /* Removido o deslocamento vertical (+ 20px) */
-    transform: translate(calc(-50% + 180px), -50%) scale(.85);
-    opacity: 0.8;
-    z-index: 90;
-}
-
-/* 2º à Direita */
-.position-right-2 {
-    /* Removido o deslocamento vertical (+ 40px) */
-    transform: translate(calc(-50% + 300px), -50%) scale(.75);
-    opacity: 0.6;
-    z-index: 80;
-}
-
-/* 3º à Direita */
-.position-right-3 {
-    /* Removido o deslocamento vertical (+ 60px) */
-    transform: translate(calc(-50% + 400px), -50%) scale(.65);
-    opacity: 0.4;
-    z-index: 70;
-}
-
-/* --- Botões de Navegação --- */
-.carousel-nav-button {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(255, 196, 0, 0.8); /* Amarelo Mazoy */
-    color: #000;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 50%;
-    cursor: pointer;
-    z-index: 110;
-    transition: background .3s ease, transform .3s ease;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-}
-
-.carousel-nav-button:hover {
-    background: #ffc400;
-    transform: translateY(-50%) scale(1.05);
-}
-
-.carousel-nav-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.carousel-nav-button.prev {
-    left: 10px;
-}
-
-.carousel-nav-button.next {
-    right: 10px;
-}
-
-/* Responsividade básica */
-@media (max-width: 950px) {
-    .rotating-carousel-container {
-        height: 350px;
-    }
-    .carousel-item {
-        width: 300px;
-        height: 225px;
-    }
-    
-    /* Ajuste de offsets para telas menores */
-    .position-left-1 { transform: translate(calc(-50% - 100px), -50%) scale(.85); }
-    .position-left-2 { transform: translate(calc(-50% - 180px), -50%) scale(.75); }
-    .position-left-3 { transform: translate(calc(-50% - 260px), -50%) scale(.65); }
-    
-    .position-right-1 { transform: translate(calc(-50% + 100px), -50%) scale(.85); }
-    .position-right-2 { transform: translate(calc(-50% + 180px), -50%) scale(.75); }
-    .position-right-3 { transform: translate(calc(-50% + 260px), -50%) scale(.65); }
+.rfc-btn.right {
+  right: -50px;
 }

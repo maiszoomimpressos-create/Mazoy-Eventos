@@ -1,131 +1,111 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from 'react';
-import './RotatingFixedCarousel.css';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useState } from "react";
+import "./RotatingFixedCarousel.css";
 
 interface RotatingFixedCarouselProps {
-    items: string[]; // Array de URLs de imagens
+  items: string[];
 }
 
-// Define as 7 posições fixas no carrossel
-const POSITIONS = [
-    'position-center',
-    'position-right-1',
-    'position-right-2',
-    'position-right-3',
-    'position-left-3',
-    'position-left-2',
-    'position-left-1',
-] as const;
+interface Position {
+  scale: number;
+  x: number;
+  y: number;
+  zIndex: number;
+  opacity: number;
+}
 
-type PositionClass = typeof POSITIONS[number];
+export default function RotatingFixedCarousel({ items }: RotatingFixedCarouselProps) {
+  const [index, setIndex] = useState(0);
 
-// Mapeia o índice do item para a classe de posição no carrossel
-const getPositionClass = (itemIndex: number, activeIndex: number, totalItems: number): PositionClass | null => {
-    const diff = (itemIndex - activeIndex + totalItems) % totalItems;
+  const rotateRight = () => {
+    setIndex((prev) => (prev + 1) % items.length);
+  };
+
+  const rotateLeft = () => {
+    setIndex((prev) => (prev - 1 + items.length) % items.length);
+  };
+
+  const getPosition = (i: number): Position => {
+    const total = items.length;
+    if (total === 0) return { scale: 0, x: 0, y: 0, zIndex: 1, opacity: 0 };
     
-    // O carrossel tem 7 slots visíveis (3 esquerda, 1 centro, 3 direita)
-    if (diff === 0) return 'position-center';
-    if (diff === 1) return 'position-right-1';
-    if (diff === 2) return 'position-right-2';
-    if (diff === 3) return 'position-right-3';
-    
-    // Para a rotação circular, os itens mais distantes à esquerda
-    // são mapeados para os índices mais altos (totalItems - 1, totalItems - 2, etc.)
-    if (diff === totalItems - 1) return 'position-left-1';
-    if (diff === totalItems - 2) return 'position-left-2';
-    if (diff === totalItems - 3) return 'position-left-3';
+    const dist = (i - index + total) % total;
 
-    // Se o item estiver fora das 7 posições visíveis, ele não recebe classe de posição
-    return null;
-};
+    // 0 é o central / ativo
+    if (dist === 0) return { scale: 1, x: 0, y: 0, zIndex: 10, opacity: 1 };
 
-// Define o z-index baseado na posição para garantir a sobreposição correta
-const getZIndex = (positionClass: PositionClass | null): number => {
-    if (positionClass === 'position-center') return 100;
-    if (positionClass?.includes('1')) return 90;
-    if (positionClass?.includes('2')) return 80;
-    if (positionClass?.includes('3')) return 70;
-    return 1;
-};
+    // laterais
+    // Requisitos: 1° lateral: offset Y = 30px, 2°: 60px, 3°: 90px
+    const map: { [key: number]: { scale: number; x: number; y: number; z: number } } = {
+      1: { scale: 0.85, x: 150, y: 30, z: 9 },
+      2: { scale: 0.75, x: 250, y: 60, z: 8 },
+      3: { scale: 0.65, x: 350, y: 90, z: 7 },
+    };
 
-
-const RotatingFixedCarousel: React.FC<RotatingFixedCarouselProps> = ({ items }) => {
-    const [activeIndex, setActiveIndex] = useState(0);
-    const totalItems = items.length;
-
-    const handlePrev = useCallback(() => {
-        setActiveIndex(prevIndex => (prevIndex - 1 + totalItems) % totalItems);
-    }, [totalItems]);
-
-    const handleNext = useCallback(() => {
-        setActiveIndex(prevIndex => (prevIndex + 1) % totalItems);
-    }, [totalItems]);
-    
-    if (totalItems === 0) {
-        return <div className="rotating-carousel-container text-gray-400 justify-center">Nenhum item para exibir no carrossel.</div>;
+    // lado direito
+    if (dist <= 3) {
+      const { scale, x, y, z } = map[dist];
+      return { scale, x, y, zIndex: z, opacity: 0.9 };
     }
-    
-    // Se houver menos de 7 itens, o carrossel não funcionará corretamente com 3 camadas de cada lado.
-    // Para simplificar, vamos garantir que haja pelo menos 7 itens para preencher todas as posições.
-    if (totalItems < 7) {
-        // Renderiza apenas o item central se não houver itens suficientes
+
+    // lado esquerdo (rota reversa)
+    const leftDist = total - dist;
+    if (leftDist <= 3) {
+      const { scale, x, y, z } = map[leftDist];
+      return { scale, x: -x, y, zIndex: z, opacity: 0.9 };
+    }
+
+    // itens muito atrás
+    return { scale: 0.6, x: 0, y: 120, zIndex: 1, opacity: 0 };
+  };
+  
+  // Ensure we have enough items for the effect to look right (at least 7)
+  const canRotate = items.length >= 7;
+
+  return (
+    <div className="rfc-container">
+      {canRotate && (
+        <button className="rfc-btn left" onClick={rotateLeft} aria-label="Previous">
+          ◀
+        </button>
+      )}
+
+      {items.map((item, i) => {
+        const pos = getPosition(i);
+        
+        // Only render items that are visible or transitioning (opacity > 0)
+        if (pos.opacity === 0 && pos.zIndex === 1 && i !== index) return null;
+
         return (
-            <div className="rotating-carousel-container">
-                <div className="carousel-item position-center">
-                    <img src={items[0]} alt="Item Central" />
-                </div>
-            </div>
+          <div
+            key={i}
+            className="rfc-item"
+            style={{
+              transform: `translateX(${pos.x}px) translateY(${pos.y}px) scale(${pos.scale})`,
+              zIndex: pos.zIndex,
+              opacity: pos.opacity,
+              // Allow clicking only on visible items
+              pointerEvents: pos.opacity > 0.1 ? 'auto' : 'none',
+              cursor: pos.opacity > 0.1 ? 'pointer' : 'default',
+            }}
+            onClick={() => {
+                // If clicking a side item, rotate to make it central
+                if (i !== index) {
+                    setIndex(i);
+                }
+            }}
+          >
+            <img src={item} alt={`Carousel item ${i + 1}`} />
+          </div>
         );
-    }
+      })}
 
-    return (
-        <div className="rotating-carousel-container">
-            
-            {/* Botões de Navegação */}
-            <button 
-                onClick={handlePrev} 
-                className="carousel-nav-button prev"
-                aria-label="Anterior"
-            >
-                <ChevronLeft className="h-6 w-6" />
-            </button>
-            
-            <button 
-                onClick={handleNext} 
-                className="carousel-nav-button next"
-                aria-label="Próximo"
-            >
-                <ChevronRight className="h-6 w-6" />
-            </button>
-
-            {/* Renderiza todos os itens e aplica a classe de posição correta */}
-            {items.map((itemUrl, index) => {
-                const positionClass = getPositionClass(index, activeIndex, totalItems);
-                
-                // Se o item não tiver uma posição visível, ele não é renderizado com a classe de posição
-                if (!positionClass) return null;
-
-                return (
-                    <div
-                        key={index}
-                        className={cn("carousel-item", positionClass)}
-                        style={{ zIndex: getZIndex(positionClass) }}
-                        onClick={() => {
-                            // Se clicar em um item lateral, ele se torna o item central
-                            if (index !== activeIndex) {
-                                setActiveIndex(index);
-                            }
-                        }}
-                    >
-                        <img src={itemUrl} alt={`Item ${index + 1}`} />
-                    </div>
-                );
-            })}
-        </div>
-    );
-};
-
-export default RotatingFixedCarousel;
+      {canRotate && (
+        <button className="rfc-btn right" onClick={rotateRight} aria-label="Next">
+          ▶
+        </button>
+      )}
+    </div>
+  );
+}
