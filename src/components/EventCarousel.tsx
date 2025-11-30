@@ -207,14 +207,14 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 pagination={{
                     clickable: true,
                 }}
-                autoplay={false} // DESATIVANDO AUTOPLAY
+                autoplay={false} // Mantendo o autoplay desativado
                 navigation={false}
                 effect={'coverflow'} 
                 grabCursor={true}
                 coverflowEffect={{
-                    rotate: 0, 
-                    stretch: 500, // Desloca 500px (600px - 100px)
-                    depth: 100, // Adiciona profundidade 3D
+                    rotate: 10, // Rotação mais perceptível
+                    stretch: 150, // Ajuste para maior separação e visibilidade lateral
+                    depth: 200, // Aumenta a profundidade para efeito 3D
                     modifier: 1, 
                     slideShadows: false, 
                 }}
@@ -241,8 +241,6 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                                 />
                                 {/* Overlay escuro com gradiente */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/40"></div>
-                                
-                                {/* REMOVIDOS: Números de Debug */}
                                 
                                 <div className="absolute inset-0 flex items-end pb-10 pt-20">
                                     <div className="px-6 w-full">
