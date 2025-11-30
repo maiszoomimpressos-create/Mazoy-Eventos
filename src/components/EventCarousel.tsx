@@ -2,10 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Autoplay, Pagination, Navigation, EffectCoverflow } from 'swiper/modules';
+import { Pagination, EffectCoverflow } from 'swiper/modules'; // Removendo Autoplay e Navigation
 import 'swiper/css';
 import 'swiper/css/pagination';
-import 'swiper/css/navigation';
 import 'swiper/css/effect-coverflow'; // Importar o CSS do Coverflow
 import './EventCarousel.css'; // Para estilos personalizados do Swiper
 import { Button } from '@/components/ui/button';
@@ -189,7 +188,6 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
     }
     
     const activeBanner = banners[activeIndex];
-    // Removendo autoplayDelay e o módulo Autoplay da Swiper
 
     return (
         <div className="relative w-full h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
@@ -198,12 +196,11 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 slidesPerView={'auto'}
                 centeredSlides={true}
                 spaceBetween={30}
-                // Autoplay removido
                 loop={true} 
                 pagination={{
                     clickable: true,
                 }}
-                navigation={true}
+                navigation={false} // Removendo navegação (setas)
                 effect={'coverflow'} 
                 grabCursor={true}
                 coverflowEffect={{
@@ -213,10 +210,10 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                     modifier: 1, 
                     slideShadows: true, 
                 }}
-                modules={[Pagination, Navigation, EffectCoverflow]} // Autoplay removido daqui
+                modules={[Pagination, EffectCoverflow]} // Removendo Navigation
                 className="mySwiper w-full h-full event-carousel-perspective"
             >
-                {banners.map((banner, index) => (
+                {banners.map((banner) => (
                     <SwiperSlide key={banner.id} className="event-slide-item">
                         {({ isActive }) => (
                             <div 
@@ -234,10 +231,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                                 {/* Overlay escuro com gradiente */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/40"></div>
                                 
-                                {/* REINTRODUZIDO: Números de Debug */}
-                                <div className="absolute top-4 left-4 bg-black/70 text-yellow-500 px-3 py-1 rounded-full text-sm font-bold z-10">
-                                    {index + 1}
-                                </div>
+                                {/* REMOVIDO: Números de Debug */}
                                 
                                 <div className="absolute inset-0 flex items-end pb-10 pt-20">
                                     <div className="px-6 w-full">
