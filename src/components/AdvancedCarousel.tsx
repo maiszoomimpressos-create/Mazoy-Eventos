@@ -3,17 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { CarouselBanner } from '@/hooks/use-carousel-banners';
 import { Button } from '@/components/ui/button';
 
-interface FixedCarouselProps {
+interface AdvancedCarouselProps {
     banners: CarouselBanner[];
 }
 
-const FixedCarousel: React.FC<FixedCarouselProps> = ({ banners }) => {
+const getMinPriceDisplay = (price: number | null | undefined): string => {
+    if (price === null || price === undefined || price === 0) return 'Grátis';
+    return `A partir de R$ ${price.toFixed(2).replace('.', ',')}`;
+};
+
+const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
     const navigate = useNavigate();
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [nextIndex, setNextIndex] = useState(0);
-    
-    // Se não houver banners, não renderiza nada
+
     if (banners.length === 0) {
         return (
             <div className="w-full h-full flex items-center justify-center bg-black/80">
@@ -21,7 +25,7 @@ const FixedCarousel: React.FC<FixedCarouselProps> = ({ banners }) => {
             </div>
         );
     }
-    
+
     const currentBanner = banners[currentIndex];
     const nextBanner = banners[nextIndex];
 
@@ -34,12 +38,9 @@ const FixedCarousel: React.FC<FixedCarouselProps> = ({ banners }) => {
             setIsTransitioning(false);
         }, 1000);
     };
-    
-    // Efeito para rotação automática
+
     useEffect(() => {
-        // Usar um tempo de rotação dinâmico (mockado para 5s por enquanto, mas pode vir do DB)
-        const rotationTime = 5000; 
-        const interval = setInterval(updateSlide, rotationTime);
+        const interval = setInterval(updateSlide, 4000);
         return () => clearInterval(interval);
     }, [currentIndex, banners.length]);
 
@@ -65,7 +66,7 @@ const FixedCarousel: React.FC<FixedCarouselProps> = ({ banners }) => {
         }
         return sideImages;
     };
-
+    
     const handleCenterCardClick = () => {
         const link = currentBanner.type === 'event' 
             ? `/events/${currentBanner.event_id}` 
@@ -73,15 +74,10 @@ const FixedCarousel: React.FC<FixedCarouselProps> = ({ banners }) => {
             
         navigate(link);
     };
-    
-    const getMinPriceDisplay = (price: number | null | undefined): string => {
-        if (price === null || price === undefined || price === 0) return 'Grátis';
-        return `A partir de R$ ${price.toFixed(2).replace('.', ',')}`;
-    };
 
     return (
-        <div className="h-full bg-black flex justify-center items-start overflow-hidden font-sans">
-            <div className="max-w-[1600px] w-full h-[600px] relative flex justify-center items-center px-4" style={{ transform: 'translateY(-20px)' }}>
+        <div className="h-full bg-black flex justify-center items-center pt-5 overflow-hidden font-sans">
+            <div className="max-w-[1600px] w-full h-[600px] relative flex justify-center items-center px-4">
                 {/* Banners laterais em escadinha - Imagens atuais */}
                 {getSideImages(currentIndex).map((sideImg, index) => {
                     const isLeft = sideImg.side === 'left';
@@ -102,7 +98,7 @@ const FixedCarousel: React.FC<FixedCarouselProps> = ({ banners }) => {
                                 height: `${baseHeight * scale}px`,
                                 transform: `translateX(${offsetX}px) translateY(${offsetY}px)`,
                                 zIndex: zIndex,
-                                opacity: isTransitioning ? 0 : (1 - (pos * 0.15)),
+                                opacity: isTransitioning ? 0 : (1 - (pos * 0.15)), // Mantendo a opacidade lateral para profundidade
                                 transition: `all 1000ms ease-out`,
                                 transitionDelay: isTransitioning ? `${transitionDelay}ms` : '0ms'
                             }}
@@ -117,7 +113,7 @@ const FixedCarousel: React.FC<FixedCarouselProps> = ({ banners }) => {
                                     transitionDelay: `${transitionDelay}ms`
                                 }}
                             />
-                            {/* REMOVIDO: Overlay escuro e gradiente lateral */}
+                            {/* Removendo overlays de opacidade do código do usuário para manter a imagem clara */}
                         </div>
                     );
                 })}
@@ -158,7 +154,7 @@ const FixedCarousel: React.FC<FixedCarouselProps> = ({ banners }) => {
                                     transitionDelay: `${200 + transitionDelay}ms`
                                 }}
                             />
-                            {/* REMOVIDO: Overlay escuro e gradiente lateral */}
+                            {/* Removendo overlays de opacidade do código do usuário para manter a imagem clara */}
                         </div>
                     );
                 })}
@@ -186,7 +182,8 @@ const FixedCarousel: React.FC<FixedCarouselProps> = ({ banners }) => {
                             }}
                         />
                     )}
-                    {/* REMOVIDO: Overlay escuro e gradiente central */}
+                    {/* Overlay escuro para o texto ser legível */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                     
                     {/* Conteúdo do Banner */}
                     <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
@@ -276,4 +273,4 @@ const FixedCarousel: React.FC<FixedCarouselProps> = ({ banners }) => {
     );
 };
 
-export default FixedCarousel;
+export default AdvancedCarousel;

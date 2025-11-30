@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { trackAdvancedFilterUse } from '@/utils/metrics';
 import { usePublicEvents, PublicEvent } from '@/hooks/use-public-events';
 import { Loader2 } from 'lucide-react';
-import FixedCarousel from '@/components/FixedCarousel'; // Importado o novo carrossel
+import AdvancedCarousel from '@/components/AdvancedCarousel'; // Importado o novo carrossel
 import { useCarouselBanners } from '@/hooks/use-carousel-banners'; // NOVO: Importando hook do carrossel
 
 const EVENTS_PER_PAGE = 12;
@@ -95,7 +95,7 @@ const Index: React.FC = () => {
                             <Loader2 className="h-10 w-10 animate-spin text-yellow-500" />
                         </div>
                     ) : (
-                        <FixedCarousel banners={banners} />
+                        <AdvancedCarousel banners={banners} />
                     )}
                 </div>
             </section>
