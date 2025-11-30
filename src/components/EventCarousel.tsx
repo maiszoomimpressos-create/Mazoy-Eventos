@@ -152,6 +152,12 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 }));
 
                 setBanners(normalizedBanners);
+                
+                // Define o slide inicial para o Banner 4 (índice 3)
+                if (normalizedBanners.length >= 4) {
+                    setActiveIndex(3);
+                }
+
 
             } catch (error: any) {
                 console.error("Error fetching carousel banners:", error);
@@ -195,20 +201,21 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                 onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
                 slidesPerView={'auto'}
                 centeredSlides={true}
-                spaceBetween={30}
-                loop={true} 
+                spaceBetween={-555} // Ajustado para sobreposição máxima (600px - 45px = 555px)
+                initialSlide={banners.length >= 4 ? 3 : 0} // Inicia no Banner 4 (índice 3)
+                loop={false} // Desativando loop para melhor controle do índice
                 pagination={{
                     clickable: true,
                 }}
-                navigation={false} // Mantendo navegação desativada
+                navigation={false}
                 effect={'coverflow'} 
                 grabCursor={true}
                 coverflowEffect={{
                     rotate: 0, 
-                    stretch: 50, 
-                    depth: 200, 
+                    stretch: 555, // Estica para cobrir a maior parte do slide adjacente
+                    depth: 0, // Remove a profundidade 3D
                     modifier: 1, 
-                    slideShadows: true, 
+                    slideShadows: false, // Removendo sombras para um visual mais plano
                 }}
                 modules={[Pagination, EffectCoverflow]}
                 className="mySwiper w-full h-full event-carousel-perspective"
@@ -231,12 +238,12 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                                 {/* Overlay escuro com gradiente */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/40"></div>
                                 
-                                {/* REINTRODUZIDO: Número de Debug - Canto Superior Esquerdo */}
+                                {/* Número de Debug - Canto Superior Esquerdo */}
                                 <div className="absolute top-4 left-4 bg-black/70 text-yellow-500 px-3 py-1 rounded-full text-sm font-bold z-10">
                                     {index + 1}
                                 </div>
                                 
-                                {/* NOVO: Número de Debug - Canto Superior Direito */}
+                                {/* Número de Debug - Canto Superior Direito */}
                                 <div className="absolute top-4 right-4 bg-black/70 text-yellow-500 px-3 py-1 rounded-full text-sm font-bold z-10">
                                     {index + 1}
                                 </div>
