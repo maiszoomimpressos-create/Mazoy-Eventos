@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import "./RotatingFixedCarousel.css";
-import { ImageOff } from "lucide-react"; // Importando ícone
+import { ImageOff } from "lucide-react";
 
 interface RotatingFixedCarouselProps {
   items: string[];
@@ -33,35 +33,29 @@ export default function RotatingFixedCarousel({ items }: RotatingFixedCarouselPr
     
     const dist = (i - index + total) % total;
 
-    // 0 é o central / ativo
-    if (dist === 0) return { scale: 1, x: 0, y: 0, zIndex: 10, opacity: 1 };
+    if (dist === 0)
+      return { scale: 1, x: 0, y: 0, opacity: 1, zIndex: 10 };
 
-    // laterais
-    // Requisitos: 1° lateral: offset Y = 30px, 2°: 60px, 3°: 90px
-    const map: { [key: number]: { scale: number; x: number; y: number; z: number } } = {
-      1: { scale: 0.85, x: 150, y: 30, z: 9 },
-      2: { scale: 0.75, x: 250, y: 60, z: 8 },
-      3: { scale: 0.65, x: 350, y: 90, z: 7 },
+    const map = {
+      1: { scale: 0.85, x: 150, y: 30, zIndex: 9 },
+      2: { scale: 0.75, x: 250, y: 60, zIndex: 8 },
+      3: { scale: 0.65, x: 350, y: 90, zIndex: 7 },
     };
 
-    // lado direito
     if (dist <= 3) {
-      const { scale, x, y, z } = map[dist];
-      return { scale, x, y, zIndex: z, opacity: 0.9 };
+      const { zIndex, ...rest } = map[dist];
+      return { ...rest, zIndex, opacity: 0.9 };
     }
 
-    // lado esquerdo (rota reversa)
     const leftDist = total - dist;
     if (leftDist <= 3) {
-      const { scale, x, y, z } = map[leftDist];
-      return { scale, x: -x, y, zIndex: z, opacity: 0.9 };
+      const { zIndex, ...m } = map[leftDist];
+      return { scale: m.scale, x: -m.x, y: m.y, zIndex, opacity: 0.9 };
     }
 
-    // itens muito atrás
-    return { scale: 0.6, x: 0, y: 120, zIndex: 1, opacity: 0 };
+    return { scale: 0.6, x: 0, y: 120, opacity: 0, zIndex: 1 };
   };
   
-  // Ensure we have enough items for the effect to look right (at least 7)
   const canRotate = items.length >= 7;
 
   return (
@@ -99,7 +93,7 @@ export default function RotatingFixedCarousel({ items }: RotatingFixedCarouselPr
           >
             <img 
                 src={item} 
-                alt="" 
+                alt={`Carousel item ${i + 1}`} 
                 onError={(e) => {
                     // Substitui a imagem por um placeholder visual em caso de erro
                     e.currentTarget.onerror = null; 
