@@ -112,14 +112,13 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                 className="w-full h-full object-cover object-top transition-all duration-1000 ease-out"
                                 style={{
                                     transform: isTransitioning ? 'scale(0.95)' : 'scale(1)',
-                                    // REMOVIDO: filter: 'blur(0px)', 
                                     transitionDelay: `${transitionDelay}ms`
                                 }}
                             />
                             {/* Overlay escuro para garantir solidez e profundidade */}
                             <div 
-                                className="absolute inset-0 bg-black/90 transition-opacity duration-1000" // Aumentado para black/90
-                                style={{ opacity: 1 }} // Opacidade total para o overlay
+                                className="absolute inset-0 bg-black/90 transition-opacity duration-1000"
+                                style={{ opacity: 1 }}
                             ></div>
                         </div>
                     );
@@ -150,7 +149,7 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                         />
                     )}
                     {/* Overlay escuro para o texto ser legível */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                     
                     {/* Conteúdo do Banner */}
                     <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
@@ -189,7 +188,7 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                 }, 1000);
                             }
                         }}
-                        className="absolute left-4 top-1/2 transform -translate-y-1/2 w-14 h-14 bg-black/40 hover:bg-black/60 rounded-xl flex items-center justify-center transition-all duration-400 z-30 cursor-pointer backdrop-blur-sm border border-yellow-400/30 shadow-2xl"
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2 w-14 h-14 bg-black/80 hover:bg-black/90 rounded-xl flex items-center justify-center transition-all duration-400 z-30 cursor-pointer border border-yellow-400/30 shadow-2xl"
                     >
                         <i className="fas fa-chevron-left text-white text-xl"></i>
                     </button>
@@ -200,7 +199,7 @@ const AdvancedCarousel: React.FC<AdvancedCarouselProps> = ({ banners }) => {
                                 updateSlide();
                             }
                         }}
-                        className="absolute right-4 top-1/2 transform -translate-y-1/2 w-14 h-14 bg-black/40 hover:bg-black/60 rounded-xl flex items-center justify-center transition-all duration-400 z-30 cursor-pointer backdrop-blur-sm border border-yellow-400/30 shadow-2xl"
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 w-14 h-14 bg-black/80 hover:bg-black/90 rounded-xl flex items-center justify-center transition-all duration-400 z-30 cursor-pointer border border-yellow-400/30 shadow-2xl"
                     >
                         <i className="fas fa-chevron-right text-white text-xl"></i>
                     </button>
