@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination, EffectCoverflow } from 'swiper/modules';
+import { Pagination } from 'swiper/modules'; // Removido EffectCoverflow
 import 'swiper/css';
 import 'swiper/css/pagination';
-import 'swiper/css/effect-coverflow'; // Importar o CSS do Coverflow
+// Removido import de 'swiper/css/effect-coverflow';
 import './EventCarousel.css'; // Para estilos personalizados do Swiper
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -199,25 +199,16 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
         <div className="relative w-full h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
             <Swiper
                 onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
-                slidesPerView={'auto'}
+                slidesPerView={3} // Mostra 3 slides por vez
                 centeredSlides={true}
-                spaceBetween={0} // Slides se tocam
-                initialSlide={banners.length >= 4 ? 3 : 0} // Inicia no Banner 4 (índice 3)
-                loop={true} // Ativa o loop para rotação contínua
+                spaceBetween={30} // Espaçamento entre slides
+                initialSlide={banners.length >= 4 ? 3 : 0} 
+                loop={true} 
                 pagination={{
                     clickable: true,
                 }}
-                navigation={true} // Mantendo a navegação (setas)
-                effect={'coverflow'} 
-                grabCursor={true}
-                coverflowEffect={{
-                    rotate: 0, 
-                    stretch: 10, 
-                    depth: 100, 
-                    modifier: 3, // Reduzindo o modifier para aproximar um pouco mais e manter a visibilidade
-                    slideShadows: false, 
-                }}
-                modules={[Pagination, EffectCoverflow]}
+                navigation={true} 
+                modules={[Pagination]} // Removido EffectCoverflow
                 className="mySwiper w-full h-full event-carousel-perspective"
             >
                 {banners.map((banner, index) => (
@@ -229,7 +220,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                                     // Aplica sombra amarela sutil nos slides adjacentes
                                     isActive 
                                         ? "shadow-2xl shadow-yellow-500/30 border-2 border-yellow-500/50" 
-                                        : "shadow-xl shadow-yellow-500/10 border border-yellow-500/20"
+                                        : "shadow-xl shadow-yellow-500/10 border border-yellow-500/20 opacity-70" // Reduz a opacidade dos slides inativos
                                 )}
                                 onClick={() => navigate(banner.event_id ? `/events/${banner.event_id}` : banner.link_url || '/')}
                             >

@@ -8,6 +8,7 @@
 
 /* Define a largura e altura exatas para o slide central (600x400) */
 .swiper-slide {
+  /* Ajustando a largura para ser responsiva dentro do Swiper */
   width: 600px; 
   height: 400px; 
   text-align: center;
@@ -76,14 +77,13 @@
   font-weight: bold;
 }
 
-/* Ajuste para a posição da paginação */
+/* Removendo estilos de perspectiva que causavam problemas */
 .event-carousel-perspective .swiper-pagination {
-    bottom: 100px !important; /* Move a paginação para cima, sobre o slide */
+    bottom: 20px !important; /* Voltando a paginação para baixo */
 }
 
-/* Aumentando a margem negativa para dar mais espaço para os slides laterais */
 .event-carousel-perspective {
-    overflow: visible !important;
-    margin: 0 -100px; 
-    padding: 0 100px; 
+    overflow: hidden !important; /* Esconde o overflow novamente */
+    margin: 0; 
+    padding: 0; 
 }
