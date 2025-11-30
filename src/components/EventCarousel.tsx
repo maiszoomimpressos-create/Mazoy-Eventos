@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Pagination } from 'swiper/modules'; // Removido EffectCoverflow
+import { Pagination, EffectCoverflow, Autoplay } from 'swiper/modules'; // Adicionando Autoplay
 import 'swiper/css';
 import 'swiper/css/pagination';
-// Removido import de 'swiper/css/effect-coverflow';
+import 'swiper/css/effect-coverflow'; // Importar o CSS do Coverflow
 import './EventCarousel.css'; // Para estilos personalizados do Swiper
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -199,16 +199,29 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
         <div className="relative w-full h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
             <Swiper
                 onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
-                slidesPerView={3} // Mostra 3 slides por vez
+                slidesPerView={'auto'}
                 centeredSlides={true}
-                spaceBetween={30} // Espaçamento entre slides
-                initialSlide={banners.length >= 4 ? 3 : 0} 
-                loop={true} 
+                spaceBetween={0} // Slides se tocam
+                initialSlide={banners.length >= 4 ? 3 : 0} // Inicia no Banner 4 (índice 3)
+                loop={true} // Ativa o loop para rotação contínua
                 pagination={{
                     clickable: true,
                 }}
-                navigation={true} 
-                modules={[Pagination]} // Removido EffectCoverflow
+                autoplay={{
+                    delay: settings?.rotation_time_seconds ? settings.rotation_time_seconds * 1000 : 5000, // Usa a configuração do DB
+                    disableOnInteraction: false,
+                }}
+                navigation={false}
+                effect={'coverflow'} 
+                grabCursor={true}
+                coverflowEffect={{
+                    rotate: 0, 
+                    stretch: 500, // Desloca 500px (600px - 100px)
+                    depth: 100, // Adiciona profundidade 3D
+                    modifier: 1, 
+                    slideShadows: false, 
+                }}
+                modules={[Pagination, EffectCoverflow, Autoplay]} // Adicionando Autoplay
                 className="mySwiper w-full h-full event-carousel-perspective"
             >
                 {banners.map((banner, index) => (
@@ -220,7 +233,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                                     // Aplica sombra amarela sutil nos slides adjacentes
                                     isActive 
                                         ? "shadow-2xl shadow-yellow-500/30 border-2 border-yellow-500/50" 
-                                        : "shadow-xl shadow-yellow-500/10 border border-yellow-500/20 opacity-70" // Reduz a opacidade dos slides inativos
+                                        : "shadow-xl shadow-yellow-500/10 border border-yellow-500/20"
                                 )}
                                 onClick={() => navigate(banner.event_id ? `/events/${banner.event_id}` : banner.link_url || '/')}
                             >
@@ -231,6 +244,8 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                                 />
                                 {/* Overlay escuro com gradiente */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/40"></div>
+                                
+                                {/* REMOVIDOS: Números de Debug */}
                                 
                                 <div className="absolute inset-0 flex items-end pb-10 pt-20">
                                     <div className="px-6 w-full">
