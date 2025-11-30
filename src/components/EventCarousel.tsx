@@ -199,26 +199,19 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
         <div className="relative w-full h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
             <Swiper
                 onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
-                slidesPerView={'auto'}
+                slidesPerView={3} // Exibe 3 slides por vez (Caixa 3, 4, 5)
                 centeredSlides={true}
-                spaceBetween={0} // Slides se tocam
+                spaceBetween={20} // Espaçamento entre as caixas
                 initialSlide={banners.length >= 4 ? 3 : 0} // Inicia no Banner 4 (índice 3)
                 loop={true} // Ativa o loop para rotação contínua
                 pagination={{
                     clickable: true,
                 }}
-                autoplay={false} // Mantendo o autoplay desativado
-                navigation={false}
-                effect={'coverflow'} 
+                autoplay={false} 
+                navigation={true} // Ativa a navegação por setas
+                effect={'slide'} // Usando o efeito slide padrão
                 grabCursor={true}
-                coverflowEffect={{
-                    rotate: 0, // Rotação zerada para manter os slides mais planos
-                    stretch: 500, // Aumenta o alongamento para afastar os slides e mostrar mais laterais
-                    depth: 100, // Profundidade reduzida
-                    modifier: 1, 
-                    slideShadows: false, 
-                }}
-                modules={[Pagination, EffectCoverflow, Autoplay]}
+                modules={[Pagination, Autoplay]} // Removendo EffectCoverflow
                 className="mySwiper w-full h-full event-carousel-perspective"
             >
                 {banners.map((banner, index) => (
@@ -229,8 +222,8 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                                     "relative w-full h-full rounded-2xl overflow-hidden transition-all duration-500",
                                     // Aplica sombra amarela sutil nos slides adjacentes
                                     isActive 
-                                        ? "shadow-2xl shadow-yellow-500/30 border-2 border-yellow-500/50" 
-                                        : "shadow-xl shadow-yellow-500/10 border border-yellow-500/20"
+                                        ? "shadow-2xl shadow-yellow-500/30 border-2 border-yellow-500/50 scale-105" // Aumenta o slide ativo
+                                        : "shadow-xl shadow-yellow-500/10 border border-yellow-500/20 opacity-70" // Diminui a opacidade dos inativos
                                 )}
                                 onClick={() => navigate(banner.event_id ? `/events/${banner.event_id}` : banner.link_url || '/')}
                             >
@@ -242,14 +235,14 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                                 {/* Overlay escuro com gradiente */}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/40"></div>
                                 
-                                {/* NOVO: Numeração do Banner - Canto Superior Esquerdo */}
+                                {/* Numeração do Banner - Canto Superior Esquerdo */}
                                 {isActive && (
                                     <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm font-semibold border border-yellow-500/50">
                                         {index + 1} / {banners.length}
                                     </div>
                                 )}
                                 
-                                {/* NOVO: Numeração do Banner - Canto Superior Direito */}
+                                {/* Numeração do Banner - Canto Superior Direito */}
                                 {isActive && (
                                     <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm font-semibold border border-yellow-500/50">
                                         {index + 1} / {banners.length}
