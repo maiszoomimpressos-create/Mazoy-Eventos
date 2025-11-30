@@ -34,24 +34,29 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Inicializa o cliente Supabase. Usamos o token de autorização se estiver presente,
+  // caso contrário, usamos a ANON_KEY (para acesso público).
+  const authHeader = req.headers.get('Authorization');
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_ANON_KEY') ?? '', // Usando ANON_KEY para dados públicos
-    { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    { global: { headers: { Authorization: authHeader || `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}` } } }
   );
 
   try {
-    let body = {};
-    try {
-        // Tenta ler o corpo, mas se for GET ou o corpo estiver vazio, falha silenciosamente
-        if (req.headers.get('content-type')?.includes('application/json')) {
+    let body: { user_id?: string, user_latitude?: number, user_longitude?: number } = {};
+    
+    // Tenta ler o corpo da requisição de forma segura
+    if (req.headers.get('content-type')?.includes('application/json')) {
+        try {
             body = await req.json();
+        } catch (e) {
+            // Ignora erro de corpo vazio ou malformado, tratando como se não houvesse payload
+            console.log("[DEBUG] Request body was empty or malformed.");
         }
-    } catch (e) {
-        // Ignora erro de corpo vazio
     }
     
-    const { user_id, user_latitude, user_longitude } = body as { user_id?: string, user_latitude?: number, user_longitude?: number };
+    const { user_id, user_latitude, user_longitude } = body;
 
     // 1. Buscar configurações globais do carrossel
     const { data: settings, error: settingsError } = await supabase
@@ -186,7 +191,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Edge Function CRITICAL Error:', error);
     return new Response(JSON.stringify({ error: error.message || 'Internal Server Error' }), {
-      status: 500,
+      status: 500, 
       headers: corsHeaders,
     });
   }
