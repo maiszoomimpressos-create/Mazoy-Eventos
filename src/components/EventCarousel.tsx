@@ -196,7 +196,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
     const activeBanner = banners[activeIndex];
 
     return (
-        <div className="relative w-full h-[500px] md:h-[600px] lg:h-[700px] overflow-hidden">
+        <div className="relative w-full h-[450px] overflow-hidden"> {/* ALTURA AJUSTADA */}
             <Swiper
                 onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
                 slidesPerView={'auto'}
@@ -215,7 +215,7 @@ const EventCarousel: React.FC<EventCarouselProps> = ({ userId }) => {
                     rotate: 0, 
                     stretch: 0, // Reduzindo o stretch para 0 para focar no depth/modifier
                     depth: 100, 
-                    modifier: 1, // REVERTIDO PARA 1
+                    modifier: 1, 
                     slideShadows: false, 
                 }}
                 modules={[Pagination, EffectCoverflow, Autoplay]}
