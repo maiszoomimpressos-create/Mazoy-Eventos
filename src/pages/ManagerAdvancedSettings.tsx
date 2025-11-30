@@ -92,7 +92,7 @@ const ManagerAdvancedSettings: React.FC = () => {
                 </Button>
             </div>
 
-            <Card className="bg-black/80 backdrop-blur-sm border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
+            <Card className="bg-black/90 border border-yellow-500/30 rounded-2xl shadow-2xl shadow-yellow-500/10">
                 <CardHeader>
                     <CardTitle className="text-white text-xl sm:text-2xl font-semibold">Ajustes de Sistema e Segurança</CardTitle>
                     <CardDescription className="text-gray-400 text-sm">
@@ -108,7 +108,7 @@ const ManagerAdvancedSettings: React.FC = () => {
                             Sistema
                         </h3>
                         
-                        <div className="flex items-center justify-between p-4 bg-black/60 rounded-xl border border-yellow-500/20">
+                        <div className="flex items-center justify-between p-4 bg-black/70 rounded-xl border border-yellow-500/20">
                             <div>
                                 <p className="text-white font-medium">Modo de Desenvolvimento</p>
                                 <p className="text-gray-400 text-xs">Ativa recursos de teste e desativa otimizações de produção. Use com cautela.</p>
@@ -121,7 +121,7 @@ const ManagerAdvancedSettings: React.FC = () => {
                             />
                         </div>
 
-                        <div className="flex items-center justify-between p-4 bg-black/60 rounded-xl border border-yellow-500/20">
+                        <div className="flex items-center justify-between p-4 bg-black/70 rounded-xl border border-yellow-500/20">
                             <div>
                                 <p className="text-white font-medium">Arquivamento Automático de Eventos</p>
                                 <p className="text-gray-400 text-xs">Eventos finalizados são movidos automaticamente para o arquivo após 7 dias.</p>
@@ -142,7 +142,7 @@ const ManagerAdvancedSettings: React.FC = () => {
                             Integração de API
                         </h3>
                         
-                        <div className="flex items-center justify-between p-4 bg-black/60 rounded-xl border border-yellow-500/20">
+                        <div className="flex items-center justify-between p-4 bg-black/70 rounded-xl border border-yellow-500/20">
                             <div>
                                 <p className="text-white font-medium">Habilitar Integração Externa</p>
                                 <p className="text-gray-400 text-xs">Permite que sistemas externos acessem seus dados de eventos via API.</p>
